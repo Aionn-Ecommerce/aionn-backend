@@ -1,0 +1,2 @@
+-- Flyway baseline migration for module: identity
+-- Add schema changes for identity here.

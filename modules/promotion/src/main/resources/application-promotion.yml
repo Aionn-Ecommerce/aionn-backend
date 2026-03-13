@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: promotion
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

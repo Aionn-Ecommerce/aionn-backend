@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: inventory
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

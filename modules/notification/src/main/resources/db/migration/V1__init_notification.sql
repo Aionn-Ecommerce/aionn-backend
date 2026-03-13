@@ -1,0 +1,2 @@
+-- Flyway baseline migration for module: notification
+-- Add schema changes for notification here.

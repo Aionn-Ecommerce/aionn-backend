@@ -1,0 +1,2 @@
+-- Flyway baseline migration for module: shipping
+-- Add schema changes for shipping here.

@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: shipping
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
