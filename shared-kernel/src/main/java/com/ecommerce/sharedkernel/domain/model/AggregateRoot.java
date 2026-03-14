@@ -1,12 +1,12 @@
 package com.ecommerce.sharedkernel.domain.model;
 
+import com.ecommerce.sharedkernel.domain.id.BaseId;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import com.ecommerce.sharedkernel.domain.event.DomainEvent;
-import com.ecommerce.sharedkernel.domain.event.DomainEventPublisher;
 
-public abstract class AggregateRoot<ID> extends BaseEntity<ID> {
+public abstract class AggregateRoot<ID extends BaseId> extends Entity<ID> {
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -15,19 +15,20 @@ public abstract class AggregateRoot<ID> extends BaseEntity<ID> {
     }
 
     protected void registerEvent(DomainEvent event) {
-        this.domainEvents.add(event);
+        domainEvents.add(event);
     }
 
-    public void clearEvents() {
-        this.domainEvents.clear();
+    public List<DomainEvent> pullDomainEvents() {
+        List<DomainEvent> events = new ArrayList<>(domainEvents);
+        domainEvents.clear();
+        return Collections.unmodifiableList(events);
     }
 
-    public List<DomainEvent> getDomainEvents() {
+    public List<DomainEvent> peekDomainEvents() {
         return Collections.unmodifiableList(domainEvents);
     }
 
-    public void publishEvents(DomainEventPublisher publisher) {
-        publisher.publishAll(domainEvents);
-        clearEvents();
+    public boolean hasUnpublishedEvents() {
+        return !domainEvents.isEmpty();
     }
 }
