@@ -26,3 +26,10 @@ logs/
 # Application
 application-local.yml
 application-dev.yml
+
+#environment variables
+.env
+.env.*
+
+# instruction files
+/instruction/

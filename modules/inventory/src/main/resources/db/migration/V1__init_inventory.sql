@@ -1,2 +1,0 @@
--- Flyway baseline migration for module: inventory
--- Add schema changes for inventory here.

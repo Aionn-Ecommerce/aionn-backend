@@ -1,5 +1,11 @@
 package com.ecommerce.sharedkernel.presentation.exception;
 
+import com.ecommerce.sharedkernel.common.exception.ConflictException;
+import com.ecommerce.sharedkernel.common.exception.DomainException;
+import com.ecommerce.sharedkernel.common.exception.ForbiddenException;
+import com.ecommerce.sharedkernel.common.exception.NotFoundException;
+import com.ecommerce.sharedkernel.common.exception.UnauthorizedException;
+import com.ecommerce.sharedkernel.common.exception.ValidationException;
 import com.ecommerce.sharedkernel.presentation.response.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

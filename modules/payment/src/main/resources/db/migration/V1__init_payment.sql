@@ -1,2 +1,0 @@
--- Flyway baseline migration for module: payment
--- Add schema changes for payment here.

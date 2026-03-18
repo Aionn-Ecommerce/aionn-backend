@@ -1,52 +1,40 @@
 package com.ecommerce.identity.infrastructure.persistence.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "social_accounts")
+@Table(name = "social_accounts", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_social_provider_id", columnNames = {"provider", "provider_user_id"})
+}, indexes = {
+        @Index(name = "idx_social_user_id", columnList = "user_id")
+})
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class SocialAccountEntity {
 
     @Id
-    @Column(name = "provider_user_id", nullable = false, length = 100)
-    private String providerUserId;
+    @Column(name = "social_account_id", nullable = false, length = 26)
+    private String socialAccountId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(name = "provider", length = 20)
+    @Column(name = "provider", length = 20, nullable = false)
     private String provider;
 
-    protected SocialAccountEntity() {
-    }
+    @Column(name = "provider_user_id", length = 100, nullable = false)
+    private String providerUserId;
 
-    public String getProviderUserId() {
-        return providerUserId;
-    }
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false, nullable = false)
+    private LocalDateTime createdAt;
 
-    public void setProviderUserId(String providerUserId) {
-        this.providerUserId = providerUserId;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
 }

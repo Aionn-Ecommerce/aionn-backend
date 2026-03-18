@@ -13,7 +13,16 @@ public class InMemoryIdentityUserRepository implements IdentityUserRepository {
     @Override
     public Optional<IdentityUser> findByEmail(String email) {
         return usersById.values().stream()
+                .filter(u -> u.getEmail() != null)
                 .filter(u -> u.getEmail().equalsIgnoreCase(email))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<IdentityUser> findByPhone(String phone) {
+        return usersById.values().stream()
+                .filter(u -> u.getPhone() != null)
+                .filter(u -> u.getPhone().equals(phone))
                 .findFirst();
     }
 

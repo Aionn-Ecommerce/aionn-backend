@@ -1,6 +1,6 @@
 package com.ecommerce.sharedkernel.infrastructure.security;
 
-import com.ecommerce.sharedkernel.presentation.exception.UnauthorizedException;
+import com.ecommerce.sharedkernel.common.exception.UnauthorizedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;

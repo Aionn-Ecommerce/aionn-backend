@@ -1,2 +1,0 @@
--- Flyway baseline migration for module: promotion
--- Add schema changes for promotion here.

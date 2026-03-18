@@ -1,7 +1,7 @@
 package com.ecommerce.sharedkernel.util;
 
-import com.ecommerce.sharedkernel.presentation.exception.DomainException;
-import com.ecommerce.sharedkernel.presentation.exception.ValidationException;
+import com.ecommerce.sharedkernel.common.exception.DomainException;
+import com.ecommerce.sharedkernel.common.exception.ValidationException;
 
 import java.util.Collection;
 import java.util.function.Supplier;

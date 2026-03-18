@@ -1,7 +1,6 @@
 package com.ecommerce.sharedkernel.presentation.response;
 
 import com.ecommerce.sharedkernel.domain.vo.OffsetPagination;
-import org.springframework.data.domain.Page;
 import java.util.List;
 
 public record OffsetPageResponse<T>(
@@ -12,17 +11,6 @@ public record OffsetPageResponse<T>(
         int totalPages,
         boolean first,
         boolean last) {
-
-    public static <T> OffsetPageResponse<T> of(Page<T> page) {
-        return new OffsetPageResponse<>(
-                page.getContent(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.isFirst(),
-                page.isLast());
-    }
 
     public static <T> OffsetPageResponse<T> of(List<T> content, OffsetPagination pagination, long totalElements) {
         int totalPages = (int) Math.ceil((double) totalElements / pagination.size());

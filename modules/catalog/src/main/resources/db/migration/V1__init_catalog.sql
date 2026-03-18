@@ -1,2 +1,0 @@
--- Flyway baseline migration for module: catalog
--- Add schema changes for catalog here.

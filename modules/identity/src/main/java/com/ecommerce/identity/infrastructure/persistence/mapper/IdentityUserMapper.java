@@ -1,20 +1,23 @@
 package com.ecommerce.identity.infrastructure.persistence.mapper;
 
+import com.ecommerce.identity.domain.id.UserId;
 import com.ecommerce.identity.domain.model.IdentityUser;
 import com.ecommerce.identity.infrastructure.persistence.entity.UserEntity;
-import java.time.LocalDateTime;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public final class IdentityUserMapper {
+@Mapper(componentModel = "spring")
+public interface IdentityUserMapper {
 
-    private IdentityUserMapper() {
-    }
+    @Mapping(target = "id", source = "userId")
+    IdentityUser toDomain(UserEntity entity);
 
-    public static IdentityUser toDomain(UserEntity entity) {
-        LocalDateTime createdAt = entity.getCreatedAt() == null ? LocalDateTime.now() : entity.getCreatedAt();
-        String displayName = entity.getDisplayName() == null || entity.getDisplayName().isBlank()
-                ? "unknown"
-                : entity.getDisplayName();
+    @Mapping(target = "userId", source = "id.value")
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    UserEntity toEntity(IdentityUser user);
 
-        return new IdentityUser(entity.getUserId(), entity.getEmail(), displayName, createdAt);
+    default UserId map(String value) {
+        return value != null ? UserId.of(value) : null;
     }
 }

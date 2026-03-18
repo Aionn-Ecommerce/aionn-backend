@@ -8,18 +8,27 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_preferences")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class UserPreferenceEntity {
 
     @Id
-    @Column(name = "user_id", nullable = false, length = 50)
+    @Column(name = "user_id", nullable = false, length = 26)
     private String userId;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private UserEntity user;
 
     @Column(name = "language", length = 10)
@@ -34,72 +43,13 @@ public class UserPreferenceEntity {
     @Column(name = "theme", length = 20)
     private String theme;
 
-    @Column(name = "notification_settings", columnDefinition = "json")
+    @Column(name = "notification_settings", columnDefinition = "jsonb")
     private String notificationSettings;
 
-    @Column(name = "ai_privacy_settings", columnDefinition = "json")
+    @Column(name = "ai_privacy_settings", columnDefinition = "jsonb")
     private String aiPrivacySettings;
 
-    protected UserPreferenceEntity() {
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getTimezone() {
-        return timezone;
-    }
-
-    public void setTimezone(String timezone) {
-        this.timezone = timezone;
-    }
-
-    public String getTheme() {
-        return theme;
-    }
-
-    public void setTheme(String theme) {
-        this.theme = theme;
-    }
-
-    public String getNotificationSettings() {
-        return notificationSettings;
-    }
-
-    public void setNotificationSettings(String notificationSettings) {
-        this.notificationSettings = notificationSettings;
-    }
-
-    public String getAiPrivacySettings() {
-        return aiPrivacySettings;
-    }
-
-    public void setAiPrivacySettings(String aiPrivacySettings) {
-        this.aiPrivacySettings = aiPrivacySettings;
-    }
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

@@ -34,12 +34,10 @@ subprojects {
         }
     }
     
-    // Only apply Spring Boot plugin to the main app
     if (project.name == 'app') {
         apply plugin: 'org.springframework.boot'
     }
     
-    // Common dependencies for all modules
     dependencies {
         if (project.name == 'shared-kernel') {
             testImplementation 'org.junit.jupiter:junit-jupiter'

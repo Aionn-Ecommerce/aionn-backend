@@ -1,53 +1,37 @@
 package com.ecommerce.identity.infrastructure.persistence.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "backup_codes")
+@Table(name = "backup_codes", indexes = {
+        @Index(name = "idx_backup_user_id", columnList = "user_id")
+})
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class BackupCodeEntity {
 
     @Id
-    @Column(name = "code_hash", nullable = false, length = 255)
-    private String codeHash;
+    @Column(name = "backup_code_id", nullable = false, length = 26)
+    private String backupCodeId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(name = "generated_at")
+    @Column(name = "code_hash", nullable = false, unique = true, length = 255)
+    private String codeHash;
+
+    @CreationTimestamp
+    @Column(name = "generated_at", nullable = false, updatable = false)
     private LocalDateTime generatedAt;
 
-    protected BackupCodeEntity() {
-    }
-
-    public String getCodeHash() {
-        return codeHash;
-    }
-
-    public void setCodeHash(String codeHash) {
-        this.codeHash = codeHash;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public LocalDateTime getGeneratedAt() {
-        return generatedAt;
-    }
-
-    public void setGeneratedAt(LocalDateTime generatedAt) {
-        this.generatedAt = generatedAt;
-    }
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
 }

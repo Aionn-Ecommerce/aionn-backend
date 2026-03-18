@@ -1,20 +1,26 @@
 package com.ecommerce.identity.infrastructure.persistence.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "auth_sessions")
+@Table(name = "auth_sessions", indexes = {
+        @Index(name = "idx_session_user_id", columnList = "user_id"),
+        @Index(name = "idx_session_status", columnList = "status"),
+        @Index(name = "idx_session_expires_at", columnList = "expires_at")
+})
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class AuthSessionEntity {
 
     @Id
-    @Column(name = "session_id", nullable = false, length = 50)
+    @Column(name = "session_id", nullable = false, length = 26)
     private String sessionId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -27,60 +33,16 @@ public class AuthSessionEntity {
     @Column(name = "user_agent", columnDefinition = "TEXT")
     private String userAgent;
 
-    @Column(name = "status", length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private String status;
 
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    protected AuthSessionEntity() {
-    }
+    @Column(name = "last_active_at")
+    private LocalDateTime lastActiveAt;
 
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 }

@@ -5,3 +5,16 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+identity:
+  registration:
+    max-verify-attempts: ${MAX_VERIFY_ATTEMPTS:5}
+    resend-cooldown-seconds: ${RESEND_COOLDOWN_SECONDS:60}
+    otp-expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
+    captcha:
+      expected-token: ${CAPTCHA_EXPECTED_TOKEN:}
+    twilio:
+      enabled: ${TWILIO_ENABLED:false}
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}

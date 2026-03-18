@@ -4,7 +4,7 @@ else
 GRADLEW := ./gradlew
 endif
 
-CONTAINER := podman
+CONTAINER := docker
 
 .PHONY: build test run clean up down logs
 

@@ -1,7 +1,7 @@
 package com.ecommerce.sharedkernel.presentation.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.ecommerce.sharedkernel.presentation.exception.ValidationException;
+import com.ecommerce.sharedkernel.common.exception.ValidationException;
 
 import java.time.Instant;
 import java.util.List;

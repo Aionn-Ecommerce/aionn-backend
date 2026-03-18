@@ -7,5 +7,7 @@ public interface IdentityUserRepository {
 
     Optional<IdentityUser> findByEmail(String email);
 
+    Optional<IdentityUser> findByPhone(String phone);
+
     IdentityUser save(IdentityUser user);
 }
