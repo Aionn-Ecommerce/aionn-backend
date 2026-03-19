@@ -1,23 +1,25 @@
-spring:
-  config:
-    import:
-      - optional:file:.env[.properties]
-      - optional:file:../.env[.properties]
+server:
+  port: ${SERVER_PORT:8085}
 
+spring:
   application:
     name: ${APP_NAME:ecommerce-backend}
 
+  config:
+    import:
+      - optional:file:../.env[.properties]
+
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_LOCAL_PORT:5434}/${POSTGRES_DB_NAME:ecommerce-backend}}
-    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_DB_USER:postgres}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_DB_PASSWORD:postgres}}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ecommerce_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: ${SPRING_DATA_REDIS_PORT:${REDIS_LOCAL_PORT:6381}}
-      password: ${SPRING_DATA_REDIS_PASSWORD:${REDIS_PASSWORD:}}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
 
   jpa:
     hibernate:
@@ -26,14 +28,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        "[format_sql]": true
-
-server:
-  port: ${SERVER_PORT:8085}
-
-logging:
-  level:
-    "[com.ecommerce]": DEBUG
+        format_sql: true
 
 springdoc:
   api-docs:
@@ -57,3 +52,16 @@ identity:
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
       from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}
+
+security:
+  ip:
+    blacklist: ${SECURITY_IP_BLACKLIST:}
+    rate-limits:
+      - path: /api/v1/registrations/initiate
+        method: POST
+        max-requests: ${SECURITY_IP_REG_INIT_MAX_REQUESTS:5}
+        window-seconds: ${SECURITY_IP_REG_INIT_WINDOW_SECONDS:60}
+
+logging:
+  level:
+    "[com.ecommerce]": DEBUG
