@@ -15,6 +15,8 @@ public interface IdentityUserMapper {
     @Mapping(target = "userId", source = "id.value")
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "mfaEnabled", ignore = true)
+    @Mapping(target = "lockedUntil", ignore = true)
     UserEntity toEntity(IdentityUser user);
 
     default UserId map(String value) {

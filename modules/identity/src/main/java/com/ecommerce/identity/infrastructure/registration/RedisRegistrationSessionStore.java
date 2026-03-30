@@ -1,7 +1,7 @@
 package com.ecommerce.identity.infrastructure.registration;
 
 import com.ecommerce.identity.application.port.out.registration.RegistrationSessionStore;
-import com.ecommerce.identity.application.port.out.registration.model.RegistrationVerificationSession;
+import com.ecommerce.identity.domain.model.RegistrationVerificationSession;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;

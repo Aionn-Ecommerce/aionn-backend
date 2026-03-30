@@ -1,34 +1,47 @@
 package com.ecommerce.identity.domain.exception;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum IdentityErrorCode {
-    PHONE_ALREADY_EXISTS("IDENTITY_001", "Phone number already exists in the system"),
-    EMAIL_ALREADY_EXISTS("IDENTITY_002", "Email already exists in the system"),
-    REGISTRATION_NOT_FOUND("IDENTITY_003", "Registration session not found"),
-    REGISTRATION_EXPIRED("IDENTITY_004", "Registration session has expired"),
+	PHONE_ALREADY_EXISTS("IDENTITY_001", "Phone number already exists in the system"),
+	EMAIL_ALREADY_EXISTS("IDENTITY_002", "Email already exists in the system"),
+	REGISTRATION_NOT_FOUND("IDENTITY_003", "Registration session not found"),
+	REGISTRATION_EXPIRED("IDENTITY_004", "Registration session has expired"),
 
-    OTP_INVALID("IDENTITY_101", "Invalid OTP code"),
-    OTP_EXPIRED("IDENTITY_102", "OTP code has expired"),
-    OTP_ATTEMPTS_EXCEEDED("IDENTITY_103", "OTP attempts exceeded the allowed limit"),
-    CAPTCHA_INVALID("IDENTITY_104", "Invalid captcha token"),
-    VERIFICATION_TOKEN_INVALID("IDENTITY_105", "Verification Token invalid"),
-    RATE_LIMIT_EXCEEDED("IDENTITY_106", "Rate limit exceeded"),
+	OTP_INVALID("IDENTITY_101", "Invalid OTP code"),
+	OTP_EXPIRED("IDENTITY_102", "OTP code has expired"),
+	OTP_ATTEMPTS_EXCEEDED("IDENTITY_103", "OTP attempts exceeded the allowed limit"),
+	CAPTCHA_INVALID("IDENTITY_104", "Invalid captcha token"),
+	VERIFICATION_TOKEN_INVALID("IDENTITY_105", "Verification Token invalid"),
+	RATE_LIMIT_EXCEEDED("IDENTITY_106", "Rate limit exceeded"),
+	ADDRESS_NUMBER_EXCEEDED("IDENTITY_107", "Too much addresses, just 5 max"),
 
-    USER_NOT_FOUND("IDENTITY_201", "User not found"),
-    INVALID_DISPLAY_NAME("IDENTITY_202", "Invalid display name");
+	USER_NOT_FOUND("IDENTITY_201", "User not found"),
+	INVALID_DISPLAY_NAME("IDENTITY_202", "Invalid display name"),
+	INVALID_CREDENTIALS("IDENTITY_203", "Invalid credentials"),
+	USER_INACTIVE("IDENTITY_204", "User account is not active"),
+	SESSION_NOT_FOUND("IDENTITY_205", "Session not found"),
+	SESSION_FORBIDDEN("IDENTITY_206", "Session does not belong to current user"),
+	SOCIAL_LINK_EXISTS("IDENTITY_207", "Social account is already linked"),
+	SOCIAL_LINK_NOT_FOUND("IDENTITY_208", "Social account link not found"),
+	PROVIDER_NOT_SUPPORTED("IDENTITY_209", "Social provider is not supported"),
+	PROVIDER_TOKEN_INVALID("IDENTITY_210", "Social provider token is invalid"),
+	OTP_REQUIRED("IDENTITY_211", "OTP code is required"),
+	OTP_CHANNEL_NOT_SUPPORTED("IDENTITY_212", "OTP channel is not supported"),
+	AVATAR_URL_INVALID("IDENTITY_213", "Avatar URL is invalid"),
+	ACCOUNT_DELETION_ALREADY_REQUESTED("IDENTITY_214", "Account deletion request already exists"),
+	ACCOUNT_DELETION_NOT_FOUND("IDENTITY_215", "Account deletion request not found"),
+	DATA_EXPORT_ALREADY_IN_PROGRESS("IDENTITY_216", "A data export request is already in progress"),
+	EMAIL_VERIFICATION_NOT_FOUND("IDENTITY_217", "Email verification challenge not found"),
+	EMAIL_CHANGE_NOT_FOUND("IDENTITY_218", "Email change challenge not found"),
+	PHONE_CHANGE_NOT_FOUND("IDENTITY_219", "Phone change challenge not found"),
 
-    private final String code;
-    private final String defaultMessage;
+	INVALID_ADDRESS_TYPE("IDENTITY_301", "Invalid address type. Supported types are HOME or OFFICE"),
+	ADDRESS_NOT_FOUND("IDENTITY_302", "Address not found");
 
-    IdentityErrorCode(String code, String defaultMessage) {
-        this.code = code;
-        this.defaultMessage = defaultMessage;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getDefaultMessage() {
-        return defaultMessage;
-    }
+	private final String code;
+	private final String defaultMessage;
 }

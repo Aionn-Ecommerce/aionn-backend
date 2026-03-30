@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record CompleteRegistrationResult(
         String userId,
-        String displayName,
-        LocalDateTime createdAt) {
+        String sessionId,
+        String accessToken,
+        LocalDateTime expiresAt) {
 }

@@ -1,6 +1,6 @@
 package com.ecommerce.identity.application.port.out.registration;
 
-import com.ecommerce.identity.application.port.out.registration.model.RegistrationVerificationSession;
+import com.ecommerce.identity.domain.model.RegistrationVerificationSession;
 
 import java.util.Optional;
 

@@ -18,3 +18,5 @@ identity:
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
       from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}
+  address:
+    max-address-numbers: ${MAX_ADDRESS_NUMBERS}

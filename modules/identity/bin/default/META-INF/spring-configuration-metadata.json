@@ -1,0 +1,87 @@
+{
+  "groups": [
+    {
+      "name": "identity.registration",
+      "type": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties"
+    },
+    {
+      "name": "identity.registration.captcha",
+      "type": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Captcha",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties",
+      "sourceMethod": "public com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties.Captcha getCaptcha() "
+    },
+    {
+      "name": "identity.registration.twilio",
+      "type": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Twilio",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties",
+      "sourceMethod": "public com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties.Twilio getTwilio() "
+    }
+  ],
+  "properties": [
+    {
+      "name": "identity.registration.captcha.expected-token",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Captcha"
+    },
+    {
+      "name": "identity.registration.captcha.google-secret-key",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Captcha"
+    },
+    {
+      "name": "identity.registration.captcha.google-site-key",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Captcha"
+    },
+    {
+      "name": "identity.registration.captcha.provider",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Captcha"
+    },
+    {
+      "name": "identity.registration.expose-otp-in-response",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties"
+    },
+    {
+      "name": "identity.registration.max-verify-attempts",
+      "type": "java.lang.Integer",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties"
+    },
+    {
+      "name": "identity.registration.otp-expiry-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties"
+    },
+    {
+      "name": "identity.registration.resend-cooldown-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties"
+    },
+    {
+      "name": "identity.registration.twilio.account-sid",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Twilio"
+    },
+    {
+      "name": "identity.registration.twilio.auth-token",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Twilio"
+    },
+    {
+      "name": "identity.registration.twilio.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Twilio"
+    },
+    {
+      "name": "identity.registration.twilio.from-phone-number",
+      "type": "java.lang.String",
+      "sourceType": "com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties$Twilio"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}

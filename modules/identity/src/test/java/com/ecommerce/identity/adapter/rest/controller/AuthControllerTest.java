@@ -1,0 +1,131 @@
+package com.ecommerce.identity.adapter.rest.controller;
+
+import com.ecommerce.identity.adapter.rest.support.ClientIpResolver;
+import com.ecommerce.identity.adapter.rest.support.ClientIpArgumentResolver;
+import com.ecommerce.identity.application.dto.auth.AuthSessionView;
+import com.ecommerce.identity.application.dto.auth.GetAuthSessionsQuery;
+import com.ecommerce.identity.application.dto.auth.LoginResult;
+import com.ecommerce.identity.application.dto.auth.LogoutAllCommand;
+import com.ecommerce.identity.application.dto.auth.LogoutAllResult;
+import com.ecommerce.identity.application.dto.auth.LoginCommand;
+import com.ecommerce.identity.application.dto.auth.SocialLinkView;
+import com.ecommerce.identity.application.port.in.auth.AuthInputPort;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
+class AuthControllerTest {
+
+        @Mock
+        private AuthInputPort authInputPort;
+
+        @Mock
+        private ClientIpResolver clientIpResolver;
+
+        @InjectMocks
+        private AuthController authController;
+
+        private MockMvc mockMvc() {
+                return MockMvcBuilders.standaloneSetup(authController)
+                                .setCustomArgumentResolvers(new ClientIpArgumentResolver(clientIpResolver))
+                                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                                .build();
+        }
+
+        private Authentication auth() {
+                return new UsernamePasswordAuthenticationToken("user-1", "N/A");
+        }
+
+        @Test
+        void loginShouldReturnSuccess() throws Exception {
+                Mockito.when(clientIpResolver.resolve(Mockito.any())).thenReturn("127.0.0.1");
+                Mockito.when(authInputPort.execute(Mockito.any(LoginCommand.class))).thenReturn(
+                                new LoginResult("user-1", "session-1", "token-1",
+                                                LocalDateTime.of(2026, 3, 20, 10, 0)));
+
+                mockMvc().perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("User-Agent", "JUnit")
+                                .content("""
+                                                {"identity":"john","password":"Password@123"}
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(Matchers.containsString("\"statusCode\":\"200\"")))
+                                .andExpect(content().string(Matchers.containsString("token-1")));
+        }
+
+        @Test
+        void linkSocialShouldReturnCreated() throws Exception {
+                Mockito.when(authInputPort.linkSocial(Mockito.any())).thenReturn(
+                                new SocialLinkView("google", "google-user-1", LocalDateTime.of(2026, 3, 20, 10, 0)));
+
+                mockMvc().perform(post("/api/v1/auth/social-links")
+                                .principal(auth())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {"provider":"google","providerToken":"provider-token"}
+                                                """))
+                                .andExpect(status().isCreated())
+                                .andExpect(content().string(Matchers.containsString("\"statusCode\":\"201\"")))
+                                .andExpect(content().string(Matchers.containsString("google-user-1")));
+        }
+
+        @Test
+        void getSessionsShouldReturnList() throws Exception {
+                Mockito.when(authInputPort.execute(Mockito.any(GetAuthSessionsQuery.class))).thenReturn(List.of(
+                                new AuthSessionView(
+                                                "session-1",
+                                                "ACTIVE",
+                                                "127.0.0.1",
+                                                "JUnit",
+                                                LocalDateTime.of(2026, 3, 20, 9, 0),
+                                                LocalDateTime.of(2026, 3, 20, 9, 30),
+                                                LocalDateTime.of(2026, 3, 21, 9, 0))));
+
+                mockMvc().perform(get("/api/v1/auth/sessions").principal(auth()))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(Matchers.containsString("\"sessionId\":\"session-1\"")));
+        }
+
+        @Test
+        void unlinkSocialShouldReturnNoContent() throws Exception {
+                mockMvc().perform(delete("/api/v1/auth/social-links/google").principal(auth()))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void revokeSessionShouldReturnNoContent() throws Exception {
+                mockMvc().perform(delete("/api/v1/auth/sessions/session-1").principal(auth()))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void logoutAllShouldReturnSuccess() throws Exception {
+                Mockito.when(authInputPort.execute(Mockito.any(LogoutAllCommand.class)))
+                                .thenReturn(new LogoutAllResult(3));
+
+                mockMvc().perform(post("/api/v1/auth/logout-all").principal(auth()))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(Matchers.containsString("\"revokedSessions\":3")));
+        }
+}

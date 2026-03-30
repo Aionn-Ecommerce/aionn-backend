@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 
 public class IdentityUser extends Entity<UserId> {
 
-    private final String email;
-    private final String phone;
+    private String email;
+    private String phone;
     private final String username;
     private String passwordHash;
     private String displayName;
@@ -78,6 +78,17 @@ public class IdentityUser extends Entity<UserId> {
         this.avatarUrl = avatarUrl;
     }
 
+    public void updateDisplayName(String displayName) {
+        if (displayName == null || displayName.isBlank()) {
+            throw new IdentityException(IdentityErrorCode.INVALID_DISPLAY_NAME);
+        }
+        this.displayName = displayName.trim();
+    }
+
+    public void updateAvatar(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
     public void verifyEmail() {
         if (this.emailVerifiedAt != null)
             return;
@@ -92,6 +103,16 @@ public class IdentityUser extends Entity<UserId> {
 
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+        this.emailVerifiedAt = LocalDateTime.now();
+    }
+
+    public void updatePhone(String newPhone) {
+        this.phone = newPhone;
+        this.phoneVerifiedAt = LocalDateTime.now();
     }
 
     public void ban() {
