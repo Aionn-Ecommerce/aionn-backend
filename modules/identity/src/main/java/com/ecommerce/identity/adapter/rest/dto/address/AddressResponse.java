@@ -15,10 +15,9 @@ public record AddressResponse(
 		String wardCode,
 		String wardName,
 		String detailAddress,
-		String fullFormattedAddress, // Formatted string: "123 Street, Ward Y, District Z, City A"
+		String fullAddress, // Formatted string: "123 Street, Ward Y, District Z, City A"
 		AddressType type,
 		boolean isDefault,
 		LocalDateTime createdAt,
-		LocalDateTime updatedAt
-) {
+		LocalDateTime updatedAt) {
 }

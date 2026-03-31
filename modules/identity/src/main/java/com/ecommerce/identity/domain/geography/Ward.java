@@ -24,8 +24,12 @@ public class Ward {
     @Column(name = "name_en", length = 100)
     private String nameEn; // Phuc Xa, Ben Nghe
 
-    @Column(name = "district_code", nullable = false, length = 10)
+    @Column(name = "district_code", nullable = false, length = 10, insertable = false, updatable = false)
     private String districtCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "district_code", nullable = false)
+    private District district;
 
     @Column(nullable = false)
     private Boolean active = true;

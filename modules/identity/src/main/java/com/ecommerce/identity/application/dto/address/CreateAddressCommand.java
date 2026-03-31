@@ -1,5 +1,6 @@
 package com.ecommerce.identity.application.dto.address;
 
+import com.ecommerce.identity.domain.valueobject.AddressType;
 import com.ecommerce.sharedkernel.application.command.Command;
 
 public record CreateAddressCommand(
@@ -10,6 +11,6 @@ public record CreateAddressCommand(
 		String districtCode,
 		String wardCode,
 		String detailAddress,
-		String type,
+		AddressType type,
 		boolean isDefault) implements Command {
 }

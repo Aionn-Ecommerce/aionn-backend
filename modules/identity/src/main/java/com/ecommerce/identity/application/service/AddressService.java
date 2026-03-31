@@ -2,6 +2,7 @@ package com.ecommerce.identity.application.service;
 
 import com.ecommerce.identity.application.dto.address.CreateAddressCommand;
 import com.ecommerce.identity.application.dto.address.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.geography.ResolvedLocation;
 import com.ecommerce.identity.domain.exception.IdentityErrorCode;
 import com.ecommerce.identity.domain.exception.IdentityException;
 import com.ecommerce.identity.domain.model.Address;
@@ -45,17 +46,23 @@ public class AddressService {
 			throw new IdentityException(IdentityErrorCode.ADDRESS_NUMBER_EXCEEDED);
 		}
 
-		// Validate geography codes and build full address
-		String fullAddress = buildFullAddress(command.provinceCode(), command.districtCode(),
-				command.wardCode(), command.detailAddress());
+		ResolvedLocation location = geographyService.resolveLocation(
+				command.provinceCode(), command.districtCode(), command.wardCode());
+
+		String fullAddress = location.buildFullAddress(command.detailAddress());
 
 		boolean shouldSetAsDefault = (count == 0) || command.isDefault();
 		if (shouldSetAsDefault) {
-			clearCurrentDefaultAddress(command.userId());
+			addressRepository.clearDefaultAddressByUserId(command.userId());
 		}
 
-		UserAddressEntity entity = addressDomainMapper.toEntity(command, user, shouldSetAsDefault);
-		entity.setFullAddress(fullAddress);
+		UserAddressEntity entity = addressDomainMapper.toEntity(
+				command, user, shouldSetAsDefault,
+				fullAddress,
+				location.province().name(),
+				location.district().name(),
+				location.ward().name());
+
 		var saved = addressRepository.save(entity);
 		return addressDomainMapper.toDomain(saved);
 	}
@@ -64,12 +71,29 @@ public class AddressService {
 	public Address updateAddress(UpdateAddressCommand command) {
 		UserAddressEntity address = getAddressOrThrow(command.userId(), command.addressId());
 
-		// Validate geography codes and build full address
-		String fullAddress = buildFullAddress(command.provinceCode(), command.districtCode(),
-				command.wardCode(), command.detailAddress());
+		String fullAddress = address.getFullAddress();
+		String provinceName = address.getProvinceName();
+		String districtName = address.getDistrictName();
+		String wardName = address.getWardName();
 
-		addressDomainMapper.updateEntityFromCommand(command, address);
-		address.setFullAddress(fullAddress);
+		boolean locationChanged = !command.provinceCode().equals(address.getProvinceCode())
+				|| !command.districtCode().equals(address.getDistrictCode())
+				|| !command.wardCode().equals(address.getWardCode())
+				|| !command.detailAddress().equals(address.getDetailAddress());
+
+		if (locationChanged) {
+			ResolvedLocation location = geographyService.resolveLocation(
+					command.provinceCode(), command.districtCode(), command.wardCode());
+
+			fullAddress = location.buildFullAddress(command.detailAddress());
+			provinceName = location.province().name();
+			districtName = location.district().name();
+			wardName = location.ward().name();
+		}
+
+		addressDomainMapper.updateEntityFromCommand(command, address,
+				fullAddress, provinceName, districtName, wardName);
+
 		return addressDomainMapper.toDomain(addressRepository.save(address));
 	}
 
@@ -78,8 +102,7 @@ public class AddressService {
 		UserAddressEntity address = getAddressOrThrow(userId, addressId);
 		Address domainAddress = addressDomainMapper.toDomain(address);
 		if (!domainAddress.canBeDeleted()) {
-			throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID,
-					"Default address cannot be deleted");
+			throw new IdentityException(IdentityErrorCode.DEFAULT_ADDRESS_CANNOT_BE_DELETED);
 		}
 		addressRepository.delete(address);
 	}
@@ -90,7 +113,7 @@ public class AddressService {
 		if (Boolean.TRUE.equals(targetEntity.getIsDefault())) {
 			return addressDomainMapper.toDomain(targetEntity);
 		}
-		clearCurrentDefaultAddress(userId);
+		addressRepository.clearDefaultAddressByUserId(userId);
 		targetEntity.setIsDefault(Boolean.TRUE);
 		return addressDomainMapper.toDomain(addressRepository.save(targetEntity));
 	}
@@ -101,34 +124,9 @@ public class AddressService {
 				.orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND, "Address not found"));
 	}
 
-	private void clearCurrentDefaultAddress(String userId) {
-		addressRepository.findByUser_UserIdAndIsDefaultTrue(userId).ifPresent(defaultAddress -> {
-			defaultAddress.setIsDefault(Boolean.FALSE);
-			addressRepository.save(defaultAddress);
-		});
-	}
-
 	private UserEntity getUserOrThrow(String userId) {
 		return userRepository.findById(userId)
 				.orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
-	}
-
-	private String buildFullAddress(String provinceCode, String districtCode, String wardCode, String detailAddress) {
-		// Validate and get names from geography service
-		var province = geographyService.getProvince(provinceCode)
-				.orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_INPUT,
-						"Invalid province code: " + provinceCode));
-
-		var district = geographyService.getDistrict(districtCode)
-				.orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_INPUT,
-						"Invalid district code: " + districtCode));
-
-		var ward = geographyService.getWard(wardCode)
-				.orElseThrow(
-						() -> new IdentityException(IdentityErrorCode.INVALID_INPUT, "Invalid ward code: " + wardCode));
-
-		// Build full address string with names
-		return String.join(", ", detailAddress, ward.name(), district.name(), province.name());
 	}
 
 }

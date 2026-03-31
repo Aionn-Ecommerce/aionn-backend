@@ -40,7 +40,10 @@ public enum IdentityErrorCode {
 	PHONE_CHANGE_NOT_FOUND("IDENTITY_219", "Phone change challenge not found"),
 
 	INVALID_ADDRESS_TYPE("IDENTITY_301", "Invalid address type. Supported types are HOME or OFFICE"),
-	ADDRESS_NOT_FOUND("IDENTITY_302", "Address not found");
+	ADDRESS_NOT_FOUND("IDENTITY_302", "Address not found"),
+	DEFAULT_ADDRESS_CANNOT_BE_DELETED("IDENTITY_303",
+			"Default address cannot be deleted. Please set another address as default first"),
+	INVALID_GEOGRAPHY_CODE("IDENTITY_304", "Invalid geography code");
 
 	private final String code;
 	private final String defaultMessage;

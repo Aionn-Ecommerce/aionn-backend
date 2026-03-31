@@ -16,33 +16,28 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface AddressDtoMapper {
 
-
-	//request -> command
-	@Mapping(target = "userId", source = "userId")
+	// request -> command
+	@Mapping(target = "type", expression = "java(mapStringToAddressType(request.type()))")
 	CreateAddressCommand toCreateCommand(String userId, CreateAddressRequest request);
 
-	@Mapping(target = "userId", source = "userId")
-	@Mapping(target = "addressId", source = "addressId")
+	@Mapping(target = "type", expression = "java(mapStringToAddressType(request.type()))")
 	UpdateAddressCommand toUpdateCommand(String userId, String addressId, UpdateAddressRequest request);
 
 	DeleteAddressCommand toDeleteCommand(String userId, String addressId);
 
 	SetDefaultAddressCommand toSetDefaultCommand(String userId, String addressId);
 
-	//result -> response
-	@Mapping(target = "userId", source = "userId")
-	@Mapping(target = "fullAddress", source = "fullAddress")
-	@Mapping(target = "isDefault", source = "default")
+	// result -> response
 	AddressResult toResult(Address address);
 
-	@Mapping(target = "fullFormattedAddress", source = "fullAddress")
 	AddressResponse toResponse(AddressResult result);
 
 	List<AddressResponse> toResponses(List<AddressResult> results);
 
-	//helper convert
+	// helper convert - validates and converts String to AddressType enum
 	default AddressType mapStringToAddressType(String type) {
-		if (type == null) return null;
+		if (type == null)
+			return null;
 		try {
 			return AddressType.valueOf(type.toUpperCase());
 		} catch (IllegalArgumentException e) {

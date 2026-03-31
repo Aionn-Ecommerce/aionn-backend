@@ -24,8 +24,12 @@ public class District {
     @Column(name = "name_en", length = 100)
     private String nameEn; // Ba Dinh, District 1
 
-    @Column(name = "province_code", nullable = false, length = 10)
+    @Column(name = "province_code", nullable = false, length = 10, insertable = false, updatable = false)
     private String provinceCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "province_code", nullable = false)
+    private Province province;
 
     @Column(nullable = false)
     private Boolean active = true;
