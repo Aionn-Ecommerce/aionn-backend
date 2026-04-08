@@ -10,3 +10,5 @@ public record LinkSocialRequest(
         @NotBlank(message = "Provider token is required")
         String providerToken) {
 }
+
+

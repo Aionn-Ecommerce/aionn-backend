@@ -1,6 +1,6 @@
 package com.ecommerce.identity.application.usecase.auth;
 
-import com.ecommerce.identity.application.dto.auth.RevokeSessionCommand;
+import com.ecommerce.identity.application.dto.auth.command.RevokeSessionCommand;
 import com.ecommerce.identity.application.port.in.auth.RevokeSessionInputPort;
 import com.ecommerce.identity.application.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ public class RevokeSessionUseCase implements RevokeSessionInputPort {
     private final AuthService authService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void execute(RevokeSessionCommand command) {
         authService.revokeSession(command);
     }

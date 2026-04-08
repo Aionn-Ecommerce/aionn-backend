@@ -12,3 +12,5 @@ public interface UserConsentRepository extends JpaRepository<UserConsentEntity, 
 
     Optional<UserConsentEntity> findTopByUser_UserIdAndConsentTypeOrderByAgreedAtDesc(String userId, String consentType);
 }
+
+

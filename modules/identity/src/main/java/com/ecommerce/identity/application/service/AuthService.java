@@ -1,15 +1,24 @@
 package com.ecommerce.identity.application.service;
 
-import com.ecommerce.identity.application.dto.auth.LinkSocialCommand;
-import com.ecommerce.identity.application.dto.auth.LoginCommand;
-import com.ecommerce.identity.application.dto.auth.LogoutAllCommand;
-import com.ecommerce.identity.application.dto.auth.LogoutCommand;
-import com.ecommerce.identity.application.dto.auth.RefreshTokenCommand;
-import com.ecommerce.identity.application.dto.auth.RevokeSessionCommand;
-import com.ecommerce.identity.application.dto.auth.SocialLoginCommand;
+import com.ecommerce.identity.application.dto.auth.command.LinkSocialCommand;
+import com.ecommerce.identity.application.dto.auth.command.LoginCommand;
+import com.ecommerce.identity.application.dto.auth.command.LogoutAllCommand;
+import com.ecommerce.identity.application.dto.auth.command.LogoutCommand;
+import com.ecommerce.identity.application.dto.auth.command.RefreshTokenCommand;
+import com.ecommerce.identity.application.dto.auth.command.RevokeSessionCommand;
+import com.ecommerce.identity.application.dto.auth.command.SocialLoginCommand;
+import com.ecommerce.identity.application.dto.auth.command.UnlinkSocialCommand;
+import com.ecommerce.identity.application.mapper.AuthResultMapper;
+import com.ecommerce.identity.application.dto.auth.result.LoginResult;
+import com.ecommerce.identity.application.dto.auth.result.LogoutAllResult;
+import com.ecommerce.identity.application.dto.auth.result.SocialLoginResult;
 import com.ecommerce.identity.application.port.out.auth.AccessTokenIssuer;
+import com.ecommerce.identity.application.port.out.auth.AuthPolicy;
+import com.ecommerce.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.ecommerce.identity.application.port.out.auth.SocialTokenVerifier;
 import com.ecommerce.identity.application.port.out.security.PasswordHasher;
+import com.ecommerce.identity.application.port.out.social.SocialLinkPersistencePort;
+import com.ecommerce.identity.application.port.out.user.UserPersistencePort;
 import com.ecommerce.identity.domain.exception.IdentityErrorCode;
 import com.ecommerce.identity.domain.exception.IdentityException;
 import com.ecommerce.identity.domain.id.UserId;
@@ -18,189 +27,242 @@ import com.ecommerce.identity.domain.model.IdentityUser;
 import com.ecommerce.identity.domain.model.SocialLink;
 import com.ecommerce.identity.domain.valueobject.AuthProvider;
 import com.ecommerce.identity.domain.valueobject.AuthSessionStatus;
-import com.ecommerce.identity.infrastructure.persistence.entity.AuthSessionEntity;
-import com.ecommerce.identity.infrastructure.persistence.entity.SocialAccountEntity;
-import com.ecommerce.identity.infrastructure.persistence.entity.UserEntity;
-import com.ecommerce.identity.infrastructure.persistence.mapper.AuthSessionDomainMapper;
-import com.ecommerce.identity.infrastructure.persistence.mapper.IdentityUserMapper;
-import com.ecommerce.identity.infrastructure.persistence.mapper.SocialLinkDomainMapper;
-import com.ecommerce.identity.infrastructure.persistence.repository.auth.AuthSessionRepository;
-import com.ecommerce.identity.infrastructure.persistence.repository.auth.SocialAccountRepository;
-import com.ecommerce.identity.infrastructure.persistence.repository.user.UserRepository;
 import com.ecommerce.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Service responsible for authentication operations including login, social
+ * authentication,
+ * session management, and social account linking.
+ * 
+ * <p>
+ * This service orchestrates the authentication flow by:
+ * <ul>
+ * <li>Validating user credentials and account status</li>
+ * <li>Creating and managing authentication sessions</li>
+ * <li>Issuing access tokens for authenticated sessions</li>
+ * <li>Handling social provider authentication and account linking</li>
+ * </ul>
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final long SESSION_EXPIRES_DAYS = 30;
-
-    private final UserRepository userRepository;
-    private final AuthSessionRepository authSessionRepository;
-    private final SocialAccountRepository socialAccountRepository;
+    private final UserPersistencePort userPersistencePort;
+    private final AuthSessionPersistencePort authSessionPersistencePort;
+    private final SocialLinkPersistencePort socialLinkPersistencePort;
     private final PasswordHasher passwordHasher;
     private final AccessTokenIssuer accessTokenIssuer;
     private final SocialTokenVerifier socialTokenVerifier;
-    private final IdentityUserMapper identityUserMapper;
-    private final AuthSessionDomainMapper authSessionDomainMapper;
-    private final SocialLinkDomainMapper socialLinkDomainMapper;
+    private final AuthPolicy authPolicy;
+    private final AuthResultMapper authResultMapper;
 
-    @Transactional
-    public AuthSessionEntity login(LoginCommand command) {
-        UserEntity user = findByIdentity(command.identity())
-                .orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS));
+    /**
+     * Authenticates a user with username/email and password credentials.
+     * 
+     * <p>
+     * Authentication flow:
+     * <ol>
+     * <li>Validate user credentials (username/email and password)</li>
+     * <li>Verify user account is active</li>
+     * <li>Create a new authentication session</li>
+     * <li>Issue an access token for the session</li>
+     * </ol>
+     * 
+     * @param command the login command containing identity (username/email),
+     *                password, IP address, and user agent
+     * @return LoginResult containing session details and access token
+     * @throws IdentityException with INVALID_CREDENTIALS if credentials are invalid
+     * @throws IdentityException with USER_INACTIVE if user account is not active
+     */
+    public LoginResult login(LoginCommand command) {
+        log.debug("Login attempt for identity: {}", command.identity());
 
-        validateActiveUser(user);
-        if (user.getPasswordHash() == null || !passwordHasher.matches(command.password(), user.getPasswordHash())) {
-            throw new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS);
-        }
+        IdentityUser user = validateCredentials(command.identity(), command.password());
 
-        return createSession(user, command.ipAddress(), command.userAgent());
+        AuthSession session = createSession(user.getId().toString(), command.ipAddress(), command.userAgent());
+        AuthSession savedSession = authSessionPersistencePort.save(session);
+        String accessToken = issueAccessToken(savedSession);
+
+        log.info("User logged in successfully: userId={}, sessionId={}", user.getId(), savedSession.getSessionId());
+        return authResultMapper.toLoginResult(savedSession, accessToken);
     }
 
-    @Transactional
-    public AuthSessionEntity socialLogin(SocialLoginCommand command) {
+    public SocialLoginResult socialLogin(SocialLoginCommand command) {
+        log.debug("Social login attempt with provider: {}", command.provider());
+
         AuthProvider provider = AuthProvider.from(command.provider());
         String providerUserId = socialTokenVerifier.verifyAndExtractProviderUserId(provider, command.providerToken());
 
-        UserEntity user;
-        var socialLink = socialAccountRepository.findByProviderAndProviderUserId(provider.name(), providerUserId);
+        IdentityUser user;
+        boolean isNewUser = false;
+
+        var socialLink = socialLinkPersistencePort.findByProviderAndProviderUserId(provider, providerUserId);
         if (socialLink.isPresent()) {
-            user = socialLink.get().getUser();
+            user = userPersistencePort.findById(socialLink.get().userId())
+                    .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
         } else {
             user = createUserForSocial(provider, providerUserId);
-            SocialLink domainSocialLink = SocialLink.createNew(
+            IdentityUser savedUser = userPersistencePort.save(user);
+            SocialLink newSocialLink = SocialLink.createNew(
                     IdGenerator.ulid(),
-                    user.getUserId(),
+                    savedUser.getId().toString(),
                     provider,
                     providerUserId);
-            socialAccountRepository.save(socialLinkDomainMapper.toEntity(domainSocialLink, user));
+            socialLinkPersistencePort.save(newSocialLink, savedUser.getId().toString());
+            user = savedUser;
+            isNewUser = true;
+            log.info("New user created via social login: userId={}, provider={}", user.getId(), provider);
         }
 
         validateActiveUser(user);
-        return createSession(user, command.ipAddress(), command.userAgent());
+        AuthSession session = createSession(user.getId().toString(), command.ipAddress(), command.userAgent());
+        AuthSession savedSession = authSessionPersistencePort.save(session);
+        String accessToken = issueAccessToken(savedSession);
+
+        log.info("User logged in via social provider: userId={}, provider={}, sessionId={}, isNewUser={}",
+                user.getId(), provider, savedSession.getSessionId(), isNewUser);
+        return authResultMapper.toSocialLoginResult(savedSession, accessToken, isNewUser);
     }
 
-    @Transactional(readOnly = true)
-    public List<AuthSessionEntity> listSessions(String userId) {
+    public List<AuthSession> listSessions(String userId) {
         validateUserExists(userId);
-        return authSessionRepository.findByUser_UserIdOrderByCreatedAtDesc(userId);
+        return authSessionPersistencePort.findByUserId(userId);
     }
 
-    @Transactional
-    public SocialAccountEntity linkSocial(LinkSocialCommand command) {
-        UserEntity user = validateUserExists(command.userId());
+    public SocialLink linkSocial(LinkSocialCommand command) {
+        log.debug("Linking social account for userId: {}, provider: {}", command.userId(), command.provider());
+
+        IdentityUser user = validateUserExists(command.userId());
         AuthProvider provider = AuthProvider.from(command.provider());
         String providerUserId = socialTokenVerifier.verifyAndExtractProviderUserId(provider, command.providerToken());
 
-        if (socialAccountRepository.existsByProviderAndProviderUserId(provider.name(), providerUserId)) {
+        if (socialLinkPersistencePort.existsByProviderAndProviderUserId(provider, providerUserId)) {
             throw new IdentityException(IdentityErrorCode.SOCIAL_LINK_EXISTS);
         }
-        if (socialAccountRepository.findByUser_UserIdAndProvider(command.userId(), provider.name()).isPresent()) {
+        if (socialLinkPersistencePort.findByUserIdAndProvider(command.userId(), provider).isPresent()) {
             throw new IdentityException(IdentityErrorCode.SOCIAL_LINK_EXISTS);
         }
 
         SocialLink domainSocialLink = SocialLink.createNew(
                 IdGenerator.ulid(),
-                user.getUserId(),
+                user.getId().toString(),
                 provider,
                 providerUserId);
-        return socialAccountRepository.save(socialLinkDomainMapper.toEntity(domainSocialLink, user));
+        SocialLink savedLink = socialLinkPersistencePort.save(domainSocialLink, user.getId().toString());
+
+        log.info("Social account linked: userId={}, provider={}", user.getId(), provider);
+        return savedLink;
     }
 
-    @Transactional
-    public void unlinkSocial(String userId, String providerRaw) {
-        validateUserExists(userId);
-        AuthProvider provider = AuthProvider.from(providerRaw);
-        socialAccountRepository.findByUser_UserIdAndProvider(userId, provider.name())
+    public void unlinkSocial(UnlinkSocialCommand command) {
+        log.debug("Unlinking social account for userId: {}, provider: {}", command.userId(), command.provider());
+
+        validateUserExists(command.userId());
+        AuthProvider provider = AuthProvider.from(command.provider());
+        socialLinkPersistencePort.findByUserIdAndProvider(command.userId(), provider)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.SOCIAL_LINK_NOT_FOUND));
-        socialAccountRepository.deleteByUser_UserIdAndProvider(userId, provider.name());
+        socialLinkPersistencePort.deleteByUserIdAndProvider(command.userId(), provider);
+
+        log.info("Social account unlinked: userId={}, provider={}", command.userId(), provider);
     }
 
-    @Transactional
     public void revokeSession(RevokeSessionCommand command) {
         revokeSessionInternal(command.userId(), command.sessionId());
     }
 
-    @Transactional
     public void logout(LogoutCommand command) {
+        log.debug("Logout request for userId: {}, sessionId: {}", command.userId(), command.sessionId());
         revokeSessionInternal(command.userId(), command.sessionId());
+        log.info("User logged out: userId={}, sessionId={}", command.userId(), command.sessionId());
     }
 
-    @Transactional
-    public int logoutAll(LogoutAllCommand command) {
+    public LogoutAllResult logoutAll(LogoutAllCommand command) {
+        log.debug("Logout all sessions for userId: {}", command.userId());
+
         validateUserExists(command.userId());
         int revoked = 0;
-        var sessions = authSessionRepository.findByUser_UserIdOrderByCreatedAtDesc(command.userId());
-        for (AuthSessionEntity session : sessions) {
-            AuthSession domainSession = authSessionDomainMapper.toDomain(session);
-            if (AuthSessionStatus.ACTIVE.equals(domainSession.getStatus())) {
-                domainSession.revoke();
-                AuthSessionEntity revokedSession = authSessionDomainMapper.toEntity(domainSession, session.getUser());
-                session.setStatus(revokedSession.getStatus());
+        var sessions = authSessionPersistencePort.findByUserId(command.userId());
+        for (AuthSession session : sessions) {
+            if (AuthSessionStatus.ACTIVE.equals(session.getStatus())) {
+                session.revoke();
                 revoked++;
             }
         }
-        authSessionRepository.saveAll(sessions);
-        return revoked;
+        authSessionPersistencePort.saveAll(sessions);
+
+        log.info("All sessions logged out: userId={}, revokedCount={}", command.userId(), revoked);
+        return authResultMapper.toLogoutAllResult(revoked);
     }
 
-    @Transactional
-    public AuthSessionEntity refreshToken(RefreshTokenCommand command) {
-        // TODO: Implement refresh token logic
+    public void refreshToken(RefreshTokenCommand command) {
         throw new UnsupportedOperationException("Refresh token logic is not implemented yet.");
     }
 
-    public String issueAccessToken(String userId, String sessionId, LocalDateTime expiresAt) {
-        return accessTokenIssuer.issueAccessToken(userId, sessionId, expiresAt);
-    }
-
-    // Helper methods
     private void revokeSessionInternal(String userId, String sessionId) {
         validateUserExists(userId);
-        AuthSessionEntity session = authSessionRepository.findById(sessionId)
+        AuthSession session = authSessionPersistencePort.findById(sessionId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.SESSION_NOT_FOUND));
 
-        if (!session.getUser().getUserId().equals(userId)) {
+        if (!session.getUserId().equals(userId)) {
             throw new IdentityException(IdentityErrorCode.SESSION_FORBIDDEN);
         }
 
-        AuthSession domainSession = authSessionDomainMapper.toDomain(session);
-        if (AuthSessionStatus.ACTIVE.equals(domainSession.getStatus())) {
-            domainSession.revoke();
-            AuthSessionEntity revokedSession = authSessionDomainMapper.toEntity(domainSession, session.getUser());
-            session.setStatus(revokedSession.getStatus());
-            authSessionRepository.save(session);
+        if (AuthSessionStatus.ACTIVE.equals(session.getStatus())) {
+            session.revoke();
+            authSessionPersistencePort.save(session);
         }
     }
 
-    private UserEntity validateUserExists(String userId) {
-        UserEntity user = userRepository.findById(userId)
+    /**
+     * Validates user credentials (identity and password).
+     * 
+     * @param identity the username or email
+     * @param password the password to validate
+     * @return the validated IdentityUser
+     * @throws IdentityException with INVALID_CREDENTIALS if user not found or
+     *                           password doesn't match
+     * @throws IdentityException with USER_INACTIVE if user account is not active
+     */
+    private IdentityUser validateCredentials(String identity, String password) {
+        IdentityUser user = userPersistencePort.findByIdentity(identity)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS));
+
+        validateActiveUser(user);
+
+        if (user.getPasswordHash() == null || !passwordHasher.matches(password, user.getPasswordHash())) {
+            log.warn("Invalid password attempt for identity: {}", identity);
+            throw new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS);
+        }
+
+        return user;
+    }
+
+    private IdentityUser validateUserExists(String userId) {
+        IdentityUser user = userPersistencePort.findById(userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
         validateActiveUser(user);
         return user;
     }
 
-    private void validateActiveUser(UserEntity user) {
-        IdentityUser domainUser = identityUserMapper.toDomain(user);
-        if (!domainUser.isActive()) {
+    private void validateActiveUser(IdentityUser user) {
+        if (!user.isActive()) {
             throw new IdentityException(IdentityErrorCode.USER_INACTIVE);
         }
     }
 
-    private UserEntity createUserForSocial(AuthProvider provider, String providerUserId) {
-        IdentityUser domainUser = IdentityUser.createNew(
+    private IdentityUser createUserForSocial(AuthProvider provider, String providerUserId) {
+        return IdentityUser.createNew(
                 UserId.of(IdGenerator.ulid()),
                 null,
                 null,
                 generateSocialUsername(provider, providerUserId));
-        return userRepository.save(identityUserMapper.toEntity(domainUser));
     }
 
     private String generateSocialUsername(AuthProvider provider, String providerUserId) {
@@ -211,7 +273,7 @@ public class AuthService {
         }
         String candidate = base;
         int suffix = 1;
-        while (userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+        while (userPersistencePort.existsByUsername(candidate)) {
             candidate = base + "_" + suffix++;
             if (candidate.length() > 50) {
                 candidate = candidate.substring(0, 50);
@@ -220,19 +282,33 @@ public class AuthService {
         return candidate;
     }
 
-    private AuthSessionEntity createSession(UserEntity user, String ipAddress, String userAgent) {
-        AuthSession domainSession = AuthSession.createNew(
+    /**
+     * Creates a new authentication session for the user.
+     * 
+     * @param userId    the user ID
+     * @param ipAddress the IP address of the client
+     * @param userAgent the user agent string of the client
+     * @return a new AuthSession with expiration set according to policy
+     */
+    private AuthSession createSession(String userId, String ipAddress, String userAgent) {
+        return AuthSession.createNew(
                 IdGenerator.ulid(),
-                user.getUserId(),
+                userId,
                 ipAddress,
                 userAgent,
-                LocalDateTime.now().plusDays(SESSION_EXPIRES_DAYS));
-        return authSessionRepository.save(authSessionDomainMapper.toEntity(domainSession, user));
+                LocalDateTime.now().plusDays(authPolicy.getSessionExpiresDays()));
     }
 
-    private java.util.Optional<UserEntity> findByIdentity(String identity) {
-        return userRepository.findByEmailIgnoreCase(identity)
-                .or(() -> userRepository.findByPhone(identity))
-                .or(() -> userRepository.findByUsernameIgnoreCase(identity));
+    /**
+     * Issues an access token for the authenticated session.
+     * 
+     * @param session the authenticated session
+     * @return the access token string
+     */
+    private String issueAccessToken(AuthSession session) {
+        return accessTokenIssuer.issueAccessToken(
+                session.getUserId(),
+                session.getSessionId(),
+                session.getExpiresAt());
     }
 }

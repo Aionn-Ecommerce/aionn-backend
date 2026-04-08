@@ -6,3 +6,5 @@ public record RejectKycRequest(
         @NotBlank(message = "Reason is required")
         String reason) {
 }
+
+

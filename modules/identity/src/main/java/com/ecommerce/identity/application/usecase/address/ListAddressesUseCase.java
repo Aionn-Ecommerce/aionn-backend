@@ -1,11 +1,12 @@
 package com.ecommerce.identity.application.usecase.address;
 
-import com.ecommerce.identity.adapter.rest.mapper.address.AddressDtoMapper;
-import com.ecommerce.identity.application.dto.address.AddressResult;
+import com.ecommerce.identity.application.dto.address.result.AddressResult;
+import com.ecommerce.identity.application.mapper.AddressResultMapper;
 import com.ecommerce.identity.application.port.in.address.ListAddressesQueryPort;
 import com.ecommerce.identity.application.service.AddressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,12 +15,13 @@ import java.util.List;
 public class ListAddressesUseCase implements ListAddressesQueryPort {
 
     private final AddressService addressService;
-    private final AddressDtoMapper addressMapper;
+    private final AddressResultMapper addressResultMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<AddressResult> execute(String userId) {
         return addressService.listAddressesByUserId(userId).stream()
-                .map(addressMapper::toResult)
+                .map(addressResultMapper::toResult)
                 .toList();
     }
 }

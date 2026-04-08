@@ -1,6 +1,6 @@
 package com.ecommerce.identity.application.usecase.kyc;
 
-import com.ecommerce.identity.application.dto.kyc.CancelKycCommand;
+import com.ecommerce.identity.application.dto.kyc.command.CancelKycCommand;
 import com.ecommerce.identity.application.port.in.kyc.CancelKycInputPort;
 import com.ecommerce.identity.application.service.KycService;
 import lombok.RequiredArgsConstructor;
@@ -19,3 +19,5 @@ public class CancelKycUseCase implements CancelKycInputPort {
         kycService.cancel(command.userId(), command.kycId());
     }
 }
+
+

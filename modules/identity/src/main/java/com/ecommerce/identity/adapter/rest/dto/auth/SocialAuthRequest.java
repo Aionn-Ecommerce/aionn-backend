@@ -8,3 +8,5 @@ public record SocialAuthRequest(
         @NotBlank(message = "Provider token is required")
         String providerToken) {
 }
+
+

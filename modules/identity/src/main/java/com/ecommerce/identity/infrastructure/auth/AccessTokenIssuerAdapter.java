@@ -18,3 +18,5 @@ public class AccessTokenIssuerAdapter implements AccessTokenIssuer {
                 .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
     }
 }
+
+

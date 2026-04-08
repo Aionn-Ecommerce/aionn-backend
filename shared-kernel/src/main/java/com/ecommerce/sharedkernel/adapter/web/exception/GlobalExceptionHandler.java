@@ -1,14 +1,10 @@
 package com.ecommerce.sharedkernel.adapter.web.exception;
 
-import com.ecommerce.sharedkernel.common.exception.ConflictException;
-import com.ecommerce.sharedkernel.common.exception.DomainException;
-import com.ecommerce.sharedkernel.common.exception.ForbiddenException;
-import com.ecommerce.sharedkernel.common.exception.NotFoundException;
-import com.ecommerce.sharedkernel.common.exception.UnauthorizedException;
-import com.ecommerce.sharedkernel.common.exception.ValidationException;
 import com.ecommerce.sharedkernel.adapter.web.response.ApiResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.ecommerce.sharedkernel.common.exception.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,123 +13,126 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
-        private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+	@ExceptionHandler(NotFoundException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleNotFound(NotFoundException ex) {
+		log.debug("Not found: {}", ex.getMessage());
+		return buildErrorResponse(HttpStatus.NOT_FOUND, ex);
+	}
 
-        @ExceptionHandler(NotFoundException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleNotFound(NotFoundException ex) {
-                log.debug("Not found: {}", ex.getMessage());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(errorBody(HttpStatus.NOT_FOUND, ex.getMessage(), ex.getErrorCode(), ex.getDomain(),
-                                                null));
-        }
+	@ExceptionHandler(ValidationException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleValidation(ValidationException ex) {
+		log.debug("Validation failed: {}", ex.getMessage());
+		Map<String, String> fieldMap = null;
+		if (!ex.getFieldErrors().isEmpty()) {
+			fieldMap = ex.getFieldErrors().stream()
+					.collect(Collectors.toMap(
+							ValidationException.FieldError::field,
+							ValidationException.FieldError::message,
+							(a, b) -> a + "; " + b));
+		}
+		return buildErrorResponse(HttpStatus.BAD_REQUEST, ex, fieldMap);
+	}
 
-        @ExceptionHandler(ValidationException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleValidation(ValidationException ex) {
-                log.debug("Validation failed: {}", ex.getMessage());
-                if (!ex.getFieldErrors().isEmpty()) {
-                        Map<String, String> fieldMap = ex.getFieldErrors().stream()
-                                        .collect(java.util.stream.Collectors.toMap(
-                                                        ValidationException.FieldError::field,
-                                                        ValidationException.FieldError::message,
-                                                        (a, b) -> a + "; " + b));
-                        return ResponseEntity.badRequest()
-                                        .body(errorBody(HttpStatus.BAD_REQUEST, ex.getMessage(), ex.getErrorCode(),
-                                                        ex.getDomain(), fieldMap));
-                }
-                return ResponseEntity.badRequest()
-                                .body(errorBody(HttpStatus.BAD_REQUEST, ex.getMessage(), ex.getErrorCode(),
-                                                ex.getDomain(), null));
-        }
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleConflict(ConflictException ex) {
+		log.debug("Conflict: {}", ex.getMessage());
+		return buildErrorResponse(HttpStatus.CONFLICT, ex);
+	}
 
-        @ExceptionHandler(ConflictException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleConflict(ConflictException ex) {
-                log.debug("Conflict: {}", ex.getMessage());
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body(errorBody(HttpStatus.CONFLICT, ex.getMessage(), ex.getErrorCode(), ex.getDomain(),
-                                                null));
-        }
+	@ExceptionHandler(UnauthorizedException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnauthorized(UnauthorizedException ex) {
+		log.debug("Unauthorized: {}", ex.getMessage());
+		return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex);
+	}
 
-        @ExceptionHandler(UnauthorizedException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnauthorized(UnauthorizedException ex) {
-                log.debug("Unauthorized: {}", ex.getMessage());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex.getErrorCode(), null,
-                                                null));
-        }
+	@ExceptionHandler(ForbiddenException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleForbidden(ForbiddenException ex) {
+		log.debug("Forbidden: {}", ex.getMessage());
+		return buildErrorResponse(HttpStatus.FORBIDDEN, ex);
+	}
 
-        @ExceptionHandler(ForbiddenException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleForbidden(ForbiddenException ex) {
-                log.debug("Forbidden: {}", ex.getMessage());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body(errorBody(HttpStatus.FORBIDDEN, ex.getMessage(), ex.getErrorCode(),
-                                                ex.getDomain(), null));
-        }
+	@ExceptionHandler(DomainException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleDomain(DomainException ex) {
+		log.warn("Domain exception [{}]: {}", ex.getErrorCode(), ex.getMessage());
+		return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex);
+	}
 
-        @ExceptionHandler(DomainException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleDomain(DomainException ex) {
-                log.warn("Domain exception [{}]: {}", ex.getErrorCode(), ex.getMessage());
-                return ResponseEntity.unprocessableEntity()
-                                .body(errorBody(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), ex.getErrorCode(),
-                                                ex.getDomain(), null));
-        }
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleMethodArgumentNotValid(
+			MethodArgumentNotValidException ex) {
+		Map<String, String> fieldMap = ex.getBindingResult()
+				.getFieldErrors()
+				.stream()
+				.collect(Collectors.toMap(
+						fe -> fe.getField(),
+						fe -> fe.getDefaultMessage() != null ? fe.getDefaultMessage()
+								: "Invalid value",
+						(a, b) -> a + "; " + b));
 
-        @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleMethodArgumentNotValid(
-                        MethodArgumentNotValidException ex) {
-                List<ValidationException.FieldError> fieldErrors = ex.getBindingResult()
-                                .getFieldErrors()
-                                .stream()
-                                .map(fe -> new ValidationException.FieldError(fe.getField(),
-                                                fe.getDefaultMessage()))
-                                .toList();
+		log.debug("Request validation failed: {} field error(s)", fieldMap.size());
+		return buildErrorResponse(
+				HttpStatus.BAD_REQUEST,
+				"Request validation failed",
+				"VALIDATION_FAILED",
+				"Request",
+				fieldMap);
+	}
 
-                log.debug("Request validation failed: {} field error(s)", fieldErrors.size());
-                Map<String, String> fieldMap = fieldErrors.stream()
-                                .collect(java.util.stream.Collectors.toMap(
-                                                ValidationException.FieldError::field,
-                                                ValidationException.FieldError::message,
-                                                (a, b) -> a + "; " + b));
-                return ResponseEntity.badRequest()
-                                .body(errorBody(HttpStatus.BAD_REQUEST, "Request validation failed",
-                                                "VALIDATION_FAILED", "Request", fieldMap));
-        }
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleTypeMismatch(
+			MethodArgumentTypeMismatchException ex) {
+		String message = "Invalid value '%s' for parameter '%s'".formatted(ex.getValue(), ex.getName());
+		log.debug("Type mismatch: {}", message);
+		return buildErrorResponse(HttpStatus.BAD_REQUEST, message, "INVALID_PARAMETER", null, null);
+	}
 
-        @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleTypeMismatch(
-                        MethodArgumentTypeMismatchException ex) {
-                String message = "Invalid value '%s' for parameter '%s'".formatted(ex.getValue(), ex.getName());
-                return ResponseEntity.badRequest()
-                                .body(errorBody(HttpStatus.BAD_REQUEST, message, "INVALID_PARAMETER", null, null));
-        }
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnexpected(Exception ex) {
+		log.error("Unexpected error", ex);
+		return buildErrorResponse(
+				HttpStatus.INTERNAL_SERVER_ERROR,
+				"An unexpected error occurred",
+				"INTERNAL_ERROR",
+				null,
+				null);
+	}
 
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnexpected(Exception ex) {
-                log.error("Unexpected error", ex);
-                return ResponseEntity.internalServerError()
-                                .body(errorBody(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred",
-                                                "INTERNAL_ERROR", null, null));
-        }
+	protected ResponseEntity<ApiResponse<Map<String, Object>>> buildErrorResponse(
+			HttpStatus status,
+			DomainException ex) {
+		return buildErrorResponse(status, ex, null);
+	}
 
-        private ApiResponse<Map<String, Object>> errorBody(
-                        HttpStatus status,
-                        String message,
-                        String errorCode,
-                        String domain,
-                        Map<String, String> fieldErrors) {
-                Map<String, Object> body = new LinkedHashMap<>();
-                body.put("errorCode", errorCode);
-                if (domain != null) {
-                        body.put("domain", domain);
-                }
-                if (fieldErrors != null && !fieldErrors.isEmpty()) {
-                        body.put("fieldErrors", fieldErrors);
-                }
-                return ApiResponse.error(String.valueOf(status.value()), message, body);
-        }
+	protected ResponseEntity<ApiResponse<Map<String, Object>>> buildErrorResponse(
+			HttpStatus status,
+			DomainException ex,
+			Map<String, String> fieldErrors) {
+		return buildErrorResponse(status, ex.getMessage(), ex.getErrorCode(), ex.getDomain(), fieldErrors);
+	}
+
+	protected ResponseEntity<ApiResponse<Map<String, Object>>> buildErrorResponse(
+			HttpStatus status,
+			String message,
+			String errorCode,
+			String domain,
+			Map<String, String> fieldErrors) {
+		Map<String, Object> body = new LinkedHashMap<>();
+		body.put("errorCode", errorCode);
+		if (domain != null) {
+			body.put("domain", domain);
+		}
+		if (fieldErrors != null && !fieldErrors.isEmpty()) {
+			body.put("fieldErrors", fieldErrors);
+		}
+		return ResponseEntity.status(status)
+				.body(ApiResponse.error(String.valueOf(status.value()), message, body));
+	}
 }

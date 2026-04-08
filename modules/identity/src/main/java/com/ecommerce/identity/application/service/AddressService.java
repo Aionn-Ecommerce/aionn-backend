@@ -1,48 +1,50 @@
 package com.ecommerce.identity.application.service;
 
-import com.ecommerce.identity.application.dto.address.CreateAddressCommand;
-import com.ecommerce.identity.application.dto.address.UpdateAddressCommand;
-import com.ecommerce.identity.application.dto.geography.ResolvedLocation;
+import com.ecommerce.identity.application.dto.address.command.CreateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.geography.result.ResolvedLocation;
+import com.ecommerce.identity.application.port.out.address.AddressPersistencePort;
+import com.ecommerce.identity.application.port.out.address.AddressPolicy;
+import com.ecommerce.identity.application.port.out.user.UserPersistencePort;
 import com.ecommerce.identity.domain.exception.IdentityErrorCode;
 import com.ecommerce.identity.domain.exception.IdentityException;
 import com.ecommerce.identity.domain.model.Address;
-import com.ecommerce.identity.infrastructure.persistence.entity.UserAddressEntity;
-import com.ecommerce.identity.infrastructure.persistence.entity.UserEntity;
-import com.ecommerce.identity.infrastructure.persistence.mapper.AddressDomainMapper;
-import com.ecommerce.identity.infrastructure.persistence.repository.address.AddressRepository;
-import com.ecommerce.identity.infrastructure.persistence.repository.user.UserRepository;
+import com.ecommerce.sharedkernel.domain.vo.PhoneNumber;
+import com.ecommerce.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AddressService {
 
-	@Value("${identity.address.max-address-numbers:5}")
-	private long maxAddresses;
-
-	private final AddressRepository addressRepository;
-	private final UserRepository userRepository;
-	private final AddressDomainMapper addressDomainMapper;
+	private final AddressPersistencePort addressPersistencePort;
+	private final UserPersistencePort userPersistencePort;
+	private final AddressPolicy addressPolicy;
 	private final GeographyService geographyService;
 
-	@Transactional(readOnly = true)
 	public List<Address> listAddressesByUserId(String userId) {
-		return addressRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
-				.stream()
-				.map(addressDomainMapper::toDomain)
-				.toList();
+		log.debug("Listing addresses for user: {}", userId);
+		return addressPersistencePort.findByUserId(userId);
 	}
 
-	@Transactional
 	public Address createAddress(CreateAddressCommand command) {
-		var user = getUserOrThrow(command.userId());
-		long count = addressRepository.countByUser_UserId(command.userId());
-		if (count >= maxAddresses) {
+		log.info("Creating address for user: {}", command.userId());
+
+		// Validate phone number format
+		PhoneNumber.of(command.phone());
+
+		if (!userPersistencePort.existsById(command.userId())) {
+			throw new IdentityException(IdentityErrorCode.USER_NOT_FOUND);
+		}
+
+		long count = addressPersistencePort.countByUserId(command.userId());
+		if (count >= addressPolicy.getMaxAddressNumbers()) {
 			throw new IdentityException(IdentityErrorCode.ADDRESS_NUMBER_EXCEEDED);
 		}
 
@@ -53,33 +55,47 @@ public class AddressService {
 
 		boolean shouldSetAsDefault = (count == 0) || command.isDefault();
 		if (shouldSetAsDefault) {
-			addressRepository.clearDefaultAddressByUserId(command.userId());
+			addressPersistencePort.clearDefaultByUserId(command.userId());
 		}
 
-		UserAddressEntity entity = addressDomainMapper.toEntity(
-				command, user, shouldSetAsDefault,
-				fullAddress,
+		Address address = new Address(
+				IdGenerator.ulid(),
+				command.userId(),
+				command.contactName(),
+				command.phone(),
+				command.provinceCode(),
 				location.province().name(),
+				command.districtCode(),
 				location.district().name(),
-				location.ward().name());
+				command.wardCode(),
+				location.ward().name(),
+				command.detailAddress(),
+				fullAddress,
+				command.type(),
+				shouldSetAsDefault,
+				LocalDateTime.now(),
+				LocalDateTime.now());
 
-		var saved = addressRepository.save(entity);
-		return addressDomainMapper.toDomain(saved);
+		return addressPersistencePort.save(address);
 	}
 
-	@Transactional
 	public Address updateAddress(UpdateAddressCommand command) {
-		UserAddressEntity address = getAddressOrThrow(command.userId(), command.addressId());
+		log.info("Updating address: {} for user: {}", command.addressId(), command.userId());
 
-		String fullAddress = address.getFullAddress();
-		String provinceName = address.getProvinceName();
-		String districtName = address.getDistrictName();
-		String wardName = address.getWardName();
+		// Validate phone number format
+		PhoneNumber.of(command.phone());
 
-		boolean locationChanged = !command.provinceCode().equals(address.getProvinceCode())
-				|| !command.districtCode().equals(address.getDistrictCode())
-				|| !command.wardCode().equals(address.getWardCode())
-				|| !command.detailAddress().equals(address.getDetailAddress());
+		Address address = getAddressOrThrow(command.userId(), command.addressId());
+
+		String fullAddress = address.fullAddress();
+		String provinceName = address.provinceName();
+		String districtName = address.districtName();
+		String wardName = address.wardName();
+
+		boolean locationChanged = !command.provinceCode().equals(address.provinceCode())
+				|| !command.districtCode().equals(address.districtCode())
+				|| !command.wardCode().equals(address.wardCode())
+				|| !command.detailAddress().equals(address.detailAddress());
 
 		if (locationChanged) {
 			ResolvedLocation location = geographyService.resolveLocation(
@@ -91,42 +107,67 @@ public class AddressService {
 			wardName = location.ward().name();
 		}
 
-		addressDomainMapper.updateEntityFromCommand(command, address,
-				fullAddress, provinceName, districtName, wardName);
+		Address updatedAddress = new Address(
+				address.addressId(),
+				address.userId(),
+				command.contactName(),
+				command.phone(),
+				command.provinceCode(),
+				provinceName,
+				command.districtCode(),
+				districtName,
+				command.wardCode(),
+				wardName,
+				command.detailAddress(),
+				fullAddress,
+				command.type(),
+				address.isDefault(),
+				address.createdAt(),
+				LocalDateTime.now());
 
-		return addressDomainMapper.toDomain(addressRepository.save(address));
+		return addressPersistencePort.save(updatedAddress);
 	}
 
-	@Transactional
 	public void deleteAddress(String userId, String addressId) {
-		UserAddressEntity address = getAddressOrThrow(userId, addressId);
-		Address domainAddress = addressDomainMapper.toDomain(address);
-		if (!domainAddress.canBeDeleted()) {
+		log.info("Deleting address: {} for user: {}", addressId, userId);
+		Address address = getAddressOrThrow(userId, addressId);
+		if (!address.canBeDeleted()) {
 			throw new IdentityException(IdentityErrorCode.DEFAULT_ADDRESS_CANNOT_BE_DELETED);
 		}
-		addressRepository.delete(address);
+		addressPersistencePort.delete(address);
 	}
 
-	@Transactional
 	public Address setDefaultAddress(String userId, String addressId) {
-		UserAddressEntity targetEntity = getAddressOrThrow(userId, addressId);
-		if (Boolean.TRUE.equals(targetEntity.getIsDefault())) {
-			return addressDomainMapper.toDomain(targetEntity);
+		log.info("Setting default address: {} for user: {}", addressId, userId);
+		Address address = getAddressOrThrow(userId, addressId);
+		if (address.isDefault()) {
+			return address;
 		}
-		addressRepository.clearDefaultAddressByUserId(userId);
-		targetEntity.setIsDefault(Boolean.TRUE);
-		return addressDomainMapper.toDomain(addressRepository.save(targetEntity));
+		addressPersistencePort.clearDefaultByUserId(userId);
+
+		Address updatedAddress = new Address(
+				address.addressId(),
+				address.userId(),
+				address.contactName(),
+				address.phone(),
+				address.provinceCode(),
+				address.provinceName(),
+				address.districtCode(),
+				address.districtName(),
+				address.wardCode(),
+				address.wardName(),
+				address.detailAddress(),
+				address.fullAddress(),
+				address.type(),
+				true,
+				address.createdAt(),
+				LocalDateTime.now());
+
+		return addressPersistencePort.save(updatedAddress);
 	}
 
-	// helper function
-	private UserAddressEntity getAddressOrThrow(String userId, String addressId) {
-		return addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
-				.orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND, "Address not found"));
+	private Address getAddressOrThrow(String userId, String addressId) {
+		return addressPersistencePort.findByAddressIdAndUserId(addressId, userId)
+				.orElseThrow(() -> new IdentityException(IdentityErrorCode.ADDRESS_NOT_FOUND, "Address not found"));
 	}
-
-	private UserEntity getUserOrThrow(String userId) {
-		return userRepository.findById(userId)
-				.orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
-	}
-
 }

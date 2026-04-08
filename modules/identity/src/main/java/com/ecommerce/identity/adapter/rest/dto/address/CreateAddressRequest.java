@@ -30,3 +30,4 @@ public record CreateAddressRequest(
 		boolean isDefault
 ) {
 }
+

@@ -12,3 +12,4 @@ public class UserId extends BaseId {
 		return new UserId(value);
 	}
 }
+

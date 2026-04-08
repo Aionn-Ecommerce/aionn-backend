@@ -1,8 +1,9 @@
 package com.ecommerce.identity.adapter.rest.controller;
 
-import com.ecommerce.identity.application.service.IdentityAgentService;
-import com.ecommerce.identity.infrastructure.persistence.entity.AgentIdentityEntity;
-import com.ecommerce.identity.infrastructure.persistence.entity.SecurityAuditEntity;
+import com.ecommerce.identity.application.service.AgentService;
+import com.ecommerce.identity.domain.model.AgentIdentity;
+import com.ecommerce.identity.domain.model.SecurityAudit;
+import com.ecommerce.identity.domain.valueobject.AgentStatus;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AgentIdentityControllerTest {
 
     @Mock
-    private IdentityAgentService agentService;
+    private AgentService agentService;
 
     @InjectMocks
     private AgentIdentityController agentIdentityController;
@@ -46,27 +47,29 @@ class AgentIdentityControllerTest {
         return new UsernamePasswordAuthenticationToken("user-1", "N/A");
     }
 
-    private AgentIdentityEntity agent(String status) {
-        return AgentIdentityEntity.builder()
-                .agentId("agent-1")
+    private AgentIdentity agent(AgentStatus status) {
+        return AgentIdentity.builder()
+                .id("agent-1")
+                .ownerId("user-1")
+                .name("bot-1")
                 .keyHash("key-1")
                 .permissions("{\"scope\":\"basic\"}")
                 .status(status)
-                .expiryAt(LocalDateTime.of(2027, 3, 20, 10, 0))
+                .expiresAt(LocalDateTime.of(2027, 3, 20, 10, 0))
                 .createdAt(LocalDateTime.of(2026, 3, 20, 10, 0))
                 .build();
     }
 
     @Test
     void createShouldReturnSuccess() throws Exception {
-        Mockito.when(agentService.create("user-1")).thenReturn(agent("ACTIVE"));
+        Mockito.when(agentService.create("user-1")).thenReturn(agent(AgentStatus.ACTIVE));
 
         mockMvc().perform(post("/api/v1/agent-identities")
-                        .principal(auth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"agentName":"bot-1"}
-                                """))
+                .principal(auth())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"agentName":"bot-1"}
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.containsString("\"agentId\":\"agent-1\"")));
     }
@@ -74,21 +77,21 @@ class AgentIdentityControllerTest {
     @Test
     void updatePermissionsShouldReturnSuccess() throws Exception {
         Mockito.when(agentService.updatePermissions("user-1", "agent-1", "{\"scope\":\"order:read\"}"))
-                .thenReturn(agent("ACTIVE"));
+                .thenReturn(agent(AgentStatus.ACTIVE));
 
         mockMvc().perform(put("/api/v1/agent-identities/agent-1/permissions")
-                        .principal(auth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"permissionsJson":"{\\"scope\\":\\"order:read\\"}"}
-                                """))
+                .principal(auth())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"permissionsJson":"{\\"scope\\":\\"order:read\\"}"}
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.containsString("Agent permissions updated")));
     }
 
     @Test
     void suspendShouldReturnSuccess() throws Exception {
-        Mockito.when(agentService.suspend("user-1", "agent-1")).thenReturn(agent("SUSPENDED"));
+        Mockito.when(agentService.suspend("user-1", "agent-1")).thenReturn(agent(AgentStatus.SUSPENDED));
 
         mockMvc().perform(post("/api/v1/agent-identities/agent-1/suspend").principal(auth()))
                 .andExpect(status().isOk())
@@ -97,10 +100,12 @@ class AgentIdentityControllerTest {
 
     @Test
     void auditLogsShouldReturnSuccess() throws Exception {
-        SecurityAuditEntity audit = SecurityAuditEntity.builder()
-                .auditId("audit-1")
+        SecurityAudit audit = SecurityAudit.builder()
+                .id("audit-1")
+                .userId("user-1")
                 .eventType("AGENT_SUSPENDED")
                 .description("Agent suspended: agent-1")
+                .ipAddress("127.0.0.1")
                 .timestamp(LocalDateTime.of(2026, 3, 20, 10, 0))
                 .build();
         Mockito.when(agentService.getAgentAuditLogs("user-1", "agent-1")).thenReturn(List.of(audit));

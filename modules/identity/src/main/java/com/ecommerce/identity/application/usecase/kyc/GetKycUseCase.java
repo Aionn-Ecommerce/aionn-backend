@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.usecase.kyc;
 
-import com.ecommerce.identity.adapter.rest.mapper.kyc.KycDtoMapper;
-import com.ecommerce.identity.application.dto.kyc.GetKycQuery;
-import com.ecommerce.identity.application.dto.kyc.KycResult;
+import com.ecommerce.identity.application.dto.kyc.query.GetKycQuery;
+import com.ecommerce.identity.application.dto.kyc.result.KycResult;
+import com.ecommerce.identity.application.mapper.KycResultMapper;
 import com.ecommerce.identity.application.port.in.kyc.GetKycQueryPort;
 import com.ecommerce.identity.application.service.KycService;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetKycUseCase implements GetKycQueryPort {
 
     private final KycService kycService;
-    private final KycDtoMapper kycDtoMapper;
+    private final KycResultMapper kycResultMapper;
 
     @Override
     @Transactional(readOnly = true)
     public KycResult execute(GetKycQuery query) {
         var entity = kycService.get(query.userId(), query.kycId());
-        return kycDtoMapper.toKycResult(entity);
+        return kycResultMapper.toResult(entity);
     }
 }

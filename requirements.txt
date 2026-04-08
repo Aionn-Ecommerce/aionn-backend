@@ -1,0 +1,333 @@
+bạn sửa giúp tôi 38 lỗi này nhé COMPREHENSIVE SERVICE ANALYSIS - ISSUES FOUND
+
+CRITICAL ARCHITECTURE VIOLATIONS
+
+1. PreferenceService - Direct Infrastructure Dependencies
+
+File: PreferenceService.java
+
+Issue: Directly imports and uses UserPreferenceEntity, UserPreferenceRepository, UserRepository (Infrastructure layer)
+
+Violation: Application layer should NEVER depend on Infrastructure entities/repositories
+
+Fix: Create Port interfaces (UserPreferencePersistencePort) and use domain models or DTOs
+
+2. KycService - Direct Infrastructure Dependencies
+
+File: KycService.java
+
+Issue: Directly imports and uses KycProfileEntity, KycProfileRepository, UserRepository
+
+Violation: Application layer depending on Infrastructure
+
+Fix: Create Port interfaces and domain models for KYC
+
+3. GeographyService - Direct Infrastructure Dependencies
+
+File: GeographyService.java
+
+Issue: Directly imports and uses CountryRepository, ProvinceRepository, DistrictRepository, WardRepository
+
+Violation: Application layer depending on Infrastructure repositories
+
+Fix: Create Port interfaces for geography data access
+
+4. AgentService - Direct Infrastructure Dependencies
+
+File: AgentService.java
+
+Issue: Directly imports and uses AgentIdentityEntity, SecurityAuditEntity, AgentIdentityRepository, SecurityAuditRepository, UserRepository
+
+Violation: Application layer depending on Infrastructure
+
+Fix: Create Port interfaces and domain models
+
+5. ConsentService - Mixed Architecture
+
+File: ConsentService.java
+
+Issue: Uses Port interfaces (good) BUT also directly uses UserConsentEntity (Infrastructure)
+
+Violation: Partial Clean Architecture - should use domain models or Result DTOs only
+
+Fix: Remove UserConsentEntity usage, use domain models
+
+TRANSACTION BOUNDARY ISSUES
+
+6. AddressService - @Transactional at Service Level
+
+File: AddressService.java
+
+Issue: All methods have @Transactional annotations
+
+Violation: Transactions should be at UseCase level (entry point), NOT Service level
+
+Fix: Remove @Transactional from Service, add to UseCases
+
+7. PreferenceService - @Transactional at Service Level
+
+File: PreferenceService.java
+
+Issue: Methods have @Transactional annotations
+
+Fix: Move to UseCase level
+
+8. KycService - @Transactional at Service Level
+
+File: KycService.java
+
+Issue: Methods have @Transactional annotations
+
+Fix: Move to UseCase level
+
+9. GeographyService - @Transactional at Service Level
+
+File: GeographyService.java
+
+Issue: Methods have @Transactional annotations
+
+Fix: Move to UseCase level
+
+10. AgentService - @Transactional at Service Level
+
+File: AgentService.java
+
+Issue: Methods have @Transactional annotations
+
+Fix: Move to UseCase level
+
+LOGIC ERRORS
+
+11. AddressService.getAddressOrThrow() - Wrong Error Code
+
+File: AddressService.java, line ~157
+
+Issue: Throws USER_NOT_FOUND when address is not found
+
+Fix: Should throw ADDRESS_NOT_FOUND or similar
+
+12. KycService.cancel() - Wrong Error Code
+
+File: KycService.java, line ~48
+
+Issue: Uses VERIFICATION_TOKEN_INVALID for KYC cancellation error
+
+Fix: Should use appropriate KYC-specific error code
+
+13. KycService - Multiple Wrong Error Codes
+
+File: KycService.java, lines ~95, ~100, ~105
+
+Issue: Uses USER_NOT_FOUND for "KYC not found" errors
+
+Fix: Should use KYC-specific error codes
+
+14. AgentService - Wrong Error Code
+
+File: AgentService.java, line ~85
+
+Issue: Uses USER_NOT_FOUND for "Agent not found"
+
+Fix: Should use AGENT-specific error code
+
+15. ConsentService - Missing @Transactional
+
+File: ConsentService.java
+
+Issue: No transaction management at all
+
+Fix: Add transaction boundaries (preferably at UseCase level)
+
+16. PreferenceService.getOrCreate() - Race Condition
+
+File: PreferenceService.java, line ~48
+
+Issue: getOrCreate() can cause race condition if two requests create preference simultaneously
+
+Fix: Use database-level unique constraint or distributed lock
+
+17. AgentService.getAgentAuditLogs() - Inefficient Filtering
+
+File: AgentService.java, line ~60
+
+Issue: Fetches top 100 audit logs then filters in memory by description contains
+
+Fix: Add proper query method in repository with WHERE clause
+
+MISSING VALIDATIONS
+
+18. AddressService.createAddress() - No Phone Validation
+
+File: AddressService.java
+
+Issue: Accepts phone number without validation
+
+Fix: Use PhoneNumber value object from shared-kernel
+
+19. KycService - No Status Transition Validation
+
+File: KycService.java
+
+Issue: Methods like submit(), review(), approve() don't validate current status before transition
+
+Fix: Add state machine validation (e.g., can't approve DRAFT, can't submit APPROVED)
+
+20. AgentService.create() - No Owner Validation
+
+File: AgentService.java
+
+Issue: Creates agent with hardcoded permissions, no validation of owner capabilities
+
+Fix: Add validation for owner's ability to create agents
+
+21. AdminUserService.updateRoles() - No Admin Permission Check
+
+File: AdminUserService.java
+
+Issue: No validation that caller has admin privileges
+
+Fix: Add authorization check (should be in UseCase or Controller)
+
+CODE SMELLS
+
+22. RegistrationService - Duplicated OTP Logic
+
+File: RegistrationService.java
+
+Issue: OTP generation, validation, expiry logic repeated across methods
+
+Fix: Extract to separate OTP service or value object
+
+23. AuthService - Long Methods
+
+File: AuthService.java
+
+Issue: Methods like login() are too long with multiple responsibilities
+
+Fix: Extract helper methods for validation, session creation, token generation
+
+24. UserService - God Class
+
+File: UserService.java
+
+Issue: Handles too many responsibilities (profile, email, phone, avatar, deletion, export)
+
+Fix: Consider splitting into smaller services (ProfileService, AccountManagementService)
+
+25. SecurityService - Mixed Concerns
+
+File: SecurityService.java
+
+Issue: Handles both MFA and password reset (different security domains)
+
+Fix: Consider splitting into MfaService and PasswordResetService
+
+26. AdminUserService.listUsers() - In-Memory Pagination
+
+File: AdminUserService.java, line ~60
+
+Issue: Loads ALL users into memory then filters and paginates
+
+Fix: Use database-level pagination with Pageable
+
+27. GeographyService - Redundant toResult() Methods
+
+File: GeographyService.java, lines ~120-135
+
+Issue: Four nearly identical toResult() methods
+
+Fix: Use single generic method or MapStruct mapper
+
+SECURITY ISSUES
+
+28. AgentService.create() - Weak Key Generation
+
+File: AgentService.java, line ~28
+
+Issue: Uses IdGenerator.ulid() for keyHash - not cryptographically secure
+
+Fix: Use proper cryptographic key generation (e.g., SecureRandom, BCrypt)
+
+29. KycService - No Admin Authorization Check
+
+File: KycService.java
+
+Issue: Methods like review(), approve(), reject() only check if admin user exists, not if they have admin role
+
+Fix: Add role-based authorization
+
+30. ConsentService - IP Address Not Validated
+
+File: ConsentService.java
+
+Issue: Accepts IP address as string without validation
+
+Fix: Validate IP address format
+
+PERFORMANCE ISSUES
+
+31. GeographyService.resolveLocation() - Misleading Comment
+
+File: GeographyService.java, line ~95
+
+Issue: Comment claims "SINGLE database query" but actually makes 1 query for ward, then accesses lazy-loaded relationships
+
+Fix: Verify JOIN FETCH is actually configured in repository, or update comment
+
+32. AdminUserService.listUsers() - N+1 Query Potential
+
+File: AdminUserService.java
+
+Issue: findAll() may trigger N+1 queries for relationships
+
+Fix: Use JOIN FETCH or DTO projection
+
+33. AgentService.getAgentAuditLogs() - Inefficient Query
+
+File: AgentService.java
+
+Issue: Fetches 100 records then filters in Java
+
+Fix: Add repository method with proper WHERE clause
+
+BEST PRACTICE VIOLATIONS
+
+34. Missing @Slf4j Annotations
+
+Files: All service files
+
+Issue: No logging for important operations (user creation, status changes, KYC approval, etc.)
+
+Fix: Add @Slf4j and log important events
+
+35. Hardcoded Strings
+
+File: KycService.java - "DRAFT", "SUBMITTED", "IN_REVIEW", "APPROVED", "REJECTED"
+
+File: AgentService.java - "ACTIVE", "SUSPENDED"
+
+File: ConsentService.java - "TERMS", "PRIVACY", "MARKETING"
+
+Fix: Use enums or constants
+
+36. Magic Numbers
+
+File: AgentService.java, line ~29 - .plusYears(1)
+
+Fix: Extract to configuration property
+
+37. Inconsistent Null Handling
+
+File: GeographyService.java - Uses Optional return types
+
+File: Other services - Throw exceptions
+
+Fix: Standardize error handling approach
+
+38. Missing Javadoc
+
+Files: All services
+
+Issue: Complex business logic without documentation
+
+Fix: Add Javadoc for public methods explaining business rules

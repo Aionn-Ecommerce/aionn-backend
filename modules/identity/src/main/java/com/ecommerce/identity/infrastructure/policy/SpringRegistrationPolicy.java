@@ -1,0 +1,63 @@
+package com.ecommerce.identity.infrastructure.policy;
+
+import com.ecommerce.identity.application.port.out.registration.RegistrationPolicy;
+import com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class SpringRegistrationPolicy implements RegistrationPolicy {
+
+    private final RegistrationProperties properties;
+
+    @Override
+    public int getMaxVerifyAttempts() {
+        return properties.maxVerifyAttempts();
+    }
+
+    @Override
+    public int getResendCooldownSeconds() {
+        return properties.resendCooldownSeconds();
+    }
+
+    @Override
+    public int getOtpExpirySeconds() {
+        return properties.otpExpirySeconds();
+    }
+
+    @Override
+    public long getSessionExpiresDays() {
+        return properties.sessionExpiresDays();
+    }
+
+    @Override
+    public String getDefaultCountryCallingCode() {
+        return properties.defaultCountryCallingCode();
+    }
+
+    @Override
+    public boolean isExposeOtpInResponse() {
+        return properties.exposeOtpInResponse();
+    }
+
+    @Override
+    public int getIpRateLimitMaxAttempts() {
+        return properties.rateLimit().ipMaxAttempts();
+    }
+
+    @Override
+    public int getIpRateLimitWindowSeconds() {
+        return properties.rateLimit().ipWindowSeconds();
+    }
+
+    @Override
+    public int getPhoneRateLimitMaxAttempts() {
+        return properties.rateLimit().phoneMaxAttempts();
+    }
+
+    @Override
+    public int getPhoneRateLimitWindowSeconds() {
+        return properties.rateLimit().phoneWindowSeconds();
+    }
+}

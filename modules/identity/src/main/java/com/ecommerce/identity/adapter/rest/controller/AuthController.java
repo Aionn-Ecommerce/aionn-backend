@@ -2,12 +2,14 @@ package com.ecommerce.identity.adapter.rest.controller;
 
 import com.ecommerce.identity.adapter.rest.dto.auth.*;
 import com.ecommerce.identity.adapter.rest.mapper.auth.AuthDtoMapper;
+import com.ecommerce.identity.adapter.rest.support.AuthTokenResponseHandler;
 import com.ecommerce.sharedkernel.adapter.web.support.ClientIp;
 import com.ecommerce.identity.adapter.rest.support.ClientUserAgent;
 import com.ecommerce.identity.application.port.in.auth.*;
 import com.ecommerce.sharedkernel.adapter.web.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,16 +32,18 @@ public class AuthController {
 	private final LogoutAllInputPort logoutAllInputPort;
 	private final LogoutInputPort logoutInputPort;
 	private final AuthDtoMapper authDtoMapper;
+	private final AuthTokenResponseHandler authTokenResponseHandler;
 
 	@PostMapping("/login")
 	@Operation(summary = "Login", description = "Authenticate user credentials and create a new auth session")
 	public ResponseEntity<ApiResponse<AuthTokenResponse>> login(
 			@Valid @RequestBody LoginRequest request,
 			@ClientIp String clientIp,
-			@ClientUserAgent String userAgent) {
+			@ClientUserAgent String userAgent,
+			HttpServletRequest httpRequest) {
 		var result = loginInputPort.execute(authDtoMapper.toLoginCommand(request, clientIp, userAgent));
 		AuthTokenResponse response = authDtoMapper.toAuthTokenResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, "Login successful!"));
+		return authTokenResponseHandler.success(response, httpRequest, "Login successful!");
 	}
 
 	@PostMapping("/refresh")
@@ -48,11 +52,12 @@ public class AuthController {
 			@RequestBody(required = false) RefreshTokenRequest request,
 			@CookieValue(name = "refresh_token", required = false) String cookieToken,
 			@ClientIp String clientIp,
-			@ClientUserAgent String userAgent) {
+			@ClientUserAgent String userAgent,
+			HttpServletRequest httpRequest) {
 		var result = refreshTokenInputPort
 				.execute(authDtoMapper.toRefreshCommand(request, cookieToken, clientIp, userAgent));
 		AuthTokenResponse response = authDtoMapper.toAuthTokenResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully!"));
+		return authTokenResponseHandler.success(response, httpRequest, "Token refreshed successfully!");
 	}
 
 	@GetMapping("/sessions")
@@ -85,7 +90,7 @@ public class AuthController {
 			@ClientUserAgent String userAgent) {
 		var command = authDtoMapper.toLogoutCommand(authentication.getName(), userAgent);
 		logoutInputPort.execute(command);
-		return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+		return authTokenResponseHandler.logoutSuccess("Logout successful");
 	}
 
 	@PostMapping("/logout-all")
@@ -98,4 +103,5 @@ public class AuthController {
 		LogoutAllResponse response = authDtoMapper.toLogoutAllResponse(result);
 		return ResponseEntity.ok(ApiResponse.success(response, "All sessions revoked"));
 	}
+
 }

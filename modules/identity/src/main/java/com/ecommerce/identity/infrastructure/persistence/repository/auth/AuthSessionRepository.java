@@ -11,3 +11,5 @@ public interface AuthSessionRepository extends JpaRepository<AuthSessionEntity, 
 
     int countByUser_UserIdAndStatus(String userId, String status);
 }
+
+

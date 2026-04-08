@@ -13,3 +13,5 @@ public class LoggingPhoneOtpSender implements PhoneOtpSender {
         log.info("[USER-PHONE-OTP] phone={}, otp={}", phoneNumber, otpCode);
     }
 }
+
+

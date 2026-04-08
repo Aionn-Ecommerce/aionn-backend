@@ -12,3 +12,5 @@ public interface KycProfileRepository extends JpaRepository<KycProfileEntity, St
 
     Optional<KycProfileEntity> findByKycIdAndUser_UserId(String kycId, String userId);
 }
+
+

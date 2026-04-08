@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.usecase.address;
 
-import com.ecommerce.identity.adapter.rest.mapper.address.AddressDtoMapper;
-import com.ecommerce.identity.application.dto.address.AddressResult;
-import com.ecommerce.identity.application.dto.address.CreateAddressCommand;
+import com.ecommerce.identity.application.dto.address.result.AddressResult;
+import com.ecommerce.identity.application.dto.address.command.CreateAddressCommand;
+import com.ecommerce.identity.application.mapper.AddressResultMapper;
 import com.ecommerce.identity.application.port.in.address.CreateAddressInputPort;
 import com.ecommerce.identity.application.service.AddressService;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateAddressUseCase implements CreateAddressInputPort {
 
 	private final AddressService addressService;
-	private final AddressDtoMapper addressMapper;
+	private final AddressResultMapper addressResultMapper;
 
 	@Override
 	@Transactional
 	public AddressResult execute(CreateAddressCommand command) {
-		var entity = addressService.createAddress(command);
-		return addressMapper.toResult(entity);
+		var address = addressService.createAddress(command);
+		return addressResultMapper.toResult(address);
 	}
 }

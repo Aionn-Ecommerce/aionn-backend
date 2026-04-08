@@ -1,9 +1,9 @@
 package com.ecommerce.identity.application.port.in.auth;
 
-import com.ecommerce.identity.application.dto.auth.LoginResult;
-import com.ecommerce.identity.application.dto.auth.SocialLoginCommand;
+import com.ecommerce.identity.application.dto.auth.result.SocialLoginResult;
+import com.ecommerce.identity.application.dto.auth.command.SocialLoginCommand;
 
 public interface SocialAuthInputPort {
 
-    LoginResult execute(SocialLoginCommand command);
+    SocialLoginResult execute(SocialLoginCommand command);
 }

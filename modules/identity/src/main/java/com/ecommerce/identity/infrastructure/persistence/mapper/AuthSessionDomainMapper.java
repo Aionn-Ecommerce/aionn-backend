@@ -4,33 +4,27 @@ import com.ecommerce.identity.domain.model.AuthSession;
 import com.ecommerce.identity.domain.valueobject.AuthSessionStatus;
 import com.ecommerce.identity.infrastructure.persistence.entity.AuthSessionEntity;
 import com.ecommerce.identity.infrastructure.persistence.entity.UserEntity;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class AuthSessionDomainMapper {
+@Mapper(componentModel = "spring")
+public interface AuthSessionDomainMapper {
 
-    public AuthSession toDomain(AuthSessionEntity entity) {
-        return new AuthSession(
-                entity.getSessionId(),
-                entity.getUser().getUserId(),
-                entity.getIpAddress(),
-                entity.getUserAgent(),
-                AuthSessionStatus.valueOf(entity.getStatus()),
-                entity.getCreatedAt(),
-                entity.getLastActiveAt(),
-                entity.getExpiresAt());
+    @Mapping(target = "userId", source = "user.userId")
+    @Mapping(target = "status", source = "entity.status")
+    @Mapping(target = "createdAt", source = "entity.createdAt")
+    AuthSession toDomain(AuthSessionEntity entity);
+
+    @Mapping(target = "user", source = "userEntity")
+    @Mapping(target = "status", source = "domain.status")
+    @Mapping(target = "createdAt", source = "domain.createdAt")
+    AuthSessionEntity toEntity(AuthSession domain, UserEntity userEntity);
+
+    default AuthSessionStatus mapStatus(String value) {
+        return value == null ? null : AuthSessionStatus.valueOf(value);
     }
 
-    public AuthSessionEntity toEntity(AuthSession domain, UserEntity userEntity) {
-        return AuthSessionEntity.builder()
-                .sessionId(domain.getSessionId())
-                .user(userEntity)
-                .ipAddress(domain.getIpAddress())
-                .userAgent(domain.getUserAgent())
-                .status(domain.getStatus().name())
-                .createdAt(domain.getCreatedAt())
-                .lastActiveAt(domain.getLastActiveAt())
-                .expiresAt(domain.getExpiresAt())
-                .build();
+    default String mapStatus(AuthSessionStatus value) {
+        return value == null ? null : value.name();
     }
 }

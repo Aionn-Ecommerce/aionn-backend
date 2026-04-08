@@ -10,3 +10,5 @@ public record ConsentResponse(
         LocalDateTime revokedAt,
         String ipAddress) {
 }
+
+

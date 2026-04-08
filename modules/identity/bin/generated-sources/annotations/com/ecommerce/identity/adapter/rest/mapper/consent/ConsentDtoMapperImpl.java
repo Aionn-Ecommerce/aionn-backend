@@ -3,11 +3,10 @@ package com.ecommerce.identity.adapter.rest.mapper.consent;
 import com.ecommerce.identity.adapter.rest.dto.consent.ConsentResponse;
 import com.ecommerce.identity.adapter.rest.dto.consent.MarketingConsentRequest;
 import com.ecommerce.identity.adapter.rest.dto.consent.TermsConsentRequest;
-import com.ecommerce.identity.application.dto.consent.AgreePrivacyCommand;
-import com.ecommerce.identity.application.dto.consent.AgreeTermsCommand;
-import com.ecommerce.identity.application.dto.consent.ConsentResult;
-import com.ecommerce.identity.application.dto.consent.UpdateMarketingConsentCommand;
-import com.ecommerce.identity.infrastructure.persistence.entity.UserConsentEntity;
+import com.ecommerce.identity.application.dto.consent.command.AgreePrivacyCommand;
+import com.ecommerce.identity.application.dto.consent.command.AgreeTermsCommand;
+import com.ecommerce.identity.application.dto.consent.command.UpdateMarketingConsentCommand;
+import com.ecommerce.identity.application.dto.consent.result.ConsentResult;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-31T09:49:08+0700",
+    date = "2026-04-05T19:28:09+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
@@ -80,45 +79,6 @@ public class ConsentDtoMapperImpl implements ConsentDtoMapper {
         UpdateMarketingConsentCommand updateMarketingConsentCommand = new UpdateMarketingConsentCommand( userId1, subscribed, clientIp1 );
 
         return updateMarketingConsentCommand;
-    }
-
-    @Override
-    public ConsentResult toConsentResult(UserConsentEntity entity) {
-        if ( entity == null ) {
-            return null;
-        }
-
-        String consentId = null;
-        String consentType = null;
-        String version = null;
-        LocalDateTime agreedAt = null;
-        LocalDateTime revokedAt = null;
-        String ipAddress = null;
-
-        consentId = entity.getConsentId();
-        consentType = entity.getConsentType();
-        version = entity.getVersion();
-        agreedAt = entity.getAgreedAt();
-        revokedAt = entity.getRevokedAt();
-        ipAddress = entity.getIpAddress();
-
-        ConsentResult consentResult = new ConsentResult( consentId, consentType, version, agreedAt, revokedAt, ipAddress );
-
-        return consentResult;
-    }
-
-    @Override
-    public List<ConsentResult> toConsentResults(List<UserConsentEntity> entities) {
-        if ( entities == null ) {
-            return null;
-        }
-
-        List<ConsentResult> list = new ArrayList<ConsentResult>( entities.size() );
-        for ( UserConsentEntity userConsentEntity : entities ) {
-            list.add( toConsentResult( userConsentEntity ) );
-        }
-
-        return list;
     }
 
     @Override

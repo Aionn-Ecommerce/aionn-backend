@@ -1,8 +1,7 @@
 package com.ecommerce.identity.application.usecase.consent;
 
-import com.ecommerce.identity.adapter.rest.mapper.consent.ConsentDtoMapper;
-import com.ecommerce.identity.application.dto.consent.ConsentResult;
-import com.ecommerce.identity.application.dto.consent.UpdateMarketingConsentCommand;
+import com.ecommerce.identity.application.dto.consent.result.ConsentResult;
+import com.ecommerce.identity.application.dto.consent.command.UpdateMarketingConsentCommand;
 import com.ecommerce.identity.application.port.in.consent.UpdateMarketingConsentInputPort;
 import com.ecommerce.identity.application.service.ConsentService;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateMarketingConsentUseCase implements UpdateMarketingConsentInputPort {
 
     private final ConsentService consentService;
-    private final ConsentDtoMapper consentDtoMapper;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ConsentResult execute(UpdateMarketingConsentCommand command) {
-        var entity = consentService.updateMarketing(command.userId(), command.subscribed(), command.clientIp());
-        return consentDtoMapper.toConsentResult(entity);
+        return consentService.updateMarketing(command.userId(), command.subscribed(), command.clientIp());
     }
 }

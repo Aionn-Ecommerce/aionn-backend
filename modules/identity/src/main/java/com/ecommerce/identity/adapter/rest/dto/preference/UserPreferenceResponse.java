@@ -12,3 +12,5 @@ public record UserPreferenceResponse(
         String aiPrivacySettings,
         LocalDateTime updatedAt) {
 }
+
+

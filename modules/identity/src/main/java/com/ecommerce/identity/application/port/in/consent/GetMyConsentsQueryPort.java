@@ -1,6 +1,6 @@
 package com.ecommerce.identity.application.port.in.consent;
 
-import com.ecommerce.identity.application.dto.consent.ConsentResult;
+import com.ecommerce.identity.application.dto.consent.result.ConsentResult;
 import java.util.List;
 
 public interface GetMyConsentsQueryPort {

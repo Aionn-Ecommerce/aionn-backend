@@ -12,3 +12,4 @@ public class RegistrationId extends BaseId {
 		return new RegistrationId(value);
 	}
 }
+

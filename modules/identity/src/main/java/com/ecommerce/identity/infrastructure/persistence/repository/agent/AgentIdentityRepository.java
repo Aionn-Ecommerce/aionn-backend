@@ -12,3 +12,5 @@ public interface AgentIdentityRepository extends JpaRepository<AgentIdentityEnti
 
     Optional<AgentIdentityEntity> findByAgentIdAndOwner_UserId(String agentId, String ownerUserId);
 }
+
+

@@ -1,7 +1,7 @@
 package com.ecommerce.identity.infrastructure.persistence.mapper;
 
-import com.ecommerce.identity.application.dto.address.CreateAddressCommand;
-import com.ecommerce.identity.application.dto.address.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.CreateAddressCommand;
 import com.ecommerce.identity.domain.model.Address;
 import com.ecommerce.identity.domain.valueobject.AddressType;
 import com.ecommerce.identity.infrastructure.persistence.entity.UserAddressEntity;
@@ -16,6 +16,12 @@ public interface AddressDomainMapper {
 
 	@Mapping(target = "userId", source = "user.userId")
 	Address toDomain(UserAddressEntity entity);
+
+	@Mapping(target = "user", source = "userEntity")
+	@Mapping(target = "phone", source = "address.phone")
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	UserAddressEntity toEntity(Address address, UserEntity userEntity);
 
 	@Mapping(target = "addressId", expression = "java(com.ecommerce.sharedkernel.util.IdGenerator.ulid())")
 	@Mapping(target = "user", source = "userEntity")

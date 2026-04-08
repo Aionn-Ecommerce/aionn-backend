@@ -4,17 +4,17 @@ import com.ecommerce.identity.adapter.rest.dto.preference.AiPrivacyPreferenceReq
 import com.ecommerce.identity.adapter.rest.dto.preference.GeneralPreferenceRequest;
 import com.ecommerce.identity.adapter.rest.dto.preference.NotificationPreferenceRequest;
 import com.ecommerce.identity.adapter.rest.dto.preference.UserPreferenceResponse;
-import com.ecommerce.identity.application.dto.preference.UpdateAiPrivacyPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UpdateGeneralPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UpdateNotificationPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UserPreferenceResult;
+import com.ecommerce.identity.application.dto.preference.command.UpdateAiPrivacyPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.command.UpdateGeneralPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.command.UpdateNotificationPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.result.UserPreferenceResult;
 import java.time.LocalDateTime;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-31T09:49:08+0700",
+    date = "2026-04-05T19:28:09+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component

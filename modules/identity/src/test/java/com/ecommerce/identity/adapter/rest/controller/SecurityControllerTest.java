@@ -1,9 +1,9 @@
 package com.ecommerce.identity.adapter.rest.controller;
 
-import com.ecommerce.identity.adapter.rest.support.ClientIpResolver;
-import com.ecommerce.identity.adapter.rest.support.ClientIpArgumentResolver;
-import com.ecommerce.identity.application.service.IdentityAdminUserService;
-import com.ecommerce.identity.application.service.IdentitySecurityService;
+import com.ecommerce.sharedkernel.infrastructure.web.ClientIpResolver;
+import com.ecommerce.sharedkernel.adapter.web.support.ClientIpArgumentResolver;
+import com.ecommerce.identity.application.service.AdminUserService;
+import com.ecommerce.identity.application.service.SecurityService;
 import com.ecommerce.identity.infrastructure.persistence.entity.SecurityAuditEntity;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -32,10 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SecurityControllerTest {
 
     @Mock
-    private IdentitySecurityService securityService;
+    private SecurityService securityService;
 
     @Mock
-    private IdentityAdminUserService adminUserService;
+    private AdminUserService adminUserService;
 
     @Mock
     private ClientIpResolver clientIpResolver;
@@ -166,3 +166,5 @@ class SecurityControllerTest {
                 .andExpect(content().string(Matchers.containsString("Account unlocked")));
     }
 }
+
+

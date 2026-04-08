@@ -1,15 +1,18 @@
 package com.ecommerce.identity.adapter.rest.controller;
 
-import com.ecommerce.identity.adapter.rest.dto.registration.*;
 import com.ecommerce.identity.adapter.rest.dto.auth.AuthTokenResponse;
+import com.ecommerce.identity.adapter.rest.dto.registration.*;
 import com.ecommerce.identity.adapter.rest.mapper.registration.RegistrationDtoMapper;
-import com.ecommerce.sharedkernel.adapter.web.support.ClientIp;
+import com.ecommerce.identity.adapter.rest.support.AuthTokenResponseHandler;
 import com.ecommerce.identity.application.port.in.registration.CompleteRegistrationInputPort;
 import com.ecommerce.identity.application.port.in.registration.InitiateRegistrationInputPort;
+import com.ecommerce.identity.application.port.in.registration.ResendRegistrationOtpInputPort;
 import com.ecommerce.identity.application.port.in.registration.VerifyRegistrationOtpInputPort;
 import com.ecommerce.sharedkernel.adapter.web.response.ApiResponse;
+import com.ecommerce.sharedkernel.adapter.web.support.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +27,17 @@ public class RegistrationController {
 	private final InitiateRegistrationInputPort initiateRegistrationInputPort;
 	private final VerifyRegistrationOtpInputPort verifyRegistrationOtpInputPort;
 	private final CompleteRegistrationInputPort completeRegistrationInputPort;
+	private final ResendRegistrationOtpInputPort resendRegistrationOtpInputPort;
 	private final RegistrationDtoMapper registrationDtoMapper;
+	private final AuthTokenResponseHandler authTokenResponseHandler;
 
 	@Operation(summary = "Initiate registration", description = "Start registration and send OTP to user")
 	@PostMapping("/initiate")
-	public ResponseEntity<ApiResponse<InitiateRegistrationResponse>> initRegistration(
+	public ResponseEntity<ApiResponse<RegistrationSessionResponse>> initRegistration(
 			@Valid @RequestBody InitiateRegistrationRequest request,
-			@ClientIp String clientIp) {
-		var result = initiateRegistrationInputPort.execute(registrationDtoMapper.toInitiateCommand(request, clientIp));
-		InitiateRegistrationResponse response = registrationDtoMapper.toInitiateResponse(result);
+			@ClientIp String ipAddress) {
+		var result = initiateRegistrationInputPort.execute(registrationDtoMapper.toInitiateCommand(request, ipAddress));
+		RegistrationSessionResponse response = registrationDtoMapper.toInitiateResponse(result);
 		return ApiResponse.createdResponse("Registration initiated successfully!", response);
 	}
 
@@ -50,9 +55,24 @@ public class RegistrationController {
 	@PostMapping("/{regId}/complete")
 	public ResponseEntity<ApiResponse<AuthTokenResponse>> completeRegistration(
 			@PathVariable String regId,
-			@Valid @RequestBody CompleteRegistrationRequest request) {
-		var result = completeRegistrationInputPort.execute(registrationDtoMapper.toCompleteCommand(regId, request));
+			@Valid @RequestBody CompleteRegistrationRequest request,
+			@ClientIp String ipAddress,
+			HttpServletRequest httpRequest) {
+		var result = completeRegistrationInputPort.execute(
+				registrationDtoMapper.toCompleteCommand(regId, request, ipAddress,
+						httpRequest.getHeader("User-Agent")));
 		AuthTokenResponse response = registrationDtoMapper.toAuthTokenResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, "Registration completed!"));
+		return authTokenResponseHandler.success(response, httpRequest, "Registration completed!");
 	}
+
+	@Operation(summary = "Resend OTP", description = "Resend OTP code for a registration session")
+	@PostMapping("/{regId}/resend-otp")
+	public ResponseEntity<ApiResponse<RegistrationSessionResponse>> resendOtp(
+			@PathVariable String regId,
+			@ClientIp String ipAddress) {
+		var result = resendRegistrationOtpInputPort.execute(registrationDtoMapper.toResendOtpCommand(regId, ipAddress));
+		RegistrationSessionResponse response = registrationDtoMapper.toResendOtpResponse(result);
+		return ResponseEntity.ok(ApiResponse.success(response, "OTP resent successfully!"));
+	}
+
 }

@@ -28,3 +28,4 @@ public record UpdateAddressRequest(
 		String type
 ) {
 }
+

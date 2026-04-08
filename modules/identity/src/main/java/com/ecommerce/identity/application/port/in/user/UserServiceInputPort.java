@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.port.in.user;
 
-import com.ecommerce.identity.application.dto.user.DataExportRequestView;
-import com.ecommerce.identity.application.dto.user.DeletionRequestView;
-import com.ecommerce.identity.application.dto.user.UserProfileView;
+import com.ecommerce.identity.application.dto.user.view.DataExportRequestView;
+import com.ecommerce.identity.application.dto.user.view.DeletionRequestView;
+import com.ecommerce.identity.application.dto.user.view.UserProfileView;
 
 public interface UserServiceInputPort {
 
@@ -30,3 +30,6 @@ public interface UserServiceInputPort {
 
     DataExportRequestView requestDataExport(String userId);
 }
+
+
+

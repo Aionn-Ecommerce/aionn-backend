@@ -1,7 +1,7 @@
 package com.ecommerce.identity.infrastructure.persistence.mapper;
 
-import com.ecommerce.identity.application.dto.address.CreateAddressCommand;
-import com.ecommerce.identity.application.dto.address.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.CreateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.UpdateAddressCommand;
 import com.ecommerce.identity.domain.model.Address;
 import com.ecommerce.identity.domain.valueobject.AddressType;
 import com.ecommerce.identity.infrastructure.persistence.entity.UserAddressEntity;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-31T10:39:59+0700",
+    date = "2026-04-05T19:28:10+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
@@ -66,6 +66,34 @@ public class AddressDomainMapperImpl implements AddressDomainMapper {
     }
 
     @Override
+    public UserAddressEntity toEntity(Address address, UserEntity userEntity) {
+        if ( address == null && userEntity == null ) {
+            return null;
+        }
+
+        UserAddressEntity.UserAddressEntityBuilder userAddressEntity = UserAddressEntity.builder();
+
+        if ( address != null ) {
+            userAddressEntity.phone( address.phone() );
+            userAddressEntity.addressId( address.addressId() );
+            userAddressEntity.contactName( address.contactName() );
+            userAddressEntity.detailAddress( address.detailAddress() );
+            userAddressEntity.districtCode( address.districtCode() );
+            userAddressEntity.districtName( address.districtName() );
+            userAddressEntity.fullAddress( address.fullAddress() );
+            userAddressEntity.isDefault( address.isDefault() );
+            userAddressEntity.provinceCode( address.provinceCode() );
+            userAddressEntity.provinceName( address.provinceName() );
+            userAddressEntity.type( mapType( address.type() ) );
+            userAddressEntity.wardCode( address.wardCode() );
+            userAddressEntity.wardName( address.wardName() );
+        }
+        userAddressEntity.user( userEntity );
+
+        return userAddressEntity.build();
+    }
+
+    @Override
     public UserAddressEntity toEntity(CreateAddressCommand command, UserEntity userEntity, boolean isDefault, String fullAddress, String provinceName, String districtName, String wardName) {
         if ( command == null && userEntity == null && fullAddress == null && provinceName == null && districtName == null && wardName == null ) {
             return null;
@@ -76,11 +104,11 @@ public class AddressDomainMapperImpl implements AddressDomainMapper {
         if ( command != null ) {
             userAddressEntity.phone( command.phone() );
             userAddressEntity.contactName( command.contactName() );
-            userAddressEntity.provinceCode( command.provinceCode() );
-            userAddressEntity.districtCode( command.districtCode() );
-            userAddressEntity.wardCode( command.wardCode() );
             userAddressEntity.detailAddress( command.detailAddress() );
+            userAddressEntity.districtCode( command.districtCode() );
+            userAddressEntity.provinceCode( command.provinceCode() );
             userAddressEntity.type( mapType( command.type() ) );
+            userAddressEntity.wardCode( command.wardCode() );
         }
         userAddressEntity.user( userEntity );
         userAddressEntity.isDefault( isDefault );
@@ -101,12 +129,12 @@ public class AddressDomainMapperImpl implements AddressDomainMapper {
 
         if ( command != null ) {
             entity.setContactName( command.contactName() );
+            entity.setDetailAddress( command.detailAddress() );
+            entity.setDistrictCode( command.districtCode() );
             entity.setPhone( command.phone() );
             entity.setProvinceCode( command.provinceCode() );
-            entity.setDistrictCode( command.districtCode() );
-            entity.setWardCode( command.wardCode() );
-            entity.setDetailAddress( command.detailAddress() );
             entity.setType( mapType( command.type() ) );
+            entity.setWardCode( command.wardCode() );
         }
         entity.setFullAddress( fullAddress );
         entity.setProvinceName( provinceName );

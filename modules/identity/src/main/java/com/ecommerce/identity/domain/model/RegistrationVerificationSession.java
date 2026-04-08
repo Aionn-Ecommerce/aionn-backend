@@ -12,10 +12,10 @@ public class RegistrationVerificationSession implements Serializable {
 
     private final String regId;
     private final String phoneNumber;
-    private final String otpCode;
+    private String otpCode;
     private final int maxVerifyAttempts;
-    private final LocalDateTime resendAvailableAt;
-    private final LocalDateTime expiredAt;
+    private LocalDateTime resendAvailableAt;
+    private LocalDateTime expiredAt;
     private int attemptCount;
     private boolean verified;
     private String verificationToken;
@@ -48,16 +48,22 @@ public class RegistrationVerificationSession implements Serializable {
         return expiredAt != null && expiredAt.isBefore(LocalDateTime.now());
     }
 
+    public boolean isLocked() {
+        return attemptCount >= maxVerifyAttempts;
+    }
+
     public void verify(String inputOtpCode) {
         if (isExpired()) {
             throw new IdentityException(IdentityErrorCode.OTP_EXPIRED);
         }
-        if (attemptCount >= maxVerifyAttempts) {
+        if (isLocked()) {
             throw new IdentityException(IdentityErrorCode.OTP_ATTEMPTS_EXCEEDED);
         }
         if (!Objects.equals(otpCode, inputOtpCode)) {
             attemptCount++;
-            if (attemptCount >= maxVerifyAttempts) {
+            if (isLocked()) {
+                // Lock this session immediately once max attempts are reached.
+                expiredAt = LocalDateTime.now();
                 throw new IdentityException(IdentityErrorCode.OTP_ATTEMPTS_EXCEEDED);
             }
             throw new IdentityException(IdentityErrorCode.OTP_INVALID);
@@ -66,6 +72,25 @@ public class RegistrationVerificationSession implements Serializable {
         verified = true;
         verificationToken = IdGenerator.ulid();
         verifiedAt = LocalDateTime.now();
+    }
+
+    public void resend(String newOtpCode, LocalDateTime newResendAvailableAt, LocalDateTime newExpiredAt) {
+        if (verified) {
+            throw new IdentityException(IdentityErrorCode.REGISTRATION_ALREADY_VERIFIED);
+        }
+        if (isExpired()) {
+            throw new IdentityException(IdentityErrorCode.REGISTRATION_SESSION_EXPIRED);
+        }
+        if (isLocked()) {
+            throw new IdentityException(IdentityErrorCode.OTP_ATTEMPTS_EXCEEDED);
+        }
+        if (resendAvailableAt != null && LocalDateTime.now().isBefore(resendAvailableAt)) {
+            throw new IdentityException(IdentityErrorCode.OTP_RESEND_TOO_SOON);
+        }
+
+        otpCode = newOtpCode;
+        resendAvailableAt = newResendAvailableAt;
+        expiredAt = newExpiredAt;
     }
 
     public String getRegId() {
@@ -108,3 +133,5 @@ public class RegistrationVerificationSession implements Serializable {
         return verifiedAt;
     }
 }
+
+

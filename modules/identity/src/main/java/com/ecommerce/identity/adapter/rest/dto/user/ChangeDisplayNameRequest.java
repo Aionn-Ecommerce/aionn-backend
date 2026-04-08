@@ -8,3 +8,5 @@ public record ChangeDisplayNameRequest(
         @Size(min = 2, max = 100, message = "Display name must be 2-100 characters")
         String displayName) {
 }
+
+

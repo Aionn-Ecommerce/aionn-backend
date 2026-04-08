@@ -23,3 +23,5 @@ public class SocialTokenVerifierAdapter implements SocialTokenVerifier {
         };
     }
 }
+
+

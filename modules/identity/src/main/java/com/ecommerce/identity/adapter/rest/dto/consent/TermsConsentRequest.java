@@ -6,3 +6,5 @@ public record TermsConsentRequest(
         @NotBlank(message = "Version is required")
         String version) {
 }
+
+

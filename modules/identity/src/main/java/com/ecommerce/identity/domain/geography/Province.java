@@ -19,7 +19,7 @@ public class Province {
     private String code; // VN-HN, VN-SG
 
     @Column(nullable = false, length = 100)
-    private String name; // Hà Nội, TP. Hồ Chí Minh
+    private String name; // HÃƒÂ  NÃ¡Â»â„¢i, TP. HÃ¡Â»â€œ ChÃƒÂ­ Minh
 
     @Column(name = "name_en", length = 100)
     private String nameEn; // Hanoi, Ho Chi Minh City
@@ -30,3 +30,5 @@ public class Province {
     @Column(nullable = false)
     private Boolean active = true;
 }
+
+

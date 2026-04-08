@@ -1,6 +1,6 @@
 package com.ecommerce.identity.application.port.in.auth;
 
-import com.ecommerce.identity.application.dto.auth.UnlinkSocialCommand;
+import com.ecommerce.identity.application.dto.auth.command.UnlinkSocialCommand;
 
 public interface UnlinkSocialInputPort {
 
@@ -10,3 +10,5 @@ public interface UnlinkSocialInputPort {
         unlinkSocial(command.userId(), command.provider());
     }
 }
+
+

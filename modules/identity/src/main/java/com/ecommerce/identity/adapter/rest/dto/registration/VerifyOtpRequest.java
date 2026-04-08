@@ -8,3 +8,5 @@ public record VerifyOtpRequest(
         @Pattern(regexp = "^\\d{6}$", message = "OTP must be 6 digits")
         String otpCode
 ) {}
+
+

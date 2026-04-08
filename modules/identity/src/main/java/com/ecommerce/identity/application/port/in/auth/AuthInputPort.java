@@ -12,3 +12,5 @@ public interface AuthInputPort extends
         RevokeSessionInputPort,
         LogoutAllInputPort {
 }
+
+

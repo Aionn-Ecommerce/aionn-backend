@@ -6,3 +6,5 @@ public record AiPrivacyPreferenceRequest(
         @NotBlank(message = "AI privacy settings JSON is required")
         String aiPrivacySettingsJson) {
 }
+
+

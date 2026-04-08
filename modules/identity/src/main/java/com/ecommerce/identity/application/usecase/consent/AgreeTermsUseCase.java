@@ -1,8 +1,7 @@
 package com.ecommerce.identity.application.usecase.consent;
 
-import com.ecommerce.identity.adapter.rest.mapper.consent.ConsentDtoMapper;
-import com.ecommerce.identity.application.dto.consent.AgreeTermsCommand;
-import com.ecommerce.identity.application.dto.consent.ConsentResult;
+import com.ecommerce.identity.application.dto.consent.command.AgreeTermsCommand;
+import com.ecommerce.identity.application.dto.consent.result.ConsentResult;
 import com.ecommerce.identity.application.port.in.consent.AgreeTermsInputPort;
 import com.ecommerce.identity.application.service.ConsentService;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AgreeTermsUseCase implements AgreeTermsInputPort {
 
     private final ConsentService consentService;
-    private final ConsentDtoMapper consentDtoMapper;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ConsentResult execute(AgreeTermsCommand command) {
-        var entity = consentService.agreeTerms(command.userId(), command.version(), command.clientIp());
-        return consentDtoMapper.toConsentResult(entity);
+        return consentService.agreeTerms(command.userId(), command.version(), command.clientIp());
     }
 }

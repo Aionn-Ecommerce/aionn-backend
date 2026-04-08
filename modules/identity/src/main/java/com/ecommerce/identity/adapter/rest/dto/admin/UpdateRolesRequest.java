@@ -8,3 +8,5 @@ import java.util.Set;
 public record UpdateRolesRequest(
                 @NotEmpty(message = "Roles must not be empty") Set<UserRole> roles) {
 }
+
+

@@ -18,3 +18,5 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccountEnti
 
     void deleteByUser_UserIdAndProvider(String userId, String provider);
 }
+
+

@@ -6,3 +6,5 @@ public record UploadKycDocumentRequest(
         @NotBlank(message = "Blob URL is required")
         String blobUrl) {
 }
+
+

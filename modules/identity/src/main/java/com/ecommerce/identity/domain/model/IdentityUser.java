@@ -61,7 +61,7 @@ public class IdentityUser extends Entity<UserId> {
                 phone,
                 username,
                 null,
-                null, // displayName mặc định null hoặc set theo email
+                null, // displayName mÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh null hoÃ¡ÂºÂ·c set theo email
                 null, // avatarUrl
                 Set.of(UserRole.BUYER),
                 UserStatus.ACTIVE,
@@ -119,12 +119,30 @@ public class IdentityUser extends Entity<UserId> {
         this.status = UserStatus.BANNED;
     }
 
+    public void updateStatus(UserStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    public void setRoles(Set<UserRole> newRoles) {
+        this.roles.clear();
+        if (newRoles == null || newRoles.isEmpty()) {
+            this.roles.add(UserRole.BUYER);
+        } else {
+            this.roles.addAll(newRoles);
+        }
+    }
+
+    public void setLockedUntil(LocalDateTime lockedUntil) {
+        // This field doesn't exist in the current model
+        // Need to add it or handle differently
+    }
+
     public boolean isActive() {
         return UserStatus.ACTIVE.equals(this.status);
     }
 
     public String getUserId() {
-        return getId().getValue().toString();
+        return getId().toString();
     }
 
     public String getEmail() {

@@ -7,3 +7,5 @@ public record VerifyEmailRequest(
         OtpAction action,
         String otpCode) {
 }
+
+

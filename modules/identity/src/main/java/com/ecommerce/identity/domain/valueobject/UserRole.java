@@ -8,3 +8,4 @@ public enum UserRole {
 	CS_ADMIN,
 	SYSTEM_ADMIN
 }
+

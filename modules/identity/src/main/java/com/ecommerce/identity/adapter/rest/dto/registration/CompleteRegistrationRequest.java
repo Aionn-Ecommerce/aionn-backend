@@ -21,3 +21,5 @@ public record CompleteRegistrationRequest(
         String verificationToken
 ) {
 }
+
+

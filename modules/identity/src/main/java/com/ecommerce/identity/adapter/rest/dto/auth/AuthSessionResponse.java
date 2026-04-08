@@ -11,3 +11,5 @@ public record AuthSessionResponse(
         LocalDateTime lastActiveAt,
         LocalDateTime expiresAt) {
 }
+
+

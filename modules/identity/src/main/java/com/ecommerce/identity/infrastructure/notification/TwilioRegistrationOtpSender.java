@@ -1,35 +1,42 @@
 package com.ecommerce.identity.infrastructure.notification;
 
 import com.ecommerce.identity.application.port.out.registration.RegistrationOtpSender;
-import com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties;
+import com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import jakarta.annotation.PostConstruct;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
-@ConditionalOnProperty(prefix = "identity.registration.twilio", name = "enabled", havingValue = "true")
 public class TwilioRegistrationOtpSender implements RegistrationOtpSender {
 
-    private final IdentityRegistrationProperties properties;
+    private final RegistrationProperties properties;
 
-    public TwilioRegistrationOtpSender(IdentityRegistrationProperties properties) {
+    public TwilioRegistrationOtpSender(RegistrationProperties properties) {
         this.properties = properties;
     }
 
     @PostConstruct
     public void init() {
-        Twilio.init(properties.getTwilio().getAccountSid(), properties.getTwilio().getAuthToken());
+        if (properties.twilio().enabled()) {
+            Twilio.init(properties.twilio().accountSid(), properties.twilio().authToken());
+            log.info("Twilio SMS sender initialized");
+        } else {
+            log.info("Twilio SMS sender disabled - OTP will only be available in response if exposeOtpInResponse=true");
+        }
     }
 
     @Override
     public void sendOtp(String phoneNumber, String otpCode) {
-        Message.creator(
-                        new PhoneNumber(phoneNumber),
-                        new PhoneNumber(properties.getTwilio().getFromPhoneNumber()),
-                        "Your verification code is: " + otpCode)
-                .create();
+        if (properties.twilio().enabled()) {
+            Message.creator(
+                    new PhoneNumber(phoneNumber),
+                    new PhoneNumber(properties.twilio().fromPhoneNumber()),
+                    "Your verification code is: " + otpCode)
+                    .create();
+        }
     }
 }

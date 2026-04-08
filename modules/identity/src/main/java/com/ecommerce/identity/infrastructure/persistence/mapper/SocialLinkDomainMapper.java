@@ -4,27 +4,18 @@ import com.ecommerce.identity.domain.model.SocialLink;
 import com.ecommerce.identity.domain.valueobject.AuthProvider;
 import com.ecommerce.identity.infrastructure.persistence.entity.SocialAccountEntity;
 import com.ecommerce.identity.infrastructure.persistence.entity.UserEntity;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class SocialLinkDomainMapper {
+@Mapper(componentModel = "spring")
+public interface SocialLinkDomainMapper {
 
-    public SocialLink toDomain(SocialAccountEntity entity) {
-        return new SocialLink(
-                entity.getSocialAccountId(),
-                entity.getUser().getUserId(),
-                AuthProvider.valueOf(entity.getProvider()),
-                entity.getProviderUserId(),
-                entity.getCreatedAt());
-    }
+    @Mapping(target = "userId", source = "user.userId")
+    @Mapping(target = "provider", expression = "java(AuthProvider.valueOf(entity.getProvider()))")
+    SocialLink toDomain(SocialAccountEntity entity);
 
-    public SocialAccountEntity toEntity(SocialLink domain, UserEntity userEntity) {
-        return SocialAccountEntity.builder()
-                .socialAccountId(domain.getSocialAccountId())
-                .user(userEntity)
-                .provider(domain.getProvider().name())
-                .providerUserId(domain.getProviderUserId())
-                .createdAt(domain.getCreatedAt())
-                .build();
-    }
+    @Mapping(target = "user", source = "userEntity")
+    @Mapping(target = "provider", expression = "java(domain.provider().name())")
+    @Mapping(target = "createdAt", source = "domain.createdAt")
+    SocialAccountEntity toEntity(SocialLink domain, UserEntity userEntity);
 }

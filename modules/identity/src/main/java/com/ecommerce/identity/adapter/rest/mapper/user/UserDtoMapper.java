@@ -9,19 +9,20 @@ import com.ecommerce.identity.adapter.rest.dto.user.DeletionRequestResponse;
 import com.ecommerce.identity.adapter.rest.dto.user.UserActionResponse;
 import com.ecommerce.identity.adapter.rest.dto.user.UserProfileResponse;
 import com.ecommerce.identity.adapter.rest.dto.user.VerifyEmailRequest;
-import com.ecommerce.identity.application.dto.user.CancelAccountDeletionCommand;
-import com.ecommerce.identity.application.dto.user.ChangeEmailCommand;
-import com.ecommerce.identity.application.dto.user.ChangePhoneCommand;
-import com.ecommerce.identity.application.dto.user.DataExportRequestView;
-import com.ecommerce.identity.application.dto.user.DeletionRequestView;
-import com.ecommerce.identity.application.dto.user.GetMyProfileQuery;
-import com.ecommerce.identity.application.dto.user.RequestAccountDeletionCommand;
-import com.ecommerce.identity.application.dto.user.RequestDataExportCommand;
-import com.ecommerce.identity.application.dto.user.UpdateAvatarCommand;
-import com.ecommerce.identity.application.dto.user.UpdateDisplayNameCommand;
-import com.ecommerce.identity.application.dto.user.UserActionOutcomeView;
-import com.ecommerce.identity.application.dto.user.UserProfileView;
-import com.ecommerce.identity.application.dto.user.VerifyEmailCommand;
+import com.ecommerce.identity.application.dto.user.command.CancelAccountDeletionCommand;
+import com.ecommerce.identity.application.dto.user.command.ChangeEmailCommand;
+import com.ecommerce.identity.application.dto.user.command.ChangePhoneCommand;
+import com.ecommerce.identity.application.dto.user.command.RequestAccountDeletionCommand;
+import com.ecommerce.identity.application.dto.user.command.RequestDataExportCommand;
+import com.ecommerce.identity.application.dto.user.command.UpdateAvatarCommand;
+import com.ecommerce.identity.application.dto.user.command.UpdateDisplayNameCommand;
+import com.ecommerce.identity.application.dto.user.command.VerifyEmailCommand;
+import com.ecommerce.identity.application.dto.user.query.GetMyProfileQuery;
+import com.ecommerce.identity.application.dto.user.view.DataExportRequestView;
+import com.ecommerce.identity.application.dto.user.view.DeletionRequestView;
+import com.ecommerce.identity.application.dto.user.view.UserActionOutcomeView;
+import com.ecommerce.identity.application.dto.user.view.UserProfileView;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -64,7 +65,7 @@ public interface UserDtoMapper {
     RequestDataExportCommand toRequestDataExportCommand(String userId);
 
     // View -> Response
-    @Mapping(target = "action", source = "action")
+    @Mapping(target = "status", source = "action")
     UserActionResponse toActionResponse(String action);
 
     @Mapping(target = "userId", source = "userId")
@@ -99,3 +100,4 @@ public interface UserDtoMapper {
         return toActionResponse(outcome.action());
     }
 }
+

@@ -6,3 +6,5 @@ public record NotificationPreferenceRequest(
         @NotBlank(message = "Notification settings JSON is required")
         String notificationSettingsJson) {
 }
+
+

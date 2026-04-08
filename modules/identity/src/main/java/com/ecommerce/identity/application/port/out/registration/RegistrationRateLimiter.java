@@ -4,3 +4,4 @@ public interface RegistrationRateLimiter {
 
     boolean check(String scope, String key, int maxAttempts, int windowSeconds);
 }
+

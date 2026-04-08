@@ -33,3 +33,5 @@ public class InMemoryUserOtpChallengeStore implements UserOtpChallengeStore {
         return userId + ":" + purpose.name();
     }
 }
+
+

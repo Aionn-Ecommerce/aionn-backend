@@ -20,6 +20,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * @deprecated This service has been split into separate services for better
+ *             separation of concerns:
+ *             - {@link MfaService} for MFA operations (enableMfa, disableMfa,
+ *             regenerateBackupCodes)
+ *             - {@link PasswordResetService} for password reset operations
+ *             (changePassword, requestPasswordReset, completePasswordReset)
+ *             - {@link SecurityAuditService} for audit log retrieval
+ *             (getAuditLogs)
+ * 
+ *             This class is kept temporarily for backward compatibility with
+ *             existing tests.
+ *             New code should use the specific services through their
+ *             respective UseCases.
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Service
 @RequiredArgsConstructor
 @Slf4j

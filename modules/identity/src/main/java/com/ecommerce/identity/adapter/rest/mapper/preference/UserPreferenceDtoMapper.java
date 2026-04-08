@@ -4,10 +4,11 @@ import com.ecommerce.identity.adapter.rest.dto.preference.AiPrivacyPreferenceReq
 import com.ecommerce.identity.adapter.rest.dto.preference.GeneralPreferenceRequest;
 import com.ecommerce.identity.adapter.rest.dto.preference.NotificationPreferenceRequest;
 import com.ecommerce.identity.adapter.rest.dto.preference.UserPreferenceResponse;
-import com.ecommerce.identity.application.dto.preference.UpdateAiPrivacyPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UpdateGeneralPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UpdateNotificationPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UserPreferenceResult;
+import com.ecommerce.identity.application.dto.preference.command.UpdateAiPrivacyPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.command.UpdateGeneralPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.command.UpdateNotificationPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.result.UserPreferenceResult;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

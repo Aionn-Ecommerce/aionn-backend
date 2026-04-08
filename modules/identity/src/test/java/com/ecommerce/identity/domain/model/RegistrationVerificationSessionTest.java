@@ -49,3 +49,5 @@ class RegistrationVerificationSessionTest {
         assertThrows(IdentityException.class, () -> session.verify("999999"));
     }
 }
+
+

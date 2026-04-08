@@ -35,3 +35,5 @@ public class BackupCodeEntity {
     @Column(name = "used_at")
     private LocalDateTime usedAt;
 }
+
+

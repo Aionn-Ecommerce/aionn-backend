@@ -8,3 +8,5 @@ public record ChangePasswordRequest(
         @NotBlank(message = "New password is required")
         String newPassword) {
 }
+
+

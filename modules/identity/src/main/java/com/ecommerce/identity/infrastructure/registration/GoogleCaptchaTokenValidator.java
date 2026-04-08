@@ -1,7 +1,8 @@
 package com.ecommerce.identity.infrastructure.registration;
 
 import com.ecommerce.identity.application.port.out.registration.CaptchaTokenValidator;
-import com.ecommerce.identity.infrastructure.config.IdentityRegistrationProperties;
+import com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,17 +15,17 @@ public class GoogleCaptchaTokenValidator implements CaptchaTokenValidator {
 
     private static final String VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 
-    private final IdentityRegistrationProperties properties;
+    private final RegistrationProperties properties;
     private final RestClient restClient;
 
-    public GoogleCaptchaTokenValidator(IdentityRegistrationProperties properties) {
+    public GoogleCaptchaTokenValidator(RegistrationProperties properties) {
         this.properties = properties;
         this.restClient = RestClient.create();
     }
 
     @Override
     public boolean isValid(String captchaToken) {
-        String secret = properties.getCaptcha().getGoogleSecretKey();
+        String secret = properties.captcha().googleSecretKey();
         if (secret == null || secret.isBlank() || captchaToken == null || captchaToken.isBlank()) {
             return false;
         }

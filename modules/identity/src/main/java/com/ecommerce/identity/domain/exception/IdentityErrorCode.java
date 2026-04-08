@@ -8,16 +8,23 @@ import lombok.RequiredArgsConstructor;
 public enum IdentityErrorCode {
 	PHONE_ALREADY_EXISTS("IDENTITY_001", "Phone number already exists in the system"),
 	EMAIL_ALREADY_EXISTS("IDENTITY_002", "Email already exists in the system"),
+	USERNAME_ALREADY_EXISTS("IDENTITY_005", "Username already exists in the system"),
+	PHONE_INVALID("IDENTITY_006", "Invalid phone number format"),
 	REGISTRATION_NOT_FOUND("IDENTITY_003", "Registration session not found"),
 	REGISTRATION_EXPIRED("IDENTITY_004", "Registration session has expired"),
 
 	OTP_INVALID("IDENTITY_101", "Invalid OTP code"),
 	OTP_EXPIRED("IDENTITY_102", "OTP code has expired"),
 	OTP_ATTEMPTS_EXCEEDED("IDENTITY_103", "OTP attempts exceeded the allowed limit"),
-	CAPTCHA_INVALID("IDENTITY_104", "Invalid captcha token"),
-	VERIFICATION_TOKEN_INVALID("IDENTITY_105", "Verification Token invalid"),
-	RATE_LIMIT_EXCEEDED("IDENTITY_106", "Rate limit exceeded"),
-	ADDRESS_NUMBER_EXCEEDED("IDENTITY_107", "Too much addresses, just 5 max"),
+	OTP_RESEND_TOO_SOON("IDENTITY_104", "Please wait before requesting another OTP"),
+	CAPTCHA_INVALID("IDENTITY_105", "Invalid captcha token"),
+	VERIFICATION_TOKEN_INVALID("IDENTITY_106", "Verification Token invalid"),
+	RATE_LIMIT_EXCEEDED("IDENTITY_107", "Rate limit exceeded"),
+	ADDRESS_NUMBER_EXCEEDED("IDENTITY_108", "Too much addresses, just 5 max"),
+	REGISTRATION_SESSION_NOT_FOUND("IDENTITY_109", "Registration session not found"),
+	REGISTRATION_ALREADY_VERIFIED("IDENTITY_110", "Registration already verified"),
+	REGISTRATION_SESSION_EXPIRED("IDENTITY_111", "Registration session has expired"),
+	REGISTRATION_IN_PROGRESS("IDENTITY_112", "Registration is already in progress for this phone number"),
 
 	USER_NOT_FOUND("IDENTITY_201", "User not found"),
 	INVALID_DISPLAY_NAME("IDENTITY_202", "Invalid display name"),
@@ -25,6 +32,7 @@ public enum IdentityErrorCode {
 	USER_INACTIVE("IDENTITY_204", "User account is not active"),
 	SESSION_NOT_FOUND("IDENTITY_205", "Session not found"),
 	SESSION_FORBIDDEN("IDENTITY_206", "Session does not belong to current user"),
+	INSUFFICIENT_PERMISSIONS("IDENTITY_220", "Insufficient permissions to perform this operation"),
 	SOCIAL_LINK_EXISTS("IDENTITY_207", "Social account is already linked"),
 	SOCIAL_LINK_NOT_FOUND("IDENTITY_208", "Social account link not found"),
 	PROVIDER_NOT_SUPPORTED("IDENTITY_209", "Social provider is not supported"),
@@ -43,7 +51,17 @@ public enum IdentityErrorCode {
 	ADDRESS_NOT_FOUND("IDENTITY_302", "Address not found"),
 	DEFAULT_ADDRESS_CANNOT_BE_DELETED("IDENTITY_303",
 			"Default address cannot be deleted. Please set another address as default first"),
-	INVALID_GEOGRAPHY_CODE("IDENTITY_304", "Invalid geography code");
+	INVALID_GEOGRAPHY_CODE("IDENTITY_304", "Invalid geography code"),
+
+	KYC_NOT_FOUND("IDENTITY_401", "KYC profile not found"),
+	KYC_INVALID_STATUS_TRANSITION("IDENTITY_402", "Invalid KYC status transition"),
+	KYC_CANNOT_BE_CANCELLED("IDENTITY_403", "KYC cannot be cancelled in current status"),
+
+	AGENT_NOT_FOUND("IDENTITY_501", "Agent identity not found"),
+	AGENT_CREATION_NOT_ALLOWED("IDENTITY_502", "User is not allowed to create agents"),
+
+	CONSENT_NOT_FOUND("IDENTITY_601", "Consent record not found"),
+	INVALID_IP_ADDRESS("IDENTITY_602", "Invalid IP address format");
 
 	private final String code;
 	private final String defaultMessage;

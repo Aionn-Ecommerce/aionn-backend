@@ -31,3 +31,5 @@ public class RedisRegistrationSessionStore implements RegistrationSessionStore {
         registrationSessionRedisManager.deleteByRegId(regId);
     }
 }
+
+

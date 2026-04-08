@@ -78,3 +78,5 @@ public class ConsentController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Marketing consent updated"));
 	}
 }
+
+

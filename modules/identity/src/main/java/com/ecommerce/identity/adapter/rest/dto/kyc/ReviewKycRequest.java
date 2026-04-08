@@ -6,3 +6,5 @@ public record ReviewKycRequest(
         @NotBlank(message = "Admin note is required")
         String note) {
 }
+
+

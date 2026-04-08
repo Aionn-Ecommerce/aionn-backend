@@ -13,3 +13,5 @@ public record KycResponse(
         LocalDateTime submittedAt,
         LocalDateTime approvedAt) {
 }
+
+

@@ -49,3 +49,5 @@ public class AccountDeletionRequestEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 }
+
+

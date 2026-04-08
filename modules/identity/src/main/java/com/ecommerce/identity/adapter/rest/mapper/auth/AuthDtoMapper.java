@@ -4,28 +4,28 @@ import com.ecommerce.identity.adapter.rest.dto.auth.AuthSessionResponse;
 import com.ecommerce.identity.adapter.rest.dto.auth.AuthTokenResponse;
 import com.ecommerce.identity.adapter.rest.dto.auth.LinkSocialRequest;
 import com.ecommerce.identity.adapter.rest.dto.auth.LoginRequest;
-import com.ecommerce.identity.adapter.rest.dto.auth.LoginResponse;
 import com.ecommerce.identity.adapter.rest.dto.auth.LogoutAllResponse;
 import com.ecommerce.identity.adapter.rest.dto.auth.RefreshTokenRequest;
 import com.ecommerce.identity.adapter.rest.dto.auth.SocialAuthRequest;
 import com.ecommerce.identity.adapter.rest.dto.auth.SocialAuthResponse;
 import com.ecommerce.identity.adapter.rest.dto.auth.SocialLinkResponse;
-import com.ecommerce.identity.application.dto.auth.AuthSessionView;
-import com.ecommerce.identity.application.dto.auth.GetAuthSessionsQuery;
-import com.ecommerce.identity.application.dto.auth.LinkSocialCommand;
-import com.ecommerce.identity.application.dto.auth.LoginCommand;
-import com.ecommerce.identity.application.dto.auth.LoginResult;
-import com.ecommerce.identity.application.dto.auth.LogoutAllCommand;
-import com.ecommerce.identity.application.dto.auth.LogoutAllResult;
-import com.ecommerce.identity.application.dto.auth.LogoutCommand;
-import com.ecommerce.identity.application.dto.auth.RefreshTokenCommand;
-import com.ecommerce.identity.application.dto.auth.RevokeSessionCommand;
-import com.ecommerce.identity.application.dto.auth.SocialLoginCommand;
-import com.ecommerce.identity.application.dto.auth.SocialLoginResult;
-import com.ecommerce.identity.application.dto.auth.SocialLinkView;
-import com.ecommerce.identity.application.dto.auth.UnlinkSocialCommand;
-import com.ecommerce.identity.infrastructure.persistence.entity.AuthSessionEntity;
-import com.ecommerce.identity.infrastructure.persistence.entity.SocialAccountEntity;
+import com.ecommerce.identity.application.dto.auth.command.LinkSocialCommand;
+import com.ecommerce.identity.application.dto.auth.command.LoginCommand;
+import com.ecommerce.identity.application.dto.auth.command.LogoutAllCommand;
+import com.ecommerce.identity.application.dto.auth.command.LogoutCommand;
+import com.ecommerce.identity.application.dto.auth.command.RefreshTokenCommand;
+import com.ecommerce.identity.application.dto.auth.command.RevokeSessionCommand;
+import com.ecommerce.identity.application.dto.auth.command.SocialLoginCommand;
+import com.ecommerce.identity.application.dto.auth.command.UnlinkSocialCommand;
+import com.ecommerce.identity.application.dto.auth.query.GetAuthSessionsQuery;
+import com.ecommerce.identity.application.dto.auth.result.LoginResult;
+import com.ecommerce.identity.application.dto.auth.result.LogoutAllResult;
+import com.ecommerce.identity.application.dto.auth.result.RefreshAccessTokenResult;
+import com.ecommerce.identity.application.dto.auth.result.SocialLoginResult;
+import com.ecommerce.identity.application.dto.auth.view.AuthSessionView;
+import com.ecommerce.identity.application.dto.auth.view.SocialLinkView;
+import com.ecommerce.identity.domain.model.AuthSession;
+import com.ecommerce.identity.domain.model.SocialLink;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -34,7 +34,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface AuthDtoMapper {
 
-    // Request -> Command
     @Mapping(target = "identity", source = "request.identity")
     @Mapping(target = "password", source = "request.password")
     @Mapping(target = "ipAddress", source = "clientIp")
@@ -54,83 +53,65 @@ public interface AuthDtoMapper {
     RefreshTokenCommand toRefreshCommand(RefreshTokenRequest request, String cookieToken, String clientIp,
             String userAgent);
 
-    GetAuthSessionsQuery toGetSessionsQuery(String userId);
+    default GetAuthSessionsQuery toGetSessionsQuery(String userId) {
+        return new GetAuthSessionsQuery(userId);
+    }
 
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "provider", source = "request.provider")
     @Mapping(target = "providerToken", source = "request.providerToken")
     LinkSocialCommand toLinkSocialCommand(String userId, LinkSocialRequest request);
 
-    UnlinkSocialCommand toUnlinkSocialCommand(String userId, String provider);
+    default UnlinkSocialCommand toUnlinkSocialCommand(String userId, String provider) {
+        return new UnlinkSocialCommand(userId, provider);
+    }
 
-    RevokeSessionCommand toRevokeSessionCommand(String userId, String sessionId);
+    default RevokeSessionCommand toRevokeSessionCommand(String userId, String sessionId) {
+        return new RevokeSessionCommand(userId, sessionId);
+    }
 
-    LogoutCommand toLogoutCommand(String userId, String userAgent);
+    default LogoutCommand toLogoutCommand(String userId, String userAgent) {
+        return new LogoutCommand(userId, userAgent);
+    }
 
-    LogoutAllCommand toLogoutAllCommand(String userId);
+    default LogoutAllCommand toLogoutAllCommand(String userId) {
+        return new LogoutAllCommand(userId);
+    }
 
-    // Entity -> Result
-    @Mapping(target = "userId", source = "session.user.userId")
-    @Mapping(target = "sessionId", source = "session.sessionId")
-    @Mapping(target = "accessToken", source = "accessToken")
-    @Mapping(target = "expiresAt", source = "session.expiresAt")
-    LoginResult toLoginResult(AuthSessionEntity session, String accessToken);
+    default AuthSessionView toAuthSessionView(AuthSession session) {
+        return new AuthSessionView(
+                session.getSessionId(),
+                session.getUserId(),
+                session.getStatus().name(),
+                session.getIpAddress(),
+                session.getUserAgent(),
+                session.getCreatedAt(),
+                session.getLastActiveAt(),
+                session.getExpiresAt());
+    }
+
+    List<AuthSessionView> toAuthSessionViews(List<AuthSession> sessions);
 
     @Mapping(target = "provider", source = "provider")
     @Mapping(target = "providerUserId", source = "providerUserId")
     @Mapping(target = "linkedAt", source = "createdAt")
-    SocialLinkView toSocialLinkView(SocialAccountEntity entity);
+    SocialLinkView toSocialLinkView(SocialLink socialLink);
 
-    @Mapping(target = "sessionId", source = "sessionId")
-    @Mapping(target = "status", source = "status")
-    @Mapping(target = "ipAddress", source = "ipAddress")
-    @Mapping(target = "userAgent", source = "userAgent")
-    @Mapping(target = "createdAt", source = "createdAt")
-    @Mapping(target = "lastActiveAt", source = "lastActiveAt")
-    @Mapping(target = "expiresAt", source = "expiresAt")
-    AuthSessionView toAuthSessionView(AuthSessionEntity entity);
-
-    List<AuthSessionView> toAuthSessionViews(List<AuthSessionEntity> entities);
-
-    // Result -> Response
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "sessionId", source = "sessionId")
-    @Mapping(target = "accessToken", source = "accessToken")
-    @Mapping(target = "expiresAt", source = "expiresAt")
     AuthTokenResponse toAuthTokenResponse(LoginResult result);
 
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "sessionId", source = "sessionId")
-    @Mapping(target = "accessToken", source = "accessToken")
-    @Mapping(target = "expiresAt", source = "expiresAt")
+    AuthTokenResponse toAuthTokenResponse(RefreshAccessTokenResult result);
+
+    AuthTokenResponse toAuthTokenResponse(SocialLoginResult result);
+
     SocialAuthResponse toSocialAuthResponse(LoginResult result);
 
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "sessionId", source = "sessionId")
-    @Mapping(target = "accessToken", source = "accessToken")
-    @Mapping(target = "expiresAt", source = "expiresAt")
     SocialAuthResponse toSocialLoginResponse(SocialLoginResult result);
 
-    @Mapping(target = "provider", source = "provider")
-    @Mapping(target = "providerUserId", source = "providerUserId")
-    @Mapping(target = "linkedAt", source = "linkedAt")
     SocialLinkResponse toSocialLinkResponse(SocialLinkView view);
 
-    @Mapping(target = "sessionId", source = "sessionId")
-    @Mapping(target = "status", source = "status")
-    @Mapping(target = "ipAddress", source = "ipAddress")
-    @Mapping(target = "userAgent", source = "userAgent")
-    @Mapping(target = "createdAt", source = "createdAt")
-    @Mapping(target = "lastActiveAt", source = "lastActiveAt")
-    @Mapping(target = "expiresAt", source = "expiresAt")
     AuthSessionResponse toAuthSessionResponse(AuthSessionView view);
 
     List<AuthSessionResponse> toAuthSessionResponses(List<AuthSessionView> views);
 
     LogoutAllResponse toLogoutAllResponse(LogoutAllResult result);
-
-    // Helper
-    default LogoutAllResult toLogoutAllResult(int revokedCount) {
-        return new LogoutAllResult(revokedCount);
-    }
 }

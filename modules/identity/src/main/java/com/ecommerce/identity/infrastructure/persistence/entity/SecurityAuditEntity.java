@@ -42,3 +42,4 @@ public class SecurityAuditEntity {
     @Column(name = "timestamp", updatable = false, nullable = false)
     private LocalDateTime timestamp;
 }
+

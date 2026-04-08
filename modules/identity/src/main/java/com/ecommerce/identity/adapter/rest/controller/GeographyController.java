@@ -92,3 +92,5 @@ public class GeographyController {
         return ResponseEntity.ok(ApiResponse.success(response, "Ward fetched"));
     }
 }
+
+

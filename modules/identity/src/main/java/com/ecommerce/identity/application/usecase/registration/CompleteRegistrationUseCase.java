@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.usecase.registration;
 
 import com.ecommerce.identity.application.port.in.registration.CompleteRegistrationInputPort;
-import com.ecommerce.identity.application.dto.registration.CompleteRegistrationCommand;
-import com.ecommerce.identity.application.dto.registration.CompleteRegistrationResult;
+import com.ecommerce.identity.application.dto.registration.result.CompleteRegistrationResult;
+import com.ecommerce.identity.application.dto.registration.command.CompleteRegistrationCommand;
 import com.ecommerce.identity.application.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,3 +20,5 @@ public class CompleteRegistrationUseCase implements CompleteRegistrationInputPor
         return registrationService.complete(command);
     }
 }
+
+

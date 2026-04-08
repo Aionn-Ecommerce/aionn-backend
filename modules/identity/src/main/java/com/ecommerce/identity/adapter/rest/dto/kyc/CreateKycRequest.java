@@ -6,3 +6,5 @@ public record CreateKycRequest(
         @NotBlank(message = "Document type is required")
         String docType) {
 }
+
+

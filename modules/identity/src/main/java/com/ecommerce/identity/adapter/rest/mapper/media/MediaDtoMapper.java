@@ -1,7 +1,7 @@
 package com.ecommerce.identity.adapter.rest.mapper.media;
 
 import com.ecommerce.identity.adapter.rest.dto.media.UploadSignatureResponse;
-import com.ecommerce.identity.application.dto.media.UploadSignatureResult;
+import com.ecommerce.identity.application.dto.media.result.UploadSignatureResult;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

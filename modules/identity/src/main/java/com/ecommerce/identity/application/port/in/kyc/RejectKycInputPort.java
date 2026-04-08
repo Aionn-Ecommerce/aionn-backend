@@ -1,8 +1,9 @@
 package com.ecommerce.identity.application.port.in.kyc;
 
-import com.ecommerce.identity.application.dto.kyc.RejectKycCommand;
-import com.ecommerce.identity.application.dto.kyc.KycResult;
+import com.ecommerce.identity.application.dto.kyc.result.KycResult;
+import com.ecommerce.identity.application.dto.kyc.command.RejectKycCommand;
 
 public interface RejectKycInputPort {
     KycResult execute(RejectKycCommand command);
 }
+

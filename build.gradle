@@ -7,7 +7,7 @@ plugins {
 allprojects {
     group = 'com.ecommerce'
     version = '1.0.0'
-    
+
     repositories {
         mavenCentral()
     }
@@ -15,40 +15,32 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
 
-    if (project.name != 'shared-kernel') {
-        apply plugin: 'io.spring.dependency-management'
+    dependencyManagement {
+        imports {
+            mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+        }
     }
-    
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
     }
-    
-    if (project.name != 'shared-kernel') {
-        dependencyManagement {
-            imports {
-                mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
-            }
-        }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << '-parameters'
     }
-    
-    if (project.name == 'app') {
-        apply plugin: 'org.springframework.boot'
-    }
-    
-    dependencies {
-        if (project.name == 'shared-kernel') {
-            testImplementation 'org.junit.jupiter:junit-jupiter'
-        } else {
-            compileOnly 'org.projectlombok:lombok'
-            annotationProcessor 'org.projectlombok:lombok'
-            testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        }
-    }
-    
+
     tasks.named('test') {
         useJUnitPlatform()
+    }
+
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
     }
 }

@@ -49,3 +49,5 @@ public class UserConsentEntity {
     @Column(name = "ip_address", length = 50)
     private String ipAddress;
 }
+
+

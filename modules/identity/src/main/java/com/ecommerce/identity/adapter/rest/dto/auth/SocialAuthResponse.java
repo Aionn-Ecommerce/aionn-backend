@@ -8,3 +8,5 @@ public record SocialAuthResponse(
         String accessToken,
         LocalDateTime expiresAt) {
 }
+
+

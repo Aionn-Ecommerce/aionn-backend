@@ -6,3 +6,5 @@ public record LogoutRequest(
         @NotBlank(message = "Session ID is required")
         String sessionId) {
 }
+
+

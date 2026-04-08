@@ -51,3 +51,4 @@ public class KycProfileEntity {
     @Column(name = "expired_at")
     private LocalDateTime expiredAt;
 }
+

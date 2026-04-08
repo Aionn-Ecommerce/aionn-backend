@@ -1,19 +1,21 @@
 package com.ecommerce.identity.application.usecase.security;
 
-import com.ecommerce.identity.application.dto.security.BackupCodesResult;
-import com.ecommerce.identity.application.dto.security.RegenerateBackupCodesCommand;
+import com.ecommerce.identity.application.dto.security.result.BackupCodesResult;
+import com.ecommerce.identity.application.dto.security.command.RegenerateBackupCodesCommand;
 import com.ecommerce.identity.application.port.in.security.RegenerateBackupCodesInputPort;
-import com.ecommerce.identity.application.service.SecurityService;
+import com.ecommerce.identity.application.service.MfaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class RegenerateBackupCodesUseCase implements RegenerateBackupCodesInputPort {
 
-    private final SecurityService securityService;
+    private final MfaService mfaService;
 
     @Override
     public BackupCodesResult execute(RegenerateBackupCodesCommand command) {
-        var result = securityService.regenerateBackupCodes(command.userId(), command.clientIp());
+        var result = mfaService.regenerateBackupCodes(command.userId(), command.clientIp());
         return new BackupCodesResult(result);
     }
 }

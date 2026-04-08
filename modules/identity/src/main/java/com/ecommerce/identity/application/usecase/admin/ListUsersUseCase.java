@@ -1,7 +1,7 @@
 package com.ecommerce.identity.application.usecase.admin;
 
-import com.ecommerce.identity.application.dto.admin.ListUsersQuery;
-import com.ecommerce.identity.application.dto.admin.UserListResult;
+import com.ecommerce.identity.application.dto.admin.query.ListUsersQuery;
+import com.ecommerce.identity.application.dto.admin.result.UserListResult;
 import com.ecommerce.identity.application.port.in.admin.ListUsersQueryPort;
 import com.ecommerce.identity.application.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public class ListUsersUseCase implements ListUsersQueryPort {
     private final AdminUserService adminUserService;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
     public UserListResult execute(ListUsersQuery query) {
         return adminUserService.listUsers(query.status(), query.role(), query.page(), query.size());
     }

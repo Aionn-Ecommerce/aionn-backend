@@ -1,10 +1,11 @@
 package com.ecommerce.identity.application.usecase.preference;
 
-import com.ecommerce.identity.application.dto.preference.UpdateAiPrivacyPreferenceCommand;
-import com.ecommerce.identity.application.dto.preference.UserPreferenceResult;
+import com.ecommerce.identity.application.dto.preference.command.UpdateAiPrivacyPreferenceCommand;
+import com.ecommerce.identity.application.dto.preference.result.UserPreferenceResult;
 import com.ecommerce.identity.application.port.in.preference.UpdateAiPrivacyPreferenceInputPort;
 import com.ecommerce.identity.application.service.PreferenceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 public class UpdateAiPrivacyPreferenceUseCase implements UpdateAiPrivacyPreferenceInputPort {
@@ -12,16 +13,8 @@ public class UpdateAiPrivacyPreferenceUseCase implements UpdateAiPrivacyPreferen
     private final PreferenceService preferenceService;
 
     @Override
+    @Transactional
     public UserPreferenceResult execute(UpdateAiPrivacyPreferenceCommand command) {
-        var result = preferenceService.updateAiPrivacy(command);
-        return new UserPreferenceResult(
-                result.getUserId(),
-                result.getLanguage(),
-                result.getCurrency(),
-                result.getTimezone(),
-                result.getTheme(),
-                result.getNotificationSettings(),
-                result.getAiPrivacySettings(),
-                result.getUpdatedAt());
+        return preferenceService.updateAiPrivacy(command);
     }
 }

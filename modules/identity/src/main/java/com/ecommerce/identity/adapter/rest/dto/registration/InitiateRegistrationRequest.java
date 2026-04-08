@@ -8,3 +8,5 @@ public record InitiateRegistrationRequest(
 
                 @NotBlank(message = "Captcha token is required") String captchaToken) {
 }
+
+

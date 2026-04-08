@@ -4,3 +4,5 @@ public enum AuthSessionStatus {
     ACTIVE,
     REVOKED
 }
+
+

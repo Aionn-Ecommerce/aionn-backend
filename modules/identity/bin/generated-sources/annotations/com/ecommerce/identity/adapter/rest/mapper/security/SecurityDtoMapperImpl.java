@@ -8,17 +8,17 @@ import com.ecommerce.identity.adapter.rest.dto.security.MfaToggleRequest;
 import com.ecommerce.identity.adapter.rest.dto.security.PasswordResetRequestCommand;
 import com.ecommerce.identity.adapter.rest.dto.security.PasswordResetResponse;
 import com.ecommerce.identity.adapter.rest.dto.security.SecurityAuditLogResponse;
-import com.ecommerce.identity.application.dto.security.BackupCodesResult;
-import com.ecommerce.identity.application.dto.security.ChangePasswordCommand;
-import com.ecommerce.identity.application.dto.security.CompletePasswordResetCommand;
-import com.ecommerce.identity.application.dto.security.DisableMfaCommand;
-import com.ecommerce.identity.application.dto.security.EnableMfaCommand;
-import com.ecommerce.identity.application.dto.security.MfaResult;
-import com.ecommerce.identity.application.dto.security.PasswordResetResult;
-import com.ecommerce.identity.application.dto.security.RegenerateBackupCodesCommand;
-import com.ecommerce.identity.application.dto.security.RequestPasswordResetCommand;
-import com.ecommerce.identity.application.dto.security.SecurityAuditLogResult;
-import com.ecommerce.identity.application.dto.security.UnlockAccountCommand;
+import com.ecommerce.identity.application.dto.security.command.ChangePasswordCommand;
+import com.ecommerce.identity.application.dto.security.command.CompletePasswordResetCommand;
+import com.ecommerce.identity.application.dto.security.command.DisableMfaCommand;
+import com.ecommerce.identity.application.dto.security.command.EnableMfaCommand;
+import com.ecommerce.identity.application.dto.security.command.RegenerateBackupCodesCommand;
+import com.ecommerce.identity.application.dto.security.command.RequestPasswordResetCommand;
+import com.ecommerce.identity.application.dto.security.command.UnlockAccountCommand;
+import com.ecommerce.identity.application.dto.security.result.BackupCodesResult;
+import com.ecommerce.identity.application.dto.security.result.MfaResult;
+import com.ecommerce.identity.application.dto.security.result.PasswordResetResult;
+import com.ecommerce.identity.application.dto.security.result.SecurityAuditLogResult;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-03-31T09:49:08+0700",
+    date = "2026-04-05T19:28:09+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component

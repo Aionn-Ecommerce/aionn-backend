@@ -21,3 +21,4 @@ public record AddressResponse(
 		LocalDateTime createdAt,
 		LocalDateTime updatedAt) {
 }
+

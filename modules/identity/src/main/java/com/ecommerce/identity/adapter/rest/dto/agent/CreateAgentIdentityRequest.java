@@ -6,3 +6,5 @@ public record CreateAgentIdentityRequest(
         @NotBlank(message = "Agent name is required")
         String agentName) {
 }
+
+

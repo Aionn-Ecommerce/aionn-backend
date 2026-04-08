@@ -17,3 +17,5 @@ public record UserDetailResponse(
                 LocalDateTime emailVerifiedAt,
                 LocalDateTime phoneVerifiedAt) {
 }
+
+

@@ -6,10 +6,13 @@ endif
 
 CONTAINER := docker
 
-.PHONY: build test run clean up down logs
+.PHONY: build build-share-kernel test run clean up down logs
 
 build:
 	$(GRADLEW) build -x test
+
+build-share-kernel:
+	$(GRADLEW) :shared-kernel:build
 
 test:
 	$(GRADLEW) test

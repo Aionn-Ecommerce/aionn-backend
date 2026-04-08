@@ -5,6 +5,7 @@ import com.ecommerce.identity.adapter.rest.dto.auth.LinkSocialRequest;
 import com.ecommerce.identity.adapter.rest.dto.auth.SocialAuthRequest;
 import com.ecommerce.identity.adapter.rest.dto.auth.SocialLinkResponse;
 import com.ecommerce.identity.adapter.rest.mapper.auth.AuthDtoMapper;
+import com.ecommerce.identity.adapter.rest.support.AuthTokenResponseHandler;
 import com.ecommerce.sharedkernel.adapter.web.support.ClientIp;
 import com.ecommerce.identity.adapter.rest.support.ClientUserAgent;
 import com.ecommerce.identity.application.port.in.auth.LinkSocialInputPort;
@@ -13,6 +14,7 @@ import com.ecommerce.identity.application.port.in.auth.UnlinkSocialInputPort;
 import com.ecommerce.sharedkernel.adapter.web.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,16 +32,18 @@ public class SocialController {
 	private final LinkSocialInputPort linkSocialInputPort;
 	private final UnlinkSocialInputPort unlinkSocialInputPort;
 	private final AuthDtoMapper authDtoMapper;
+	private final AuthTokenResponseHandler authTokenResponseHandler;
 
 	@PostMapping("/social")
 	@Operation(summary = "Social login", description = "Authenticate via social provider token and create auth session")
 	public ResponseEntity<ApiResponse<AuthTokenResponse>> socialLogin(
 			@Valid @RequestBody SocialAuthRequest request,
 			@ClientIp String clientIp,
-			@ClientUserAgent String userAgent) {
+			@ClientUserAgent String userAgent,
+			HttpServletRequest httpRequest) {
 		var result = socialAuthInputPort.execute(authDtoMapper.toSocialLoginCommand(request, clientIp, userAgent));
 		AuthTokenResponse response = authDtoMapper.toAuthTokenResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, "Social login successful!"));
+		return authTokenResponseHandler.success(response, httpRequest, "Social login successful!");
 	}
 
 	@PostMapping("/social-links")
@@ -64,4 +68,5 @@ public class SocialController {
 		unlinkSocialInputPort.execute(authDtoMapper.toUnlinkSocialCommand(userId, provider));
 		return ResponseEntity.noContent().build();
 	}
+
 }

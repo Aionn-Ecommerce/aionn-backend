@@ -6,3 +6,5 @@ public record PasswordResetRequestCommand(
         @NotBlank(message = "Identity is required")
         String identity) {
 }
+
+

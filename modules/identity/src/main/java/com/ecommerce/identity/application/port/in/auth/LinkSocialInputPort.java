@@ -1,7 +1,7 @@
 package com.ecommerce.identity.application.port.in.auth;
 
-import com.ecommerce.identity.application.dto.auth.LinkSocialCommand;
-import com.ecommerce.identity.application.dto.auth.SocialLinkView;
+import com.ecommerce.identity.application.dto.auth.command.LinkSocialCommand;
+import com.ecommerce.identity.application.dto.auth.view.SocialLinkView;
 
 public interface LinkSocialInputPort {
 
@@ -11,3 +11,5 @@ public interface LinkSocialInputPort {
         return linkSocial(command);
     }
 }
+
+

@@ -6,3 +6,5 @@ public record UpdateAgentPermissionsRequest(
         @NotBlank(message = "Permissions JSON is required")
         String permissionsJson) {
 }
+
+

@@ -6,3 +6,5 @@ public record GeneralPreferenceRequest(
         String timezone,
         String theme) {
 }
+
+

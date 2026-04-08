@@ -1,6 +1,6 @@
 package com.ecommerce.identity.adapter.rest.controller;
 
-import com.ecommerce.identity.application.service.IdentityAdminUserService;
+import com.ecommerce.identity.application.service.AdminUserService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AdminUserControllerTest {
 
     @Mock
-    private IdentityAdminUserService adminUserService;
+    private AdminUserService adminUserService;
 
     @InjectMocks
     private AdminUserController adminUserController;
@@ -77,3 +77,5 @@ class AdminUserControllerTest {
                 .andExpect(content().string(Matchers.containsString("\"status\":\"ACTIVE\"")));
     }
 }
+
+

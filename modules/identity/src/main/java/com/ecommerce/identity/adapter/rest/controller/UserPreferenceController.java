@@ -73,3 +73,5 @@ public class UserPreferenceController {
 		return ResponseEntity.ok(ApiResponse.success(response, "AI privacy preferences updated"));
 	}
 }
+
+

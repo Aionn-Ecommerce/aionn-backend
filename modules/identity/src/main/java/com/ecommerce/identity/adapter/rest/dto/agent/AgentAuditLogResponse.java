@@ -10,3 +10,5 @@ public record AgentAuditLogResponse(
         String deviceId,
         LocalDateTime timestamp) {
 }
+
+

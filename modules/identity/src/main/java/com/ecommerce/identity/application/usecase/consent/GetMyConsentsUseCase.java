@@ -1,7 +1,6 @@
 package com.ecommerce.identity.application.usecase.consent;
 
-import com.ecommerce.identity.adapter.rest.mapper.consent.ConsentDtoMapper;
-import com.ecommerce.identity.application.dto.consent.ConsentResult;
+import com.ecommerce.identity.application.dto.consent.result.ConsentResult;
 import com.ecommerce.identity.application.port.in.consent.GetMyConsentsQueryPort;
 import com.ecommerce.identity.application.service.ConsentService;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +14,10 @@ import java.util.List;
 public class GetMyConsentsUseCase implements GetMyConsentsQueryPort {
 
     private final ConsentService consentService;
-    private final ConsentDtoMapper consentDtoMapper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
     public List<ConsentResult> execute(String userId) {
-        var entities = consentService.listMy(userId);
-        return consentDtoMapper.toConsentResults(entities);
+        return consentService.listMy(userId);
     }
 }

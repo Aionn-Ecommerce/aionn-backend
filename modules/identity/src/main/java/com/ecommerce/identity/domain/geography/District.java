@@ -19,7 +19,7 @@ public class District {
     private String code; // VN-HN-BA, VN-SG-Q1
 
     @Column(nullable = false, length = 100)
-    private String name; // Ba Đình, Quận 1
+    private String name; // Ba Ã„ÂÃƒÂ¬nh, QuÃ¡ÂºÂ­n 1
 
     @Column(name = "name_en", length = 100)
     private String nameEn; // Ba Dinh, District 1
@@ -34,3 +34,5 @@ public class District {
     @Column(nullable = false)
     private Boolean active = true;
 }
+
+

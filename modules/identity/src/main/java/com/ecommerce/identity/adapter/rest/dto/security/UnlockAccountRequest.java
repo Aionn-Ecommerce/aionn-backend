@@ -6,3 +6,5 @@ public record UnlockAccountRequest(
         @NotBlank(message = "User ID is required")
         String userId) {
 }
+
+

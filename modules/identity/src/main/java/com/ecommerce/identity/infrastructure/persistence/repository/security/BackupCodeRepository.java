@@ -11,3 +11,5 @@ public interface BackupCodeRepository extends JpaRepository<BackupCodeEntity, St
 
     void deleteByUser_UserId(String userId);
 }
+
+

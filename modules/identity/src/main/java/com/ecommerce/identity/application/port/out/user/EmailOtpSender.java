@@ -4,3 +4,5 @@ public interface EmailOtpSender {
 
     void sendOtp(String email, String otpCode);
 }
+
+

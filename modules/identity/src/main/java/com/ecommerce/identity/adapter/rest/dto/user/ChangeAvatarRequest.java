@@ -6,3 +6,5 @@ public record ChangeAvatarRequest(
         @NotBlank(message = "Avatar URL is required")
         String avatarUrl) {
 }
+
+

@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.usecase.kyc;
 
-import com.ecommerce.identity.adapter.rest.mapper.kyc.KycDtoMapper;
-import com.ecommerce.identity.application.dto.kyc.KycResult;
-import com.ecommerce.identity.application.dto.kyc.ReviewKycCommand;
+import com.ecommerce.identity.application.dto.kyc.result.KycResult;
+import com.ecommerce.identity.application.dto.kyc.command.ReviewKycCommand;
+import com.ecommerce.identity.application.mapper.KycResultMapper;
 import com.ecommerce.identity.application.port.in.kyc.ReviewKycInputPort;
 import com.ecommerce.identity.application.service.KycService;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewKycUseCase implements ReviewKycInputPort {
 
     private final KycService kycService;
-    private final KycDtoMapper kycDtoMapper;
+    private final KycResultMapper kycResultMapper;
 
     @Override
     @Transactional
     public KycResult execute(ReviewKycCommand command) {
         var entity = kycService.review(command.adminId(), command.kycId(), command.note());
-        return kycDtoMapper.toKycResult(entity);
+        return kycResultMapper.toResult(entity);
     }
 }

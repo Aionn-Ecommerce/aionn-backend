@@ -1,8 +1,8 @@
 package com.ecommerce.identity.application.usecase.auth;
 
+import com.ecommerce.identity.application.dto.auth.view.AuthSessionView;
+import com.ecommerce.identity.application.dto.auth.query.GetAuthSessionsQuery;
 import com.ecommerce.identity.adapter.rest.mapper.auth.AuthDtoMapper;
-import com.ecommerce.identity.application.dto.auth.AuthSessionView;
-import com.ecommerce.identity.application.dto.auth.GetAuthSessionsQuery;
 import com.ecommerce.identity.application.port.in.auth.GetAuthSessionsQueryPort;
 import com.ecommerce.identity.application.service.AuthService;
 import lombok.RequiredArgsConstructor;

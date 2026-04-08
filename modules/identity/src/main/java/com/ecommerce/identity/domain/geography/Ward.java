@@ -19,7 +19,7 @@ public class Ward {
     private String code; // VN-HN-BA-PH, VN-SG-Q1-BN
 
     @Column(nullable = false, length = 100)
-    private String name; // Phúc Xá, Bến Nghé
+    private String name; // PhÃƒÂºc XÃƒÂ¡, BÃ¡ÂºÂ¿n NghÃƒÂ©
 
     @Column(name = "name_en", length = 100)
     private String nameEn; // Phuc Xa, Ben Nghe
@@ -34,3 +34,5 @@ public class Ward {
     @Column(nullable = false)
     private Boolean active = true;
 }
+
+

@@ -1,0 +1,22 @@
+package com.ecommerce.identity.infrastructure.persistence.mapper;
+
+import com.ecommerce.identity.domain.model.SecurityAudit;
+import com.ecommerce.identity.infrastructure.persistence.entity.SecurityAuditEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+/**
+ * MapStruct mapper for converting between SecurityAudit domain model and
+ * SecurityAuditEntity.
+ */
+@Mapper(componentModel = "spring")
+public interface SecurityAuditDomainMapper {
+
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "auditId", source = "id")
+    SecurityAuditEntity toEntity(SecurityAudit domain);
+
+    @Mapping(target = "id", source = "auditId")
+    @Mapping(target = "userId", source = "user.userId")
+    SecurityAudit toDomain(SecurityAuditEntity entity);
+}

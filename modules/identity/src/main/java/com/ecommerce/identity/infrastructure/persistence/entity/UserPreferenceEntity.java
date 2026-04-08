@@ -53,3 +53,5 @@ public class UserPreferenceEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
+
+

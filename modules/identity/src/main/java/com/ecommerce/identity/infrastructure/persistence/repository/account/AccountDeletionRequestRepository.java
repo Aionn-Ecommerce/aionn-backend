@@ -9,3 +9,5 @@ public interface AccountDeletionRequestRepository extends JpaRepository<AccountD
 
     Optional<AccountDeletionRequestEntity> findByUser_UserIdAndStatus(String userId, String status);
 }
+
+

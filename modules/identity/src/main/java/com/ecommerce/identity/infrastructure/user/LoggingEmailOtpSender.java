@@ -13,3 +13,5 @@ public class LoggingEmailOtpSender implements EmailOtpSender {
         log.info("[USER-EMAIL-OTP] email={}, otp={}", email, otpCode);
     }
 }
+
+

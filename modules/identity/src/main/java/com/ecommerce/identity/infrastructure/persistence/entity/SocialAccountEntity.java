@@ -38,3 +38,5 @@ public class SocialAccountEntity {
     private LocalDateTime createdAt;
 
 }
+
+

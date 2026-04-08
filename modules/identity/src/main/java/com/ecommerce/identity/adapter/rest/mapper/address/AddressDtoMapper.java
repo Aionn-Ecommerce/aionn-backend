@@ -3,10 +3,13 @@ package com.ecommerce.identity.adapter.rest.mapper.address;
 import com.ecommerce.identity.adapter.rest.dto.address.AddressResponse;
 import com.ecommerce.identity.adapter.rest.dto.address.CreateAddressRequest;
 import com.ecommerce.identity.adapter.rest.dto.address.UpdateAddressRequest;
-import com.ecommerce.identity.application.dto.address.*;
+import com.ecommerce.identity.application.dto.address.command.CreateAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.DeleteAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.SetDefaultAddressCommand;
+import com.ecommerce.identity.application.dto.address.command.UpdateAddressCommand;
+import com.ecommerce.identity.application.dto.address.result.AddressResult;
 import com.ecommerce.identity.domain.exception.IdentityErrorCode;
 import com.ecommerce.identity.domain.exception.IdentityException;
-import com.ecommerce.identity.domain.model.Address;
 import com.ecommerce.identity.domain.valueobject.AddressType;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -28,8 +31,6 @@ public interface AddressDtoMapper {
 	SetDefaultAddressCommand toSetDefaultCommand(String userId, String addressId);
 
 	// result -> response
-	AddressResult toResult(Address address);
-
 	AddressResponse toResponse(AddressResult result);
 
 	List<AddressResponse> toResponses(List<AddressResult> results);

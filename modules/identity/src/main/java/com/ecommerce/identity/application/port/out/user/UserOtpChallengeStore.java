@@ -12,3 +12,5 @@ public interface UserOtpChallengeStore {
 
     void delete(String userId, UserOtpPurpose purpose);
 }
+
+

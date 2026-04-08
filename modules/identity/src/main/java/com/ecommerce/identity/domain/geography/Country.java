@@ -17,7 +17,7 @@ public class Country {
     private String code; // VN, US, JP
 
     @Column(nullable = false, length = 100)
-    private String name; // Việt Nam, United States
+    private String name; // ViÃ¡Â»â€¡t Nam, United States
 
     @Column(name = "name_en", length = 100)
     private String nameEn; // Vietnam, United States
@@ -28,3 +28,5 @@ public class Country {
     @Column(nullable = false)
     private Boolean active = true;
 }
+
+
