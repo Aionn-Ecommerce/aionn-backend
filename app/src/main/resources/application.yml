@@ -38,10 +38,10 @@ springdoc:
 
 identity:
   registration:
-    max-verify-attempts: ${MAX_VERIFY_ATTEMPTS:5}
-    resend-cooldown-seconds: ${RESEND_COOLDOWN_SECONDS:60}
-    otp-expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
-    expose-otp-in-response: ${IDENTITY_REGISTRATION_EXPOSE_OTP_IN_RESPONSE:false}
+    max-verify-attempts: ${MAX_VERIFY_ATTEMPTS}
+    resend-cooldown-seconds: ${RESEND_COOLDOWN_SECONDS}
+    otp-expiry-seconds: ${OTP_EXPIRY_SECONDS}
+    expose-otp-in-response: ${IDENTITY_REGISTRATION_EXPOSE_OTP_IN_RESPONSE}
     captcha:
       provider: ${CAPTCHA_PROVIDER:mock}
       expected-token: ${CAPTCHA_EXPECTED_TOKEN:}
@@ -59,8 +59,8 @@ security:
     rate-limits:
       - path: /api/v1/registrations/initiate
         method: POST
-        max-requests: ${SECURITY_IP_REG_INIT_MAX_REQUESTS:5}
-        window-seconds: ${SECURITY_IP_REG_INIT_WINDOW_SECONDS:60}
+        max-requests: ${SECURITY_IP_REG_INIT_MAX_REQUESTS}
+        window-seconds: ${SECURITY_IP_REG_INIT_WINDOW_SECONDS}
 
 logging:
   level:
