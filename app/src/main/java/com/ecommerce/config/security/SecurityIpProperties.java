@@ -34,7 +34,7 @@ public class SecurityIpProperties {
 	public static class RateLimitRule {
 		private String path;
 		private String method;
-		private int maxRequests = 5; //default
-		private int windowSeconds = 60; //default
+		private int maxRequests;
+		private int windowSeconds;
 	}
 }

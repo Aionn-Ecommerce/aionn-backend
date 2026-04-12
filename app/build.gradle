@@ -4,10 +4,8 @@ plugins {
 }
 
 dependencies {
-    // All modules
     implementation project(':shared-kernel')
     implementation project(':modules:identity')
-    implementation project(':modules:ucp')
     implementation project(':modules:catalog')
     implementation project(':modules:inventory')
     implementation project(':modules:ordering')
@@ -16,7 +14,6 @@ dependencies {
     implementation project(':modules:notification')
     implementation project(':modules:promotion')
 
-    // Database
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -25,7 +22,4 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
-    // Monitoring
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }
