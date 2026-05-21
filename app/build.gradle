@@ -15,8 +15,10 @@ dependencies {
     implementation project(':modules:shipping')
     implementation project(':modules:notification')
     implementation project(':modules:promotion')
+    implementation project(':modules:chat')
 
-    // Database
+    // base
+    implementation 'io.github.cdimascio:dotenv-java:3.1.0'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -28,4 +30,10 @@ dependencies {
 
     // Monitoring
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

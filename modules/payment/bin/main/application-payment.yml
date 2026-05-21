@@ -1,7 +1,0 @@
-spring:
-  application:
-    name: payment
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration

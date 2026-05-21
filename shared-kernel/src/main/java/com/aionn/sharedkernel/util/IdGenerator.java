@@ -4,11 +4,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 
-/**
- * ULID (Universally Unique Lexicographically Sortable Identifier) generator.
- * All entity IDs in the system use ULID format (26 Crockford Base32
- * characters).
- */
 public final class IdGenerator {
 
     private IdGenerator() {
@@ -27,16 +22,10 @@ public final class IdGenerator {
         }
     }
 
-    /**
-     * Generate a new ULID using current timestamp.
-     */
     public static String ulid() {
         return ulid(Instant.now().toEpochMilli());
     }
 
-    /**
-     * Generate a ULID with a specific timestamp (useful for testing or replay).
-     */
     public static String ulid(long timestampMs) {
         char[] ulid = new char[26];
 
@@ -73,9 +62,6 @@ public final class IdGenerator {
         return new String(ulid);
     }
 
-    /**
-     * Validate whether a string is a valid ULID.
-     */
     public static boolean isValid(String value) {
         if (value == null || value.length() != 26) {
             return false;
@@ -89,9 +75,6 @@ public final class IdGenerator {
         return true;
     }
 
-    /**
-     * Extract the timestamp (epoch millis) from a ULID string.
-     */
     public static long extractTimestamp(String ulid) {
         if (ulid == null || ulid.length() != 26) {
             throw new IllegalArgumentException("Invalid ULID: " + ulid);

@@ -101,18 +101,6 @@ public record Money(BigDecimal amount, String currency) {
         return this.amount.compareTo(other.amount) >= 0;
     }
 
-    /** @deprecated Use {@link #isGreaterThan(Money)} instead. */
-    @Deprecated(forRemoval = true)
-    public boolean greaterThan(Money other) {
-        return isGreaterThan(other);
-    }
-
-    /** @deprecated Use {@link #isGreaterOrEqual(Money)} instead. */
-    @Deprecated(forRemoval = true)
-    public boolean greaterOrEqual(Money other) {
-        return isGreaterOrEqual(other);
-    }
-
     public boolean isLessThan(Money other) {
         ensureSameCurrency(other);
         return this.amount.compareTo(other.amount) < 0;

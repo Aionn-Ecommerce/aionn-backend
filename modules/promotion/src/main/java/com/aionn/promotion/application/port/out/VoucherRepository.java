@@ -1,0 +1,18 @@
+package com.aionn.promotion.application.port.out;
+
+import com.aionn.promotion.domain.model.Voucher;
+
+import java.util.Optional;
+
+public interface VoucherRepository {
+
+    Voucher save(Voucher voucher);
+
+    Optional<Voucher> findByCode(String voucherCode);
+
+    /**
+     * Pessimistic lock used by reserve/apply/release to serialize counter updates.
+     */
+    Optional<Voucher> lockByCode(String voucherCode);
+}
+

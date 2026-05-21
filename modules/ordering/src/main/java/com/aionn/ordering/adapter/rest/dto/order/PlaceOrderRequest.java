@@ -1,0 +1,18 @@
+package com.aionn.ordering.adapter.rest.dto.order;
+
+import com.aionn.ordering.domain.valueobject.ShippingAddress;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
+
+public record PlaceOrderRequest(
+        @NotBlank String addressId,
+        @NotBlank String paymentMethodId,
+        @Size(min = 3, max = 3) String currency,
+        @DecimalMin(value = "0.0") BigDecimal shippingFee,
+        @Valid ShippingAddress shippingAddress) {
+}
+

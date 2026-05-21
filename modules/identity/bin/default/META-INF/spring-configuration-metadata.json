@@ -2,184 +2,251 @@
   "groups": [
     {
       "name": "identity.address",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.AddressProperties",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AddressProperties"
+      "type": "com.aionn.identity.infrastructure.config.properties.AddressProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AddressProperties"
     },
     {
       "name": "identity.agent",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.AgentProperties",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AgentProperties"
+      "type": "com.aionn.identity.infrastructure.config.properties.AgentProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AgentProperties"
     },
     {
       "name": "identity.auth",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.AuthProperties",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AuthProperties"
+      "type": "com.aionn.identity.infrastructure.config.properties.AuthProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AuthProperties"
     },
     {
       "name": "identity.auth.session",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.AuthSessionProperties",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AuthSessionProperties"
+      "type": "com.aionn.identity.infrastructure.config.properties.AuthSessionProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AuthSessionProperties"
+    },
+    {
+      "name": "identity.jwt",
+      "type": "com.aionn.identity.infrastructure.config.properties.JwtProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.JwtProperties"
+    },
+    {
+      "name": "identity.media.cloudinary",
+      "type": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties"
     },
     {
       "name": "identity.registration",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties"
+      "type": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties"
     },
     {
       "name": "identity.registration.captcha",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
-      "sourceMethod": "public com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties.Captcha captcha() "
+      "type": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceMethod": "public com.aionn.identity.infrastructure.config.properties.RegistrationProperties.Captcha captcha() "
     },
     {
       "name": "identity.registration.rate-limit",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
-      "sourceMethod": "public com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties.RateLimit rateLimit() "
+      "type": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceMethod": "public com.aionn.identity.infrastructure.config.properties.RegistrationProperties.RateLimit rateLimit() "
     },
     {
       "name": "identity.registration.twilio",
-      "type": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
-      "sourceMethod": "public com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties.Twilio twilio() "
+      "type": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceMethod": "public com.aionn.identity.infrastructure.config.properties.RegistrationProperties.Twilio twilio() "
     }
   ],
   "properties": [
     {
       "name": "identity.address.max-address-numbers",
       "type": "java.lang.Long",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AddressProperties",
-      "defaultValue": 0
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AddressProperties",
+      "defaultValue": 5
     },
     {
       "name": "identity.agent.key-expiry-years",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AgentProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AgentProperties",
       "defaultValue": 1
     },
     {
       "name": "identity.auth.client-type-header",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AuthProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AuthProperties",
       "defaultValue": "X-Client-Type"
     },
     {
       "name": "identity.auth.mobile-client-value",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AuthProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AuthProperties",
       "defaultValue": "mobile"
     },
     {
       "name": "identity.auth.session.expires-days",
       "type": "java.lang.Long",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.AuthSessionProperties"
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.AuthSessionProperties"
+    },
+    {
+      "name": "identity.jwt.access-token-expiry-minutes",
+      "type": "java.lang.Integer",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.JwtProperties",
+      "defaultValue": 15
+    },
+    {
+      "name": "identity.jwt.issuer",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.JwtProperties",
+      "defaultValue": "aionn-identity"
+    },
+    {
+      "name": "identity.jwt.secret",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.JwtProperties",
+      "defaultValue": "dev-only-secret-please-override-min-32-bytes!!"
+    },
+    {
+      "name": "identity.media.cloudinary.api-key",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties"
+    },
+    {
+      "name": "identity.media.cloudinary.api-secret",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties"
+    },
+    {
+      "name": "identity.media.cloudinary.avatar-folder",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties",
+      "defaultValue": "identity\/avatars"
+    },
+    {
+      "name": "identity.media.cloudinary.cloud-name",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties"
+    },
+    {
+      "name": "identity.media.cloudinary.kyc-folder",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties",
+      "defaultValue": "identity\/kyc"
+    },
+    {
+      "name": "identity.media.cloudinary.signature-expiry-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties",
+      "defaultValue": 600
+    },
+    {
+      "name": "identity.media.cloudinary.upload-base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.CloudinaryProperties",
+      "defaultValue": "https:\/\/api.cloudinary.com\/v1_1"
     },
     {
       "name": "identity.registration.captcha.expected-token",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
       "defaultValue": ""
     },
     {
       "name": "identity.registration.captcha.google-secret-key",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
       "defaultValue": ""
     },
     {
       "name": "identity.registration.captcha.google-site-key",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
       "defaultValue": ""
     },
     {
       "name": "identity.registration.captcha.provider",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Captcha",
       "defaultValue": "mock"
     },
     {
       "name": "identity.registration.default-country-calling-code",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": "+84"
     },
     {
       "name": "identity.registration.expose-otp-in-response",
       "type": "java.lang.Boolean",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": false
     },
     {
       "name": "identity.registration.max-verify-attempts",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": 5
     },
     {
       "name": "identity.registration.otp-expiry-seconds",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": 300
     },
     {
       "name": "identity.registration.rate-limit.ip-max-attempts",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
       "defaultValue": 3
     },
     {
       "name": "identity.registration.rate-limit.ip-window-seconds",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
       "defaultValue": 300
     },
     {
       "name": "identity.registration.rate-limit.phone-max-attempts",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
       "defaultValue": 1
     },
     {
       "name": "identity.registration.rate-limit.phone-window-seconds",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$RateLimit",
       "defaultValue": 60
     },
     {
       "name": "identity.registration.resend-cooldown-seconds",
       "type": "java.lang.Integer",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": 60
     },
     {
       "name": "identity.registration.session-expires-days",
       "type": "java.lang.Long",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties",
       "defaultValue": 30
     },
     {
       "name": "identity.registration.twilio.account-sid",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
       "defaultValue": ""
     },
     {
       "name": "identity.registration.twilio.auth-token",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
       "defaultValue": ""
     },
     {
       "name": "identity.registration.twilio.enabled",
       "type": "java.lang.Boolean",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
       "defaultValue": false
     },
     {
       "name": "identity.registration.twilio.from-phone-number",
       "type": "java.lang.String",
-      "sourceType": "com.ecommerce.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
+      "sourceType": "com.aionn.identity.infrastructure.config.properties.RegistrationProperties$Twilio",
       "defaultValue": ""
     }
   ],

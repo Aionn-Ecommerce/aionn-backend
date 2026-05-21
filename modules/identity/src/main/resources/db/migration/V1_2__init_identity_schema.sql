@@ -28,11 +28,11 @@ CREATE TABLE kyc_profiles (
     kyc_id VARCHAR(26) PRIMARY KEY,
     user_id VARCHAR(26) NOT NULL,
     doc_type VARCHAR(50) NOT NULL,
-    blob_url TEXT NOT NULL,
+    blob_url TEXT,
     status VARCHAR(20) NOT NULL,
     admin_id VARCHAR(26),
     reason TEXT,
-    submitted_at TIMESTAMP NOT NULL,
+    submitted_at TIMESTAMP,
     approved_at TIMESTAMP,
     expired_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
