@@ -3,7 +3,7 @@ version: "3.8"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: ecommerce-postgres
+    container_name: aionn-postgres
     environment:
       - POSTGRES_DB=${POSTGRES_DB_NAME}
       - POSTGRES_USER=${POSTGRES_DB_USER}
@@ -12,14 +12,26 @@ services:
       - "${POSTGRES_LOCAL_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: ecommerce-redis
+    container_name: aionn-redis
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     ports:
       - "${REDIS_LOCAL_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:
+  redis_data:

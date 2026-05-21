@@ -1,33 +1,30 @@
-ifeq ($(OS),Windows_NT)
-GRADLEW := .\\gradlew.bat
-else
-GRADLEW := ./gradlew
-endif
+CONTAINER ?= docker
 
-CONTAINER := docker
-
-.PHONY: build build-share-kernel test run clean up down logs
+.PHONY: build test smoke run clean reset-db up down
 
 build:
-	$(GRADLEW) build -x test
-
-build-share-kernel:
-	$(GRADLEW) :shared-kernel:build
+	./gradlew build -x test
 
 test:
-	$(GRADLEW) test
+	./gradlew test
+
+smoke:
+	./gradlew :app:test
 
 run:
-	$(GRADLEW) :app:bootRun
+	./gradlew :app:bootRun
 
 clean:
-	$(GRADLEW) clean
+	./gradlew clean
+
+reset-db:
+	@echo "Resetting Postgres database schema..."
+	$(CONTAINER) exec aionn-postgres psql -U postgres -d "aionn" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+	@echo "Flushing Redis cache..."
+	$(CONTAINER) exec aionn-redis redis-cli -a hello FLUSHALL
 
 up:
 	$(CONTAINER) compose up -d
 
 down:
 	$(CONTAINER) compose down
-
-logs:
-	$(CONTAINER) compose logs -f

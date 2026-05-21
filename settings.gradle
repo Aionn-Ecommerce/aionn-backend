@@ -1,34 +1,14 @@
-rootProject.name = 'ecommerce-modular-monolith'
+rootProject.name = 'aionn'
 
-// Shared Kernel - Base classes, utilities, events
 include 'shared-kernel'
-
-// Module 1: Identity
 include 'modules:identity'
-
-// Module 2: UCP Gateway
 include 'modules:ucp'
-
-// Module 3: Catalog
 include 'modules:catalog'
-
-// Module 4: Inventory
 include 'modules:inventory'
-
-// Module 5: Ordering
 include 'modules:ordering'
-
-// Module 6: Payment
 include 'modules:payment'
-
-// Module 7: Shipping
 include 'modules:shipping'
-
-// Module 8: Notification
 include 'modules:notification'
-
-// Module 9: Promotion
 include 'modules:promotion'
-
-// Main Application (Bootstrap)
+include 'modules:chat'
 include 'app'
