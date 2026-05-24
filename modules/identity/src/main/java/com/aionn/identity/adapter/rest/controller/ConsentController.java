@@ -1,8 +1,8 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.consent.ConsentResponse;
-import com.aionn.identity.adapter.rest.dto.consent.MarketingConsentRequest;
-import com.aionn.identity.adapter.rest.dto.consent.TermsConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.request.MarketingConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.request.TermsConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.response.ConsentResponse;
 import com.aionn.identity.adapter.rest.mapper.consent.ConsentDtoMapper;
 import com.aionn.sharedkernel.adapter.web.support.ClientIp;
 import com.aionn.identity.application.port.in.consent.AgreePrivacyInputPort;
@@ -78,6 +78,5 @@ public class ConsentController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Marketing consent updated"));
 	}
 }
-
 
 

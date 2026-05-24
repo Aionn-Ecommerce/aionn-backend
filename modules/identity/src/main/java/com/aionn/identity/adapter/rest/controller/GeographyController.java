@@ -1,6 +1,6 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.geography.GeographyResponse;
+import com.aionn.identity.adapter.rest.dto.geography.response.GeographyResponse;
 import com.aionn.identity.adapter.rest.mapper.geography.GeographyDtoMapper;
 import com.aionn.identity.application.service.GeographyService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -80,4 +80,3 @@ public class GeographyController {
         return ResponseEntity.ok(ApiResponse.success(geographyDtoMapper.toResponse(result), "Ward fetched"));
     }
 }
-

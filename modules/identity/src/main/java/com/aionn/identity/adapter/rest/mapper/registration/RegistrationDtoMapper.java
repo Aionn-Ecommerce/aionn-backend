@@ -1,7 +1,11 @@
 package com.aionn.identity.adapter.rest.mapper.registration;
 
-import com.aionn.identity.adapter.rest.dto.auth.AuthTokenResponse;
-import com.aionn.identity.adapter.rest.dto.registration.*;
+import com.aionn.identity.adapter.rest.dto.auth.response.AuthTokenResponse;
+import com.aionn.identity.adapter.rest.dto.registration.request.CompleteRegistrationRequest;
+import com.aionn.identity.adapter.rest.dto.registration.request.InitiateRegistrationRequest;
+import com.aionn.identity.adapter.rest.dto.registration.request.VerifyOtpRequest;
+import com.aionn.identity.adapter.rest.dto.registration.response.RegistrationSessionResponse;
+import com.aionn.identity.adapter.rest.dto.registration.response.VerifyOtpResponse;
 import com.aionn.identity.application.dto.registration.command.CompleteRegistrationCommand;
 import com.aionn.identity.application.dto.registration.command.InitiateRegistrationCommand;
 import com.aionn.identity.application.dto.registration.command.ResendRegistrationOtpCommand;
@@ -37,4 +41,3 @@ public interface RegistrationDtoMapper {
 
 	RegistrationSessionResponse toResendOtpResponse(ResendRegistrationOtpResult result);
 }
-

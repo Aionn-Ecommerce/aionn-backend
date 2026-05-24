@@ -1,8 +1,8 @@
 package com.aionn.identity.adapter.rest.mapper.address;
 
-import com.aionn.identity.adapter.rest.dto.address.AddressResponse;
-import com.aionn.identity.adapter.rest.dto.address.CreateAddressRequest;
-import com.aionn.identity.adapter.rest.dto.address.UpdateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.request.CreateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.request.UpdateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.response.AddressResponse;
 import com.aionn.identity.application.dto.address.command.CreateAddressCommand;
 import com.aionn.identity.application.dto.address.command.DeleteAddressCommand;
 import com.aionn.identity.application.dto.address.command.SetDefaultAddressCommand;
@@ -46,4 +46,3 @@ public interface AddressDtoMapper {
 		}
 	}
 }
-

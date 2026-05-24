@@ -1,6 +1,6 @@
 package com.aionn.identity.adapter.rest.mapper.geography;
 
-import com.aionn.identity.adapter.rest.dto.geography.GeographyResponse;
+import com.aionn.identity.adapter.rest.dto.geography.response.GeographyResponse;
 import com.aionn.identity.application.dto.geography.result.GeographyResult;
 import org.mapstruct.Mapper;
 
@@ -13,4 +13,3 @@ public interface GeographyDtoMapper {
 
     List<GeographyResponse> toResponses(List<GeographyResult> results);
 }
-

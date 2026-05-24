@@ -1,15 +1,15 @@
 package com.aionn.identity.adapter.rest.mapper.security;
 
-import com.aionn.identity.adapter.rest.dto.security.BackupCodesResponse;
-import com.aionn.identity.adapter.rest.dto.security.ChangePasswordRequest;
-import com.aionn.identity.adapter.rest.dto.security.CompletePasswordResetRequest;
-import com.aionn.identity.adapter.rest.dto.security.MfaResponse;
-import com.aionn.identity.adapter.rest.dto.security.MfaSetupRequest;
-import com.aionn.identity.adapter.rest.dto.security.MfaSetupResponse;
-import com.aionn.identity.adapter.rest.dto.security.MfaToggleRequest;
-import com.aionn.identity.adapter.rest.dto.security.PasswordResetRequestCommand;
-import com.aionn.identity.adapter.rest.dto.security.PasswordResetResponse;
-import com.aionn.identity.adapter.rest.dto.security.SecurityAuditLogResponse;
+import com.aionn.identity.adapter.rest.dto.security.request.ChangePasswordRequest;
+import com.aionn.identity.adapter.rest.dto.security.request.CompletePasswordResetRequest;
+import com.aionn.identity.adapter.rest.dto.security.request.MfaSetupRequest;
+import com.aionn.identity.adapter.rest.dto.security.request.MfaToggleRequest;
+import com.aionn.identity.adapter.rest.dto.security.request.PasswordResetRequestCommand;
+import com.aionn.identity.adapter.rest.dto.security.response.BackupCodesResponse;
+import com.aionn.identity.adapter.rest.dto.security.response.MfaResponse;
+import com.aionn.identity.adapter.rest.dto.security.response.MfaSetupResponse;
+import com.aionn.identity.adapter.rest.dto.security.response.PasswordResetResponse;
+import com.aionn.identity.adapter.rest.dto.security.response.SecurityAuditLogResponse;
 import com.aionn.identity.application.dto.security.result.BackupCodesResult;
 import com.aionn.identity.application.dto.security.command.ChangePasswordCommand;
 import com.aionn.identity.application.dto.security.command.EnableMfaCommand;

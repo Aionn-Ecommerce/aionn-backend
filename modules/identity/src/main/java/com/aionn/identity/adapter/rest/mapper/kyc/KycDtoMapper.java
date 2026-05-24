@@ -1,8 +1,8 @@
 package com.aionn.identity.adapter.rest.mapper.kyc;
 
-import com.aionn.identity.adapter.rest.dto.kyc.CreateKycRequest;
-import com.aionn.identity.adapter.rest.dto.kyc.KycResponse;
-import com.aionn.identity.adapter.rest.dto.kyc.KycVerificationSessionResponse;
+import com.aionn.identity.adapter.rest.dto.kyc.request.CreateKycRequest;
+import com.aionn.identity.adapter.rest.dto.kyc.response.KycResponse;
+import com.aionn.identity.adapter.rest.dto.kyc.response.KycVerificationSessionResponse;
 import com.aionn.identity.application.dto.kyc.command.CreateKycCommand;
 import com.aionn.identity.application.dto.kyc.query.GetKycQuery;
 import com.aionn.identity.application.dto.kyc.result.KycResult;

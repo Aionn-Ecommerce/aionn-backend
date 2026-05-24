@@ -1,9 +1,9 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.agent.AgentAuditLogResponse;
-import com.aionn.identity.adapter.rest.dto.agent.AgentIdentityResponse;
-import com.aionn.identity.adapter.rest.dto.agent.CreateAgentIdentityRequest;
-import com.aionn.identity.adapter.rest.dto.agent.UpdateAgentPermissionsRequest;
+import com.aionn.identity.adapter.rest.dto.agent.request.CreateAgentIdentityRequest;
+import com.aionn.identity.adapter.rest.dto.agent.request.UpdateAgentPermissionsRequest;
+import com.aionn.identity.adapter.rest.dto.agent.response.AgentAuditLogResponse;
+import com.aionn.identity.adapter.rest.dto.agent.response.AgentIdentityResponse;
 import com.aionn.identity.adapter.rest.mapper.agent.AgentIdentityDtoMapper;
 import com.aionn.identity.application.port.in.agent.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -109,4 +109,3 @@ public class AgentIdentityController {
                 return ResponseEntity.ok(ApiResponse.success("Agent identity revoked"));
         }
 }
-

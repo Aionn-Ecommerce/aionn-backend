@@ -1,11 +1,11 @@
 package com.aionn.identity.adapter.rest.mapper.admin;
 
-import com.aionn.identity.adapter.rest.dto.admin.UpdateRolesRequest;
-import com.aionn.identity.adapter.rest.dto.admin.UpdateUserStatusRequest;
-import com.aionn.identity.adapter.rest.dto.admin.UserDetailResponse;
-import com.aionn.identity.adapter.rest.dto.admin.UserRolesResponse;
-import com.aionn.identity.adapter.rest.dto.admin.UserStatusResponse;
-import com.aionn.identity.adapter.rest.dto.admin.UserSummaryResponse;
+import com.aionn.identity.adapter.rest.dto.admin.request.UpdateRolesRequest;
+import com.aionn.identity.adapter.rest.dto.admin.request.UpdateUserStatusRequest;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserDetailResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserRolesResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserStatusResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserSummaryResponse;
 import com.aionn.identity.application.dto.admin.query.GetUserQuery;
 import com.aionn.identity.application.dto.admin.command.RemoveUserRolesCommand;
 import com.aionn.identity.application.dto.admin.result.UserDetailResult;
@@ -67,4 +67,3 @@ public interface AdminUserDtoMapper {
                 totalPages);
     }
 }
-

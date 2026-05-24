@@ -1,7 +1,12 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.admin.*;
-import com.aionn.identity.adapter.rest.dto.security.UnlockAccountRequest;
+import com.aionn.identity.adapter.rest.dto.admin.request.UpdateRolesRequest;
+import com.aionn.identity.adapter.rest.dto.admin.request.UpdateUserStatusRequest;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserDetailResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserRolesResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserStatusResponse;
+import com.aionn.identity.adapter.rest.dto.admin.response.UserSummaryResponse;
+import com.aionn.identity.adapter.rest.dto.security.request.UnlockAccountRequest;
 import com.aionn.identity.adapter.rest.mapper.admin.AdminUserDtoMapper;
 import com.aionn.identity.adapter.rest.mapper.security.SecurityDtoMapper;
 import com.aionn.identity.application.port.in.admin.*;

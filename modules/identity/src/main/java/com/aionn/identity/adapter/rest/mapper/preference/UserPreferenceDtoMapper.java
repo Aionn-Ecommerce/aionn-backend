@@ -1,9 +1,9 @@
 package com.aionn.identity.adapter.rest.mapper.preference;
 
-import com.aionn.identity.adapter.rest.dto.preference.AiPrivacyPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.GeneralPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.NotificationPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.UserPreferenceResponse;
+import com.aionn.identity.adapter.rest.dto.preference.request.AiPrivacyPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.request.GeneralPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.request.NotificationPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.response.UserPreferenceResponse;
 import com.aionn.identity.application.dto.preference.command.UpdateAiPrivacyPreferenceCommand;
 import com.aionn.identity.application.dto.preference.command.UpdateGeneralPreferenceCommand;
 import com.aionn.identity.application.dto.preference.command.UpdateNotificationPreferenceCommand;
@@ -33,4 +33,3 @@ public interface UserPreferenceDtoMapper {
 
     UserPreferenceResponse toResponse(UserPreferenceResult preference);
 }
-

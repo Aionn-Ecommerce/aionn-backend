@@ -1,8 +1,8 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.address.AddressResponse;
-import com.aionn.identity.adapter.rest.dto.address.CreateAddressRequest;
-import com.aionn.identity.adapter.rest.dto.address.UpdateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.request.CreateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.request.UpdateAddressRequest;
+import com.aionn.identity.adapter.rest.dto.address.response.AddressResponse;
 import com.aionn.identity.adapter.rest.mapper.address.AddressDtoMapper;
 import com.aionn.identity.application.port.in.address.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -81,5 +81,4 @@ public class AddressController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Default address updated"));
 	}
 }
-
 

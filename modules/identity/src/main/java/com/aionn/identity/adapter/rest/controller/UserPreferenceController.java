@@ -1,9 +1,9 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.preference.AiPrivacyPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.GeneralPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.NotificationPreferenceRequest;
-import com.aionn.identity.adapter.rest.dto.preference.UserPreferenceResponse;
+import com.aionn.identity.adapter.rest.dto.preference.request.AiPrivacyPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.request.GeneralPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.request.NotificationPreferenceRequest;
+import com.aionn.identity.adapter.rest.dto.preference.response.UserPreferenceResponse;
 import com.aionn.identity.adapter.rest.mapper.preference.UserPreferenceDtoMapper;
 import com.aionn.identity.application.port.in.preference.GetUserPreferenceQueryPort;
 import com.aionn.identity.application.port.in.preference.UpdateAiPrivacyPreferenceInputPort;
@@ -73,6 +73,5 @@ public class UserPreferenceController {
 		return ResponseEntity.ok(ApiResponse.success(response, "AI privacy preferences updated"));
 	}
 }
-
 
 

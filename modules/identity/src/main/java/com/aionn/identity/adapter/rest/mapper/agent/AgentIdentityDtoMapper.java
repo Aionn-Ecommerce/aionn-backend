@@ -1,9 +1,9 @@
 package com.aionn.identity.adapter.rest.mapper.agent;
 
-import com.aionn.identity.adapter.rest.dto.agent.AgentAuditLogResponse;
-import com.aionn.identity.adapter.rest.dto.agent.AgentIdentityResponse;
-import com.aionn.identity.adapter.rest.dto.agent.CreateAgentIdentityRequest;
-import com.aionn.identity.adapter.rest.dto.agent.UpdateAgentPermissionsRequest;
+import com.aionn.identity.adapter.rest.dto.agent.request.CreateAgentIdentityRequest;
+import com.aionn.identity.adapter.rest.dto.agent.request.UpdateAgentPermissionsRequest;
+import com.aionn.identity.adapter.rest.dto.agent.response.AgentAuditLogResponse;
+import com.aionn.identity.adapter.rest.dto.agent.response.AgentIdentityResponse;
 import com.aionn.identity.application.dto.agent.result.AgentIdentityResult;
 import com.aionn.identity.application.dto.agent.command.CreateAgentIdentityCommand;
 import com.aionn.identity.application.dto.agent.query.GetAgentIdentityQuery;
@@ -56,4 +56,3 @@ public interface AgentIdentityDtoMapper {
 
     AgentAuditLogResponse toAuditLogResponse(AgentAuditLogResult audit);
 }
-

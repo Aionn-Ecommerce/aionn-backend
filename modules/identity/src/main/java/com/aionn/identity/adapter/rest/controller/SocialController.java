@@ -1,7 +1,7 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.auth.LinkSocialRequest;
-import com.aionn.identity.adapter.rest.dto.auth.SocialLinkResponse;
+import com.aionn.identity.adapter.rest.dto.auth.request.LinkSocialRequest;
+import com.aionn.identity.adapter.rest.dto.auth.response.SocialLinkResponse;
 import com.aionn.identity.adapter.rest.mapper.auth.AuthDtoMapper;
 import com.aionn.identity.application.port.in.auth.LinkSocialInputPort;
 import com.aionn.identity.application.port.in.auth.UnlinkSocialInputPort;

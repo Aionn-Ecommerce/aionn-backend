@@ -1,7 +1,7 @@
 package com.aionn.identity.adapter.rest.support;
 
-import com.aionn.identity.adapter.rest.dto.auth.AuthTokenResponse;
-import com.aionn.identity.adapter.rest.dto.auth.LogoutAllResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.AuthTokenResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.LogoutAllResponse;
 import com.aionn.identity.application.port.out.auth.AuthClientPolicy;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

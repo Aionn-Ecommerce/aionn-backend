@@ -1,6 +1,6 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.media.UploadSignatureResponse;
+import com.aionn.identity.adapter.rest.dto.media.response.UploadSignatureResponse;
 import com.aionn.identity.adapter.rest.mapper.media.MediaDtoMapper;
 import com.aionn.identity.application.port.in.media.GenerateAvatarUploadSignatureInputPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -31,5 +31,4 @@ public class MediaController {
         return ResponseEntity.ok(ApiResponse.success(response, "Avatar upload signature generated"));
     }
 }
-
 

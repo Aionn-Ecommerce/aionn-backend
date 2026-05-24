@@ -1,7 +1,11 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.auth.AuthTokenResponse;
-import com.aionn.identity.adapter.rest.dto.registration.*;
+import com.aionn.identity.adapter.rest.dto.auth.response.AuthTokenResponse;
+import com.aionn.identity.adapter.rest.dto.registration.request.CompleteRegistrationRequest;
+import com.aionn.identity.adapter.rest.dto.registration.request.InitiateRegistrationRequest;
+import com.aionn.identity.adapter.rest.dto.registration.request.VerifyOtpRequest;
+import com.aionn.identity.adapter.rest.dto.registration.response.RegistrationSessionResponse;
+import com.aionn.identity.adapter.rest.dto.registration.response.VerifyOtpResponse;
 import com.aionn.identity.adapter.rest.mapper.registration.RegistrationDtoMapper;
 import com.aionn.identity.adapter.rest.support.AuthClientType;
 import com.aionn.identity.adapter.rest.support.AuthTokenResponseHandler;

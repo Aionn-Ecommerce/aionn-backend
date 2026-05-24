@@ -1,14 +1,14 @@
 package com.aionn.identity.adapter.rest.mapper.auth;
 
-import com.aionn.identity.adapter.rest.dto.auth.AuthSessionResponse;
-import com.aionn.identity.adapter.rest.dto.auth.AuthTokenResponse;
-import com.aionn.identity.adapter.rest.dto.auth.LinkSocialRequest;
-import com.aionn.identity.adapter.rest.dto.auth.LoginRequest;
-import com.aionn.identity.adapter.rest.dto.auth.LogoutAllResponse;
-import com.aionn.identity.adapter.rest.dto.auth.RefreshTokenRequest;
-import com.aionn.identity.adapter.rest.dto.auth.SocialAuthRequest;
-import com.aionn.identity.adapter.rest.dto.auth.SocialAuthResponse;
-import com.aionn.identity.adapter.rest.dto.auth.SocialLinkResponse;
+import com.aionn.identity.adapter.rest.dto.auth.request.LinkSocialRequest;
+import com.aionn.identity.adapter.rest.dto.auth.request.LoginRequest;
+import com.aionn.identity.adapter.rest.dto.auth.request.RefreshTokenRequest;
+import com.aionn.identity.adapter.rest.dto.auth.request.SocialAuthRequest;
+import com.aionn.identity.adapter.rest.dto.auth.response.AuthSessionResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.AuthTokenResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.LogoutAllResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.SocialAuthResponse;
+import com.aionn.identity.adapter.rest.dto.auth.response.SocialLinkResponse;
 import com.aionn.identity.application.dto.auth.command.LinkSocialCommand;
 import com.aionn.identity.application.dto.auth.command.LoginCommand;
 import com.aionn.identity.application.dto.auth.command.LogoutAllCommand;

@@ -1,6 +1,13 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.adapter.rest.dto.user.*;
+import com.aionn.identity.adapter.rest.dto.user.request.ChangeAvatarRequest;
+import com.aionn.identity.adapter.rest.dto.user.request.ChangeDisplayNameRequest;
+import com.aionn.identity.adapter.rest.dto.user.request.ConfirmOtpRequest;
+import com.aionn.identity.adapter.rest.dto.user.request.RequestEmailChangeOtpRequest;
+import com.aionn.identity.adapter.rest.dto.user.request.RequestPhoneChangeOtpRequest;
+import com.aionn.identity.adapter.rest.dto.user.response.DataExportRequestResponse;
+import com.aionn.identity.adapter.rest.dto.user.response.DeletionRequestResponse;
+import com.aionn.identity.adapter.rest.dto.user.response.UserProfileResponse;
 import com.aionn.identity.adapter.rest.mapper.user.UserDtoMapper;
 import com.aionn.identity.application.port.in.user.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -40,15 +47,20 @@ public class UserController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Fetched user profile"));
 	}
 
-	@PostMapping("/verify-email")
-	@Operation(summary = "Verify email", description = "Verify user email address using verification token or code")
-	public ResponseEntity<ApiResponse<UserActionResponse>> verifyEmail(
+	@PostMapping("/verify-email/otp")
+	@Operation(summary = "Send verification email OTP", description = "Send OTP to the current primary email for verification")
+	public ResponseEntity<ApiResponse<Void>> sendVerifyEmailOtp(Authentication authentication) {
+		verifyEmailInputPort.sendOtp(authentication.getName());
+		return ResponseEntity.ok(ApiResponse.success("Verification OTP sent to email"));
+	}
+
+	@PostMapping("/verify-email/confirm")
+	@Operation(summary = "Confirm email verification OTP", description = "Confirm the OTP sent to the current primary email")
+	public ResponseEntity<ApiResponse<Void>> confirmVerifyEmailOtp(
 			Authentication authentication,
-			@Valid @RequestBody VerifyEmailRequest request) {
-		var result = verifyEmailInputPort
-				.execute(userDtoMapper.toVerifyEmailCommand(authentication.getName(), request));
-		UserActionResponse response = userDtoMapper.toActionResponse(result.action());
-		return ResponseEntity.ok(ApiResponse.success(response, result.message()));
+			@Valid @RequestBody ConfirmOtpRequest request) {
+		verifyEmailInputPort.confirm(authentication.getName(), request.otpCode());
+		return ResponseEntity.ok(ApiResponse.success("Email verified"));
 	}
 
 	@PatchMapping("/display-name")
@@ -73,26 +85,42 @@ public class UserController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Avatar updated"));
 	}
 
-	@PatchMapping("/email")
-	@Operation(summary = "Change email", description = "Request or complete email change flow for the authenticated user")
-	public ResponseEntity<ApiResponse<UserProfileResponse>> changeEmail(
+	@PostMapping("/email-change/otp")
+	@Operation(summary = "Request email change OTP", description = "Send OTP to the new email before changing the authenticated user's email")
+	public ResponseEntity<ApiResponse<Void>> requestEmailChangeOtp(
 			Authentication authentication,
-			@Valid @RequestBody ChangeEmailRequest request) {
-		var result = changeEmailInputPort
-				.execute(userDtoMapper.toChangeEmailCommand(authentication.getName(), request));
-		var response = userDtoMapper.toProfileActionResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, result.message()));
+			@Valid @RequestBody RequestEmailChangeOtpRequest request) {
+		changeEmailInputPort.sendOtp(authentication.getName(), request.newEmail());
+		return ResponseEntity.ok(ApiResponse.success("OTP sent to new email"));
 	}
 
-	@PatchMapping("/phone")
-	@Operation(summary = "Change phone", description = "Request or complete phone change flow for the authenticated user")
-	public ResponseEntity<ApiResponse<UserProfileResponse>> changePhone(
+	@PostMapping("/email-change/confirm")
+	@Operation(summary = "Confirm email change OTP", description = "Confirm the OTP sent to the new email and update the authenticated user's email")
+	public ResponseEntity<ApiResponse<UserProfileResponse>> confirmEmailChange(
 			Authentication authentication,
-			@Valid @RequestBody ChangePhoneRequest request) {
-		var result = changePhoneInputPort
-				.execute(userDtoMapper.toChangePhoneCommand(authentication.getName(), request));
-		var response = userDtoMapper.toProfileActionResponse(result);
-		return ResponseEntity.ok(ApiResponse.success(response, result.message()));
+			@Valid @RequestBody ConfirmOtpRequest request) {
+		var result = changeEmailInputPort.confirm(authentication.getName(), request.otpCode());
+		var response = userDtoMapper.toProfileResponse(result);
+		return ResponseEntity.ok(ApiResponse.success(response, "Email updated"));
+	}
+
+	@PostMapping("/phone-change/otp")
+	@Operation(summary = "Request phone change OTP", description = "Send OTP to the new phone before changing the authenticated user's phone")
+	public ResponseEntity<ApiResponse<Void>> requestPhoneChangeOtp(
+			Authentication authentication,
+			@Valid @RequestBody RequestPhoneChangeOtpRequest request) {
+		changePhoneInputPort.sendOtp(authentication.getName(), request.newPhone());
+		return ResponseEntity.ok(ApiResponse.success("OTP sent to new phone"));
+	}
+
+	@PostMapping("/phone-change/confirm")
+	@Operation(summary = "Confirm phone change OTP", description = "Confirm the OTP sent to the new phone and update the authenticated user's phone")
+	public ResponseEntity<ApiResponse<UserProfileResponse>> confirmPhoneChange(
+			Authentication authentication,
+			@Valid @RequestBody ConfirmOtpRequest request) {
+		var result = changePhoneInputPort.confirm(authentication.getName(), request.otpCode());
+		var response = userDtoMapper.toProfileResponse(result);
+		return ResponseEntity.ok(ApiResponse.success(response, "Phone updated"));
 	}
 
 	@PostMapping("/deletion-requests")

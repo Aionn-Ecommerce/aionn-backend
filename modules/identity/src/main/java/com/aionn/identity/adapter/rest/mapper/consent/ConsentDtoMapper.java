@@ -1,8 +1,8 @@
 package com.aionn.identity.adapter.rest.mapper.consent;
 
-import com.aionn.identity.adapter.rest.dto.consent.ConsentResponse;
-import com.aionn.identity.adapter.rest.dto.consent.MarketingConsentRequest;
-import com.aionn.identity.adapter.rest.dto.consent.TermsConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.request.MarketingConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.request.TermsConsentRequest;
+import com.aionn.identity.adapter.rest.dto.consent.response.ConsentResponse;
 import com.aionn.identity.application.dto.consent.command.AgreePrivacyCommand;
 import com.aionn.identity.application.dto.consent.command.AgreeTermsCommand;
 import com.aionn.identity.application.dto.consent.result.ConsentResult;
@@ -35,4 +35,3 @@ public interface ConsentDtoMapper {
 
     List<ConsentResponse> toResponses(List<ConsentResult> results);
 }
-
