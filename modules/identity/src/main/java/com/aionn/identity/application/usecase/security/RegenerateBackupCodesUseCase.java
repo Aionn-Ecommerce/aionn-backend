@@ -18,8 +18,7 @@ public class RegenerateBackupCodesUseCase implements RegenerateBackupCodesInputP
     @Transactional
     public BackupCodesResult execute(RegenerateBackupCodesCommand command) {
         var rawCodes = mfaService.regenerateBackupCodes(
-                command.userId(), command.password(), command.clientIp());
+                command.userId(), command.password(), command.mfaCode(), command.clientIp());
         return new BackupCodesResult(rawCodes);
     }
 }
-

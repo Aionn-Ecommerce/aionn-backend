@@ -15,6 +15,8 @@ import com.aionn.identity.application.dto.admin.query.ListUsersQuery;
 import com.aionn.identity.application.dto.admin.result.UserListResult;
 import com.aionn.identity.application.dto.admin.result.UserRolesResult;
 import com.aionn.identity.application.dto.admin.result.UserStatusResult;
+import com.aionn.identity.domain.valueobject.UserRole;
+import com.aionn.identity.domain.valueobject.UserStatus;
 import com.aionn.sharedkernel.adapter.web.response.PageMetadata;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,7 +38,7 @@ public interface AdminUserDtoMapper {
     @Mapping(target = "status", source = "request.status")
     UpdateUserStatusCommand toUpdateStatusCommand(String userId, UpdateUserStatusRequest request);
 
-    ListUsersQuery toListUsersQuery(String status, String role, int page, int size);
+    ListUsersQuery toListUsersQuery(UserStatus status, UserRole role, int page, int size);
 
     default GetUserQuery toGetUserQuery(String userId) {
         return new GetUserQuery(userId);

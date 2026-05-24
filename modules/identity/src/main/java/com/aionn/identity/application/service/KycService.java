@@ -1,12 +1,15 @@
 package com.aionn.identity.application.service;
 
+import com.aionn.identity.application.dto.kyc.result.KycVerificationSessionResult;
+import com.aionn.identity.application.port.out.kyc.ExternalKycVerificationPort;
 import com.aionn.identity.application.port.out.kyc.KycPersistencePort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
+import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.model.KycProfile;
 import com.aionn.identity.domain.valueobject.KycStatus;
-import com.aionn.identity.domain.valueobject.UserRole;
+import com.aionn.identity.infrastructure.config.properties.KycProperties;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,20 +18,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Service for managing KYC profiles.
- *
- * <h3>Business rules</h3>
- * <ul>
- * <li>State machine: DRAFT â†’ SUBMITTED â†’ IN_REVIEW â†’ APPROVED/REJECTED.
- * Cancel transitions to CANCELLED. Rejected applicants may restart from
- * DRAFT.</li>
- * <li>Cancel preserves history: we update {@link KycStatus#CANCELLED} instead
- * of deleting the row.</li>
- * <li>Admin operations (review/approve/reject) require {@code CS_ADMIN} or
- * {@code SYSTEM_ADMIN} role.</li>
- * </ul>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,74 +25,52 @@ public class KycService {
 
     private final KycPersistencePort kycPersistencePort;
     private final UserPersistencePort userPersistencePort;
+    private final KycProperties kycProperties;
+    private final ExternalKycVerificationPort externalKycVerificationPort;
 
     public KycProfile createKyc(String userId, String docType) {
         log.info("Creating KYC profile for user: {}, docType: {}", userId, docType);
-        validateUserExists(userId);
+        IdentityUser user = requireUser(userId);
+        boolean managedProviderEnabled = kycProperties.usesManagedProvider();
 
         KycProfile kyc = new KycProfile(
                 IdGenerator.ulid(),
                 userId,
                 docType,
                 null,
-                KycStatus.DRAFT,
+                managedProviderEnabled ? KycStatus.SUBMITTED : KycStatus.DRAFT,
                 null,
                 null,
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
+                managedProviderEnabled ? LocalDateTime.now() : null,
                 null,
                 LocalDateTime.now());
 
-        return kycPersistencePort.save(kyc);
-    }
+        if (!managedProviderEnabled) {
+            return kycPersistencePort.save(kyc);
+        }
 
-    public KycProfile uploadDocument(String userId, String kycId, String blobUrl) {
-        log.info("Uploading document for KYC: {}, user: {}", kycId, userId);
-        KycProfile kyc = getKycByUser(kycId, userId);
-        kyc.uploadDocument(blobUrl);
-        return kycPersistencePort.save(kyc);
-    }
-
-    public KycProfile submit(String userId, String kycId) {
-        log.info("Submitting KYC: {}, user: {}", kycId, userId);
-        KycProfile kyc = getKycByUser(kycId, userId);
-        kyc.submit();
-        return kycPersistencePort.save(kyc);
-    }
-
-    /**
-     * Cancel a KYC profile by transitioning it to {@link KycStatus#CANCELLED}.
-     * The record is preserved for audit.
-     */
-    public KycProfile cancel(String userId, String kycId) {
-        log.info("Cancelling KYC: {}, user: {}", kycId, userId);
-        KycProfile kyc = getKycByUser(kycId, userId);
-        kyc.cancel();
-        return kycPersistencePort.save(kyc);
-    }
-
-    public KycProfile review(String adminUserId, String kycId, String note) {
-        log.info("Admin {} reviewing KYC: {}", adminUserId, kycId);
-        validateAdminUser(adminUserId);
-        KycProfile kyc = getKyc(kycId);
-        kyc.review(adminUserId, note);
-        return kycPersistencePort.save(kyc);
-    }
-
-    public KycProfile approve(String adminUserId, String kycId) {
-        log.info("Admin {} approving KYC: {}", adminUserId, kycId);
-        validateAdminUser(adminUserId);
-        KycProfile kyc = getKyc(kycId);
-        kyc.approve(adminUserId);
-        return kycPersistencePort.save(kyc);
-    }
-
-    public KycProfile reject(String adminUserId, String kycId, String reason) {
-        log.info("Admin {} rejecting KYC: {}", adminUserId, kycId);
-        validateAdminUser(adminUserId);
-        KycProfile kyc = getKyc(kycId);
-        kyc.reject(adminUserId, reason);
+        var applicant = externalKycVerificationPort.createApplicant(user, kyc.getKycId(), docType);
+        kyc.attachExternalProvider(
+                applicant.provider(),
+                applicant.applicantId(),
+                applicant.levelName(),
+                applicant.reviewStatus(),
+                applicant.correlationId());
+        if (kycProperties.isLocalDevelopmentEnabled()) {
+            kyc.syncExternalReview(
+                    applicant.reviewStatus(),
+                    applicant.correlationId(),
+                    "GREEN",
+                    "Local development KYC auto-approved",
+                    null);
+        }
         return kycPersistencePort.save(kyc);
     }
 
@@ -119,32 +86,70 @@ public class KycService {
         return getKycByUser(kycId, userId);
     }
 
+    public KycVerificationSessionResult generateVerificationSession(String userId, String kycId) {
+        if (!kycProperties.usesManagedProvider()) {
+            throw new IdentityException(IdentityErrorCode.KYC_MANAGED_EXTERNALLY,
+                    "External KYC session is only available when a managed KYC provider is enabled");
+        }
+
+        IdentityUser user = requireUser(userId);
+        KycProfile kyc = getKycByUser(kycId, userId);
+        if (!kyc.isManagedExternally()) {
+            throw new IdentityException(IdentityErrorCode.KYC_PROVIDER_NOT_CONFIGURED);
+        }
+
+        var session = externalKycVerificationPort.generateVerificationSession(
+                user,
+                kyc.getKycId(),
+                kyc.getProviderApplicantId());
+        return new KycVerificationSessionResult(
+                kyc.getKycId(),
+                session.provider(),
+                session.applicantId(),
+                session.levelName(),
+                session.accessToken(),
+                session.expiresInSeconds(),
+                session.sandbox());
+    }
+
+    public void handleSumsubWebhook(
+            byte[] payload,
+            String digest,
+            String digestAlgorithm,
+            String providerApplicantId,
+            String providerReviewStatus,
+            String reviewAnswer,
+            String moderationComment,
+            String clientComment,
+            String correlationId) {
+        if (!kycProperties.isSumsubEnabled()) {
+            log.info("Ignoring Sumsub webhook because provider is not enabled");
+            return;
+        }
+
+        externalKycVerificationPort.verifyWebhookSignature(payload, digest, digestAlgorithm);
+
+        if (providerApplicantId == null || providerApplicantId.isBlank()) {
+            throw new IdentityException(IdentityErrorCode.KYC_PROVIDER_ERROR, "Webhook is missing applicantId");
+        }
+
+        KycProfile kyc = kycPersistencePort.findByProviderApplicantId(providerApplicantId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
+        kyc.syncExternalReview(providerReviewStatus, correlationId, reviewAnswer, moderationComment, clientComment);
+        kycPersistencePort.save(kyc);
+    }
+
     private KycProfile getKycByUser(String kycId, String userId) {
         return kycPersistencePort.findByKycIdAndUserId(kycId, userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
     }
-
-    private KycProfile getKyc(String kycId) {
-        return kycPersistencePort.findById(kycId)
-                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
-    }
-
     private void validateUserExists(String userId) {
-        userPersistencePort.findById(userId)
+        requireUser(userId);
+    }
+
+    private IdentityUser requireUser(String userId) {
+        return userPersistencePort.findById(userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
     }
 
-    private void validateAdminUser(String adminUserId) {
-        var user = userPersistencePort.findById(adminUserId)
-                .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
-
-        boolean isAdmin = user.getRoles().contains(UserRole.CS_ADMIN)
-                || user.getRoles().contains(UserRole.SYSTEM_ADMIN);
-
-        if (!isAdmin) {
-            log.warn("User {} attempted admin KYC operation without admin role", adminUserId);
-            throw new IdentityException(IdentityErrorCode.INSUFFICIENT_PERMISSIONS);
-        }
-    }
 }
-

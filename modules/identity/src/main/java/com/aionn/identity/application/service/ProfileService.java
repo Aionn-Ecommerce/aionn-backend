@@ -4,6 +4,7 @@ import com.aionn.identity.application.dto.user.command.UpdateAvatarCommand;
 import com.aionn.identity.application.dto.user.command.UpdateDisplayNameCommand;
 import com.aionn.identity.application.dto.user.query.GetMyProfileQuery;
 import com.aionn.identity.application.dto.user.view.UserProfileView;
+import com.aionn.identity.application.mapper.UserResultMapper;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
@@ -14,14 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.stream.Collectors;
 
-/**
- * Service for user profile read/update operations. Methods are exposed to use
- * cases via plain Java calls; the input ports themselves are not implemented
- * here so that the use case layer can wrap each invocation in its own
- * transaction.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,10 +25,11 @@ public class ProfileService {
     private static final int MAX_AVATAR_URL_LENGTH = 2048;
 
     private final UserPersistencePort userPersistencePort;
+    private final UserResultMapper userResultMapper;
 
     public UserProfileView getMyProfile(GetMyProfileQuery query) {
         log.debug("Fetching profile for user: {}", query.userId());
-        return toProfileView(getActiveUser(query.userId()));
+        return userResultMapper.toUserProfileView(getActiveUser(query.userId()));
     }
 
     public UserProfileView updateDisplayName(UpdateDisplayNameCommand command) {
@@ -45,7 +40,7 @@ public class ProfileService {
         }
         IdentityUser user = getActiveUser(command.userId());
         user.updateDisplayName(command.displayName());
-        return toProfileView(userPersistencePort.save(user));
+        return userResultMapper.toUserProfileView(userPersistencePort.save(user));
     }
 
     public UserProfileView updateAvatar(UpdateAvatarCommand command) {
@@ -53,7 +48,7 @@ public class ProfileService {
         validateAvatarUrl(command.avatarUrl());
         IdentityUser user = getActiveUser(command.userId());
         user.updateAvatar(command.avatarUrl().trim());
-        return toProfileView(userPersistencePort.save(user));
+        return userResultMapper.toUserProfileView(userPersistencePort.save(user));
     }
 
     private IdentityUser getActiveUser(String userId) {
@@ -65,12 +60,6 @@ public class ProfileService {
         return user;
     }
 
-    /**
-     * Avatar URL validation: must be a syntactically valid HTTP(S) URI with a
-     * non-empty host. Rejects schemes other than http/https to mitigate SSRF
-     * and prevents trivially malformed strings (the previous implementation
-     * accepted anything that started with "http").
-     */
     private static void validateAvatarUrl(String avatarUrl) {
         if (avatarUrl == null || avatarUrl.isBlank()) {
             throw new IdentityException(IdentityErrorCode.AVATAR_URL_INVALID);
@@ -92,20 +81,4 @@ public class ProfileService {
             throw new IdentityException(IdentityErrorCode.AVATAR_URL_INVALID);
         }
     }
-
-    private UserProfileView toProfileView(IdentityUser user) {
-        return new UserProfileView(
-                user.getUserId(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getUsername(),
-                user.getDisplayName(),
-                user.getAvatarUrl(),
-                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.getStatus().name(),
-                user.getEmailVerifiedAt(),
-                user.getPhoneVerifiedAt(),
-                user.getCreatedAt());
-    }
 }
-

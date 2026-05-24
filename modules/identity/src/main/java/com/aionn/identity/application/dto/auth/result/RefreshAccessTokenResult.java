@@ -7,6 +7,6 @@ public record RefreshAccessTokenResult(
         String sessionId,
         String accessToken,
         String refreshToken,
-        LocalDateTime expiresAt) {
+        LocalDateTime expiresAt,
+        LocalDateTime sessionExpiresAt) {
 }
-

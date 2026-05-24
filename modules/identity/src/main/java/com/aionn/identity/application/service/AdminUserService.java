@@ -17,14 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Administrative user management. Authorization is enforced at the
- * controller/use-case layer via Spring Security; these methods assume the
- * caller has already passed the role check.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,18 +29,18 @@ public class AdminUserService {
     private final AdminUserPersistencePort adminUserPersistencePort;
     private final AdminResultMapper adminResultMapper;
 
-    public Set<String> updateRoles(String userId, Set<String> roles) {
+    public Set<String> updateRoles(String userId, Set<UserRole> roles) {
         log.info("Updating roles for user: {}", userId);
         IdentityUser user = getUser(userId);
-        user.setRoles(parseRoles(roles));
+        user.setRoles(requireRoles(roles));
         IdentityUser saved = adminUserPersistencePort.save(user);
-        return saved.getRoles().stream().map(Enum::name).collect(Collectors.toSet());
+        return toRoleNames(saved);
     }
 
-    public Set<String> removeRoles(String userId, Set<String> roles) {
+    public Set<String> removeRoles(String userId, Set<UserRole> roles) {
         log.info("Removing roles from user: {}", userId);
         IdentityUser user = getUser(userId);
-        Set<UserRole> toRemove = parseRoles(roles);
+        Set<UserRole> toRemove = requireRoles(roles);
         Set<UserRole> remaining = user.getRoles().stream()
                 .filter(existing -> !toRemove.contains(existing))
                 .collect(Collectors.toSet());
@@ -53,25 +49,17 @@ public class AdminUserService {
         }
         user.setRoles(remaining);
         IdentityUser saved = adminUserPersistencePort.save(user);
-        return saved.getRoles().stream().map(Enum::name).collect(Collectors.toSet());
+        return toRoleNames(saved);
     }
 
-    public String updateStatus(String userId, String status) {
+    public String updateStatus(String userId, UserStatus status) {
         log.info("Updating status for user: {} to {}", userId, status);
-        UserStatus parsed = parseStatus(status);
-        if (parsed == null) {
-            throw new IdentityException(IdentityErrorCode.INVALID_DISPLAY_NAME, "Invalid user status: " + status);
-        }
         IdentityUser user = getUser(userId);
-        user.updateStatus(parsed);
+        user.updateStatus(requireStatus(status));
         IdentityUser saved = adminUserPersistencePort.save(user);
         return saved.getStatus().name();
     }
 
-    /**
-     * Clear an account's lock. Persists through the domain entity so the
-     * mapper writes {@code locked_until = NULL} on the user row.
-     */
     public void unlockAccount(String userId) {
         log.info("Unlocking account for user: {}", userId);
         IdentityUser user = getUser(userId);
@@ -79,18 +67,15 @@ public class AdminUserService {
         adminUserPersistencePort.save(user);
     }
 
-    public UserListResult listUsers(String status, String role, int page, int size) {
+    public UserListResult listUsers(UserStatus status, UserRole role, int page, int size) {
         OffsetPagination pagination = OffsetPagination.safe(page, size);
 
-        UserStatus statusFilter = parseStatus(status);
-        UserRole roleFilter = parseRole(role);
-
-        log.debug("Listing users status={}, role={}, page={}, size={}", statusFilter, roleFilter,
+        log.debug("Listing users status={}, role={}, page={}, size={}", status, role,
                 pagination.page(), pagination.size());
 
         Pageable pageable = PageRequest.of(pagination.page(), pagination.size());
         Page<IdentityUser> userPage = adminUserPersistencePort.findUsersWithFilters(
-                statusFilter, roleFilter, pageable);
+                status, role, pageable);
 
         var users = userPage.getContent().stream()
                 .map(user -> new UserListResult.UserSummary(
@@ -117,46 +102,29 @@ public class AdminUserService {
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
     }
 
-    private static Set<UserRole> parseRoles(Set<String> roles) {
-        if (roles == null || roles.isEmpty()) {
-            throw new IdentityException(IdentityErrorCode.INSUFFICIENT_PERMISSIONS,
-                    "At least one role must be supplied");
-        }
-        return roles.stream()
-                .filter(s -> s != null && !s.isBlank())
-                .map(s -> {
-                    try {
-                        return UserRole.valueOf(s.trim().toUpperCase());
-                    } catch (IllegalArgumentException ex) {
-                        throw new IdentityException(IdentityErrorCode.INSUFFICIENT_PERMISSIONS,
-                                "Unknown role: " + s);
-                    }
-                })
+    private static Set<String> toRoleNames(IdentityUser user) {
+        return user.getRoles().stream()
+                .map(Enum::name)
                 .collect(Collectors.toSet());
     }
 
-    private static UserStatus parseStatus(String status) {
-        if (status == null || status.trim().isEmpty()) {
-            return null;
+    private static Set<UserRole> requireRoles(Set<UserRole> roles) {
+        if (roles == null || roles.isEmpty()) {
+            throw new IdentityException(IdentityErrorCode.INVALID_USER_ROLE,
+                    "At least one role must be supplied");
         }
-        try {
-            return UserStatus.valueOf(status.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid status filter: {}", status);
-            return null;
+        if (roles.stream().anyMatch(Objects::isNull)) {
+            throw new IdentityException(IdentityErrorCode.INVALID_USER_ROLE,
+                    "Roles must not contain null values");
         }
+        return roles;
     }
 
-    private static UserRole parseRole(String role) {
-        if (role == null || role.trim().isEmpty()) {
-            return null;
+    private static UserStatus requireStatus(UserStatus status) {
+        if (status == null) {
+            throw new IdentityException(IdentityErrorCode.INVALID_USER_STATUS,
+                    "User status must be supplied");
         }
-        try {
-            return UserRole.valueOf(role.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid role filter: {}", role);
-            return null;
-        }
+        return status;
     }
 }
-

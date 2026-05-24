@@ -8,6 +8,10 @@ public record KycResult(
         String docType,
         String blobUrl,
         String status,
+        String provider,
+        String providerApplicantId,
+        String providerLevelName,
+        String providerReviewStatus,
         String reviewerId,
         String reviewNote,
         String decisionAdminId,
@@ -15,4 +19,3 @@ public record KycResult(
         LocalDateTime submittedAt,
         LocalDateTime approvedAt) {
 }
-

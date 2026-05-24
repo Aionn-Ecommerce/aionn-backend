@@ -6,6 +6,7 @@ import com.aionn.identity.application.port.in.security.EnableMfaInputPort;
 import com.aionn.identity.application.service.MfaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -14,9 +15,8 @@ public class EnableMfaUseCase implements EnableMfaInputPort {
     private final MfaService mfaService;
 
     @Override
+    @Transactional
     public MfaResult execute(EnableMfaCommand command) {
-        var result = mfaService.enableMfa(command.userId(), command.password(), command.clientIp());
-        return new MfaResult(result);
+        return mfaService.enableMfa(command.userId(), command.password(), command.mfaCode(), command.clientIp());
     }
 }
-

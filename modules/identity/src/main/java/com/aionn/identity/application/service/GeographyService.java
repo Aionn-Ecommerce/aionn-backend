@@ -11,10 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Reference data for geography. Caching is handled at the persistence adapter
- * (single source of truth) so callers do not double-cache.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

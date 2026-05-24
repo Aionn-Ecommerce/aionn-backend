@@ -11,6 +11,8 @@ import com.aionn.identity.adapter.rest.mapper.admin.AdminUserDtoMapper;
 import com.aionn.identity.adapter.rest.mapper.security.SecurityDtoMapper;
 import com.aionn.identity.application.port.in.admin.*;
 import com.aionn.identity.application.port.in.security.UnlockAccountInputPort;
+import com.aionn.identity.domain.valueobject.UserRole;
+import com.aionn.identity.domain.valueobject.UserStatus;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import com.aionn.sharedkernel.adapter.web.response.PageMetadata;
 import com.aionn.sharedkernel.domain.vo.OffsetPagination;
@@ -43,8 +45,8 @@ public class AdminUserController {
 	@GetMapping
 	@Operation(summary = "List users", description = "Get paginated users for admin management with optional status and role filters")
 	public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> listUsers(
-			@RequestParam(required = false) String status,
-			@RequestParam(required = false) String role,
+			@RequestParam(required = false) UserStatus status,
+			@RequestParam(required = false) UserRole role,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
 		OffsetPagination safe = OffsetPagination.safe(page, size);

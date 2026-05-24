@@ -12,8 +12,9 @@ public interface KycPersistencePort {
 
     Optional<KycProfile> findById(String kycId);
 
+    Optional<KycProfile> findByProviderApplicantId(String providerApplicantId);
+
     List<KycProfile> findByUserIdOrderBySubmittedAtDesc(String userId);
 
     void delete(KycProfile kycProfile);
 }
-

@@ -1,7 +1,5 @@
 package com.aionn.identity.application.usecase.user;
 
-import com.aionn.identity.application.dto.user.command.VerifyEmailCommand;
-import com.aionn.identity.application.dto.user.view.UserActionOutcomeView;
 import com.aionn.identity.application.port.in.user.VerifyEmailInputPort;
 import com.aionn.identity.application.service.AccountManagementService;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +14,13 @@ public class VerifyEmailUseCase implements VerifyEmailInputPort {
 
     @Override
     @Transactional
-    public UserActionOutcomeView execute(VerifyEmailCommand command) {
-        return accountManagementService.verifyPrimaryEmail(command);
+    public void sendOtp(String userId) {
+        accountManagementService.sendVerifyPrimaryEmailOtp(userId);
+    }
+
+    @Override
+    @Transactional
+    public void confirm(String userId, String otpCode) {
+        accountManagementService.confirmVerifyPrimaryEmailOtp(userId, otpCode);
     }
 }
-

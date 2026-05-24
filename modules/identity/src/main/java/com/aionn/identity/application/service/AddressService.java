@@ -18,12 +18,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Address book operations. Phone numbers are validated through
- * {@link PhoneNumber} (the controller layer is intentionally permissive);
- * geography codes are resolved through {@link GeographyService} which checks
- * the parent/child hierarchy.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -177,4 +171,3 @@ public class AddressService {
 				.orElseThrow(() -> new IdentityException(IdentityErrorCode.ADDRESS_NOT_FOUND, "Address not found"));
 	}
 }
-

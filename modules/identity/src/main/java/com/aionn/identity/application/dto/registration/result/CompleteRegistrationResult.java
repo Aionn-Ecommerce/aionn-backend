@@ -7,6 +7,6 @@ public record CompleteRegistrationResult(
         String sessionId,
         String refreshToken,
         String accessToken,
-        LocalDateTime expiresAt) {
+        LocalDateTime expiresAt,
+        LocalDateTime sessionExpiresAt) {
 }
-

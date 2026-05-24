@@ -1,13 +1,12 @@
 package com.aionn.identity.application.port.in.user;
 
-import com.aionn.identity.application.dto.user.command.ChangePhoneCommand;
-import com.aionn.identity.application.dto.user.view.UserActionOutcomeView;
+import com.aionn.identity.application.dto.user.view.UserProfileView;
 
 public interface ChangePhoneInputPort {
 
-    UserActionOutcomeView execute(ChangePhoneCommand command);
+    void sendOtp(String userId, String newPhone);
+
+    UserProfileView confirm(String userId, String otpCode);
 }
-
-
 
 

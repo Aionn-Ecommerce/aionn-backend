@@ -8,27 +8,36 @@ import com.aionn.identity.domain.model.AuthSession;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.LocalDateTime;
+
 @Mapper(componentModel = "spring")
 public interface AuthResultMapper {
 
     @Mapping(target = "userId", source = "session.userId")
     @Mapping(target = "sessionId", source = "session.sessionId")
-    @Mapping(target = "expiresAt", source = "session.expiresAt")
-    LoginResult toLoginResult(AuthSession session, String accessToken, String refreshToken);
+    @Mapping(target = "sessionExpiresAt", source = "session.expiresAt")
+    LoginResult toLoginResult(AuthSession session, String accessToken, String refreshToken, LocalDateTime expiresAt);
 
     @Mapping(target = "userId", source = "session.userId")
     @Mapping(target = "sessionId", source = "session.sessionId")
-    @Mapping(target = "expiresAt", source = "session.expiresAt")
-    SocialLoginResult toSocialLoginResult(AuthSession session, String accessToken, String refreshToken,
+    @Mapping(target = "sessionExpiresAt", source = "session.expiresAt")
+    SocialLoginResult toSocialLoginResult(
+            AuthSession session,
+            String accessToken,
+            String refreshToken,
+            LocalDateTime expiresAt,
             boolean newUser);
 
     @Mapping(target = "userId", source = "session.userId")
     @Mapping(target = "sessionId", source = "session.sessionId")
-    @Mapping(target = "expiresAt", source = "session.expiresAt")
-    RefreshAccessTokenResult toRefreshResult(AuthSession session, String accessToken, String refreshToken);
+    @Mapping(target = "sessionExpiresAt", source = "session.expiresAt")
+    RefreshAccessTokenResult toRefreshResult(
+            AuthSession session,
+            String accessToken,
+            String refreshToken,
+            LocalDateTime expiresAt);
 
     default LogoutAllResult toLogoutAllResult(int revokedCount) {
         return new LogoutAllResult(revokedCount);
     }
 }
-

@@ -19,7 +19,10 @@ import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStore;
 import com.aionn.identity.application.port.out.auth.SocialTokenVerifier;
 import com.aionn.identity.application.port.out.auth.TokenBlacklist;
+import com.aionn.identity.application.port.out.security.MfaPersistencePort;
 import com.aionn.identity.application.port.out.security.PasswordHasher;
+import com.aionn.identity.application.port.out.security.TotpManager;
+import com.aionn.identity.application.port.out.security.UserSecurityPort;
 import com.aionn.identity.application.port.out.social.SocialLinkPersistencePort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
@@ -40,13 +43,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * Authentication service: login, social login, session lifecycle, refresh
- * tokens. Mapping to result DTOs is delegated to the use case via
- * {@link AuthResultMapper}, but the use cases just forward the values returned
- * by these methods.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -56,9 +54,12 @@ public class AuthService {
     private static final int REFRESH_TOKEN_BYTES = 48;
 
     private final UserPersistencePort userPersistencePort;
+    private final UserSecurityPort userSecurityPort;
     private final AuthSessionPersistencePort authSessionPersistencePort;
     private final SocialLinkPersistencePort socialLinkPersistencePort;
+    private final MfaPersistencePort mfaPersistencePort;
     private final PasswordHasher passwordHasher;
+    private final TotpManager totpManager;
     private final AccessTokenIssuer accessTokenIssuer;
     private final SocialTokenVerifier socialTokenVerifier;
     private final AuthPolicy authPolicy;
@@ -69,14 +70,17 @@ public class AuthService {
     public LoginResult login(LoginCommand command) {
         log.debug("Login attempt for identity: {}", command.identity());
         IdentityUser user = validateCredentials(command.identity(), command.password());
+        validateMfa(user.getId().toString(), command.mfaCode());
+        userSecurityPort.resetFailedLoginAttempts(user.getId().toString());
 
         AuthSession session = createSession(user.getId().toString(), command.ipAddress(), command.userAgent());
         AuthSession savedSession = authSessionPersistencePort.save(session);
         String accessToken = issueAccessToken(savedSession);
         String refreshToken = issueRefreshToken(savedSession);
+        LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
         log.info("User logged in: userId={}, sessionId={}", user.getId(), savedSession.getSessionId());
-        return authResultMapper.toLoginResult(savedSession, accessToken, refreshToken);
+        return authResultMapper.toLoginResult(savedSession, accessToken, refreshToken, accessTokenExpiresAt);
     }
 
     public SocialLoginResult socialLogin(SocialLoginCommand command) {
@@ -110,8 +114,14 @@ public class AuthService {
         AuthSession savedSession = authSessionPersistencePort.save(session);
         String accessToken = issueAccessToken(savedSession);
         String refreshToken = issueRefreshToken(savedSession);
+        LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
-        return authResultMapper.toSocialLoginResult(savedSession, accessToken, refreshToken, isNewUser);
+        return authResultMapper.toSocialLoginResult(
+                savedSession,
+                accessToken,
+                refreshToken,
+                accessTokenExpiresAt,
+                isNewUser);
     }
 
     public List<AuthSession> listSessions(String userId) {
@@ -142,8 +152,6 @@ public class AuthService {
         AuthProvider provider = AuthProvider.from(command.provider());
         socialLinkPersistencePort.findByUserIdAndProvider(command.userId(), provider)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.SOCIAL_LINK_NOT_FOUND));
-
-        // Refuse to remove the last login mechanism: user would be locked out.
         boolean hasPassword = user.getPasswordHash() != null && !user.getPasswordHash().isBlank();
         boolean hasOtherCredential = hasPassword
                 || (user.getPhone() != null && !user.getPhone().isBlank())
@@ -163,8 +171,6 @@ public class AuthService {
     public void logout(LogoutCommand command) {
         revokeSessionInternal(command.userId(), command.sessionId());
         refreshTokenStore.revokeBySessionId(command.sessionId());
-        // Blacklist the current access token so it's rejected immediately
-        // (max 15 min TTL, auto-expires from blacklist)
         if (command.accessTokenJti() != null && !command.accessTokenJti().isBlank()) {
             tokenBlacklist.blacklist(command.accessTokenJti(), authPolicy.getAccessTokenExpiryMinutes() * 60L);
         }
@@ -185,12 +191,6 @@ public class AuthService {
         return authResultMapper.toLogoutAllResult(revoked);
     }
 
-    /**
-     * Refresh-token rotation: lookup token, ensure session still active,
-     * extend session, issue a fresh access+refresh pair, invalidate the old
-     * token. Tokens are single-use so a stolen refresh token cannot be reused
-     * after the legitimate user refreshes.
-     */
     public RefreshAccessTokenResult refreshToken(RefreshTokenCommand command) {
         String tokenId = pickToken(command);
         if (tokenId == null) {
@@ -206,8 +206,6 @@ public class AuthService {
             refreshTokenStore.revoke(tokenId);
             throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID);
         }
-
-        // Single-use rotation: invalidate this specific refresh token.
         refreshTokenStore.revoke(tokenId);
 
         session.extendExpiry(LocalDateTime.now().plusDays(authPolicy.getSessionExpiresDays()));
@@ -215,7 +213,8 @@ public class AuthService {
 
         String accessToken = issueAccessToken(refreshed);
         String newRefreshToken = issueRefreshToken(refreshed);
-        return authResultMapper.toRefreshResult(refreshed, accessToken, newRefreshToken);
+        LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
+        return authResultMapper.toRefreshResult(refreshed, accessToken, newRefreshToken, accessTokenExpiresAt);
     }
 
     private static String pickToken(RefreshTokenCommand command) {
@@ -245,20 +244,66 @@ public class AuthService {
     }
 
     private IdentityUser validateCredentials(String identity, String password) {
-        IdentityUser user = userPersistencePort.findByIdentity(identity)
+        var userSecurity = userSecurityPort.findByIdentity(identity)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS));
 
-        validateActiveUser(user);
-        if (user.isLocked()) {
+        if (!userSecurity.status().equals(com.aionn.identity.domain.valueobject.UserStatus.ACTIVE)) {
+            throw new IdentityException(IdentityErrorCode.USER_INACTIVE);
+        }
+        if (isLocked(userSecurity.lockedUntil())) {
             log.warn("Login attempt against locked account: {}", identity);
             throw new IdentityException(IdentityErrorCode.USER_INACTIVE,
                     "Account is temporarily locked");
         }
-        if (user.getPasswordHash() == null || !passwordHasher.matches(password, user.getPasswordHash())) {
+        if (userSecurity.passwordHash() == null || !passwordHasher.matches(password, userSecurity.passwordHash())) {
             log.warn("Invalid password attempt for identity: {}", identity);
+            recordFailedLoginAttempt(userSecurity);
             throw new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS);
         }
-        return user;
+        return userPersistencePort.findById(userSecurity.userId())
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
+    }
+
+    private void validateMfa(String userId, String mfaCode) {
+        var userSecurity = userSecurityPort.findById(userId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
+        if (!userSecurity.mfaEnabled()) {
+            return;
+        }
+        if (mfaCode == null || mfaCode.isBlank()) {
+            recordFailedLoginAttempt(userSecurity);
+            throw new IdentityException(IdentityErrorCode.OTP_REQUIRED, "MFA code is required");
+        }
+
+        boolean matched = false;
+        if (userSecurity.mfaSecret() != null && !userSecurity.mfaSecret().isBlank()) {
+            matched = mfaPersistencePort.findActiveBackupCodes(userId).stream()
+                    .filter(code -> passwordHasher.matches(mfaCode, code.codeHash()))
+                    .findFirst()
+                    .map(code -> mfaPersistencePort.markBackupCodeUsed(code.backupCodeId(), LocalDateTime.now()))
+                    .orElse(false);
+            if (!matched) {
+                matched = totpManager.verifyCode(userSecurity.mfaSecret(), mfaCode);
+            }
+        }
+
+        if (!matched) {
+            recordFailedLoginAttempt(userSecurity);
+            throw new IdentityException(IdentityErrorCode.OTP_INVALID, "Invalid MFA code");
+        }
+    }
+
+    private void recordFailedLoginAttempt(UserSecurityPort.UserSecurityData user) {
+        int failedAttempts = user.failedLoginAttempts() + 1;
+        LocalDateTime lockedUntil = null;
+        if (failedAttempts >= authPolicy.getMaxFailedLoginAttempts()) {
+            lockedUntil = LocalDateTime.now().plusMinutes(authPolicy.getLockoutMinutes());
+        }
+        userSecurityPort.recordFailedLoginAttempt(user.userId(), failedAttempts, lockedUntil);
+    }
+
+    private boolean isLocked(LocalDateTime lockedUntil) {
+        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
     }
 
     private IdentityUser validateUserExists(String userId) {
@@ -309,10 +354,9 @@ public class AuthService {
     }
 
     private String issueAccessToken(AuthSession session) {
-        // Load user roles to embed in JWT for microservice-ready authorization
         var user = userPersistencePort.findById(session.getUserId()).orElse(null);
         var roles = user != null
-                ? user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet())
+                ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())
                 : java.util.Set.<String>of();
         return accessTokenIssuer.issueAccessToken(
                 session.getUserId(),

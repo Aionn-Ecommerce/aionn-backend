@@ -16,24 +16,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Service for managing user consents.
- *
- * <p>
- * Each grant/revoke is appended as a new row, preserving the full history
- * for compliance audits.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConsentService {
 
-    /**
-     * Default version used when the caller does not specify one. The current
-     * marketing consent does not carry a versioned policy document, so we tag
-     * the decision with this constant and store it for traceability.
-     */
-    public static final String DEFAULT_MARKETING_VERSION = "marketing-v1";
+        public static final String DEFAULT_MARKETING_VERSION = "marketing-v1";
 
     private final UserPersistencePort userPersistencePort;
     private final ConsentPersistencePort consentPersistencePort;

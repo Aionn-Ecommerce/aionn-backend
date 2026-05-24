@@ -20,7 +20,10 @@ public interface RegistrationResultMapper {
 
     @Mapping(target = "userId", source = "session.userId")
     @Mapping(target = "sessionId", source = "session.sessionId")
-    @Mapping(target = "expiresAt", source = "session.expiresAt")
-    CompleteRegistrationResult toCompleteResult(AuthSession session, String accessToken, String refreshToken);
+    @Mapping(target = "sessionExpiresAt", source = "session.expiresAt")
+    CompleteRegistrationResult toCompleteResult(
+            AuthSession session,
+            String accessToken,
+            String refreshToken,
+            java.time.LocalDateTime expiresAt);
 }
-

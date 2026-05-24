@@ -8,6 +8,6 @@ public record SocialLoginResult(
         String accessToken,
         String refreshToken,
         LocalDateTime expiresAt,
+        LocalDateTime sessionExpiresAt,
         boolean newUser) {
 }
-

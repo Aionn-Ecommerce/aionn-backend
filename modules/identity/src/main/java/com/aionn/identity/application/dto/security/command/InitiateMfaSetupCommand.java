@@ -1,8 +1,7 @@
 package com.aionn.identity.application.dto.security.command;
 
-public record RegenerateBackupCodesCommand(
+public record InitiateMfaSetupCommand(
         String userId,
         String password,
-        String mfaCode,
         String clientIp) {
 }

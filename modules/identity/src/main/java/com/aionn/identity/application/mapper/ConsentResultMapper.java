@@ -7,13 +7,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Internal mapper used only by infrastructure adapters to translate consent
- * entities into application-level results. The application layer talks to
- * {@link com.aionn.identity.application.port.out.consent.ConsentPersistencePort}
- * which already returns {@link ConsentResult}, so this mapper does not leak
- * entities into use cases.
- */
 @Mapper(componentModel = "spring")
 public interface ConsentResultMapper {
 

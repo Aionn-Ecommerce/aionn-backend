@@ -79,15 +79,7 @@ public class PreferenceService {
         return getOrCreate(userId);
     }
 
-    /**
-     * Gets or creates user preferences.
-     * Race condition is prevented by database-level unique constraint on user_id
-     * (PRIMARY KEY).
-     * If two concurrent requests attempt to create preferences, one will succeed
-     * and the other will fail with a duplicate key violation. We retry the read
-     * operation to fetch the successfully created preference.
-     */
-    private UserPreferenceResult getOrCreate(String userId) {
+        private UserPreferenceResult getOrCreate(String userId) {
         userPersistencePort.findById(userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
 
@@ -95,12 +87,9 @@ public class PreferenceService {
         if (existing.isPresent()) {
             return existing.get();
         }
-
-        // Try to create default preferences
         try {
             return preferencePersistencePort.createDefault(userId);
         } catch (Exception e) {
-            // If creation fails due to duplicate key (race condition), retry the read
             log.debug("Concurrent preference creation detected for user: {}, retrying read", userId);
             return preferencePersistencePort.findById(userId)
                     .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));

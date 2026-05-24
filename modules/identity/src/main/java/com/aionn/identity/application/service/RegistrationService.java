@@ -38,20 +38,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
-/**
- * Multi-step user registration: initiate (with captcha + OTP), verify, resend,
- * complete. Hardening notes:
- *
- * <ul>
- * <li>Refresh tokens are random 384-bit values stored via
- * {@link RefreshTokenStore} so the registration result no longer leaks
- * the session id as a refresh token.</li>
- * <li>Distributed lock for concurrent completion uses a token-stamped
- * acquire/release so two pods cannot stomp on each other.</li>
- * <li>Verification token is single use; the session is deleted when
- * completion succeeds.</li>
- * </ul>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -117,7 +103,6 @@ public class RegistrationService {
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.REGISTRATION_NOT_FOUND));
 
         if (session.isVerified()) {
-            // Already verified - reuse the existing token instead of re-running verify().
             return registrationResultMapper.toVerifyOtpResult(session.getRegId(), session.getVerificationToken());
         }
 
@@ -179,12 +164,17 @@ public class RegistrationService {
                     savedSession.getExpiresAt(),
                     savedUser.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()));
             String refreshToken = issueRefreshToken(savedSession);
+            LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
             registrationSessionStore.deleteByRegId(command.regId());
 
             log.info("Registration completed for userId: {}, sessionId: {}",
                     savedUser.getId(), savedSession.getSessionId());
-            return registrationResultMapper.toCompleteResult(savedSession, accessToken, refreshToken);
+            return registrationResultMapper.toCompleteResult(
+                    savedSession,
+                    accessToken,
+                    refreshToken,
+                    accessTokenExpiresAt);
         } finally {
             registrationLockManager.unlock(phoneNumber, lockToken);
         }
