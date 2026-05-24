@@ -2,18 +2,11 @@ package com.aionn.identity.adapter.rest.mapper.kyc;
 
 import com.aionn.identity.adapter.rest.dto.kyc.CreateKycRequest;
 import com.aionn.identity.adapter.rest.dto.kyc.KycResponse;
-import com.aionn.identity.adapter.rest.dto.kyc.RejectKycRequest;
-import com.aionn.identity.adapter.rest.dto.kyc.ReviewKycRequest;
-import com.aionn.identity.adapter.rest.dto.kyc.UploadKycDocumentRequest;
-import com.aionn.identity.application.dto.kyc.command.ApproveKycCommand;
+import com.aionn.identity.adapter.rest.dto.kyc.KycVerificationSessionResponse;
 import com.aionn.identity.application.dto.kyc.command.CreateKycCommand;
 import com.aionn.identity.application.dto.kyc.query.GetKycQuery;
 import com.aionn.identity.application.dto.kyc.result.KycResult;
-import com.aionn.identity.application.dto.kyc.command.RejectKycCommand;
-import com.aionn.identity.application.dto.kyc.command.ReviewKycCommand;
-import com.aionn.identity.application.dto.kyc.command.SubmitKycCommand;
-import com.aionn.identity.application.dto.kyc.command.UploadKycDocumentCommand;
-import com.aionn.identity.application.dto.kyc.command.CancelKycCommand;
+import com.aionn.identity.application.dto.kyc.result.KycVerificationSessionResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -28,37 +21,11 @@ public interface KycDtoMapper {
 
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "kycId", source = "kycId")
-    @Mapping(target = "blobUrl", source = "request.blobUrl")
-    UploadKycDocumentCommand toUploadDocumentCommand(String userId, String kycId, UploadKycDocumentRequest request);
-
-    @Mapping(target = "adminId", source = "adminId")
-    @Mapping(target = "kycId", source = "kycId")
-    @Mapping(target = "note", source = "request.note")
-    ReviewKycCommand toReviewCommand(String adminId, String kycId, ReviewKycRequest request);
-
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "kycId", source = "kycId")
-    SubmitKycCommand toSubmitKycCommand(String userId, String kycId);
-
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "kycId", source = "kycId")
-    CancelKycCommand toCancelKycCommand(String userId, String kycId);
-
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "kycId", source = "kycId")
     GetKycQuery toGetKycQuery(String userId, String kycId);
-
-    @Mapping(target = "adminId", source = "adminId")
-    @Mapping(target = "kycId", source = "kycId")
-    ApproveKycCommand toApproveKycCommand(String adminId, String kycId);
-
-    @Mapping(target = "adminId", source = "adminId")
-    @Mapping(target = "kycId", source = "kycId")
-    @Mapping(target = "reason", source = "request.reason")
-    RejectKycCommand toRejectCommand(String adminId, String kycId, RejectKycRequest request);
 
     KycResponse toResponse(KycResult result);
 
     List<KycResponse> toResponses(List<KycResult> results);
-}
 
+    KycVerificationSessionResponse toVerificationSessionResponse(KycVerificationSessionResult result);
+}

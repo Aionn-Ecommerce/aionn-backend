@@ -36,6 +36,7 @@ public interface AuthDtoMapper {
 
     @Mapping(target = "identity", source = "request.identity")
     @Mapping(target = "password", source = "request.password")
+    @Mapping(target = "mfaCode", source = "request.mfaCode")
     @Mapping(target = "ipAddress", source = "clientIp")
     @Mapping(target = "userAgent", source = "userAgent")
     LoginCommand toLoginCommand(LoginRequest request, String clientIp, String userAgent);

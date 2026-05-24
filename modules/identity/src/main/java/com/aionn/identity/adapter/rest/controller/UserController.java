@@ -105,9 +105,9 @@ public class UserController {
 
 	@DeleteMapping("/deletion-requests")
 	@Operation(summary = "Cancel account deletion", description = "Cancel existing account deletion request for the authenticated user")
-	public ResponseEntity<Void> cancelAccountDeletion(Authentication authentication) {
+	public ResponseEntity<ApiResponse<Void>> cancelAccountDeletion(Authentication authentication) {
 		cancelAccountDeletionInputPort.execute(userDtoMapper.toCancelAccountDeletionCommand(authentication.getName()));
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(ApiResponse.success("Account deletion cancelled"));
 	}
 
 	@PostMapping("/data-exports")
@@ -119,6 +119,5 @@ public class UserController {
 		return ApiResponse.createdResponse("Data export requested", response);
 	}
 }
-
 
 

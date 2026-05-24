@@ -100,13 +100,12 @@ public class AgentIdentityController {
 
         @DeleteMapping("/{agentId}")
         @Operation(summary = "Revoke agent identity", description = "Revoke and delete an AI agent identity by agent ID")
-        public ResponseEntity<Void> revoke(
+        public ResponseEntity<ApiResponse<Void>> revoke(
                         Authentication authentication,
                         @PathVariable String agentId) {
                 revokeAgentInputPort.execute(agentIdentityDtoMapper.toRevokeCommand(authentication.getName(), agentId));
-                return ResponseEntity.noContent().build();
+                return ResponseEntity.ok(ApiResponse.success("Agent identity revoked"));
         }
 }
-
 
 

@@ -2,6 +2,7 @@ package com.aionn.identity.adapter.rest.controller;
 
 import com.aionn.identity.adapter.rest.dto.security.*;
 import com.aionn.identity.adapter.rest.mapper.security.SecurityDtoMapper;
+import com.aionn.identity.adapter.rest.support.NoStoreResponseFactory;
 import com.aionn.identity.application.port.in.security.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import com.aionn.sharedkernel.adapter.web.support.ClientIp;
@@ -16,10 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * User self-service security endpoints. Admin operations (unlock account,
- * etc.) live under {@code /api/v1/admin/users}.
- */
 @RestController
 @RequestMapping("/api/v1/security")
 @RequiredArgsConstructor
@@ -29,11 +26,13 @@ public class SecurityController {
 	private final ChangePasswordInputPort changePasswordInputPort;
 	private final RequestPasswordResetInputPort requestPasswordResetInputPort;
 	private final CompletePasswordResetInputPort completePasswordResetInputPort;
+	private final InitiateMfaSetupInputPort initiateMfaSetupInputPort;
 	private final EnableMfaInputPort enableMfaInputPort;
 	private final DisableMfaInputPort disableMfaInputPort;
 	private final RegenerateBackupCodesInputPort regenerateBackupCodesInputPort;
 	private final GetSecurityAuditLogsQueryPort getSecurityAuditLogsQueryPort;
 	private final SecurityDtoMapper securityDtoMapper;
+	private final NoStoreResponseFactory noStoreResponseFactory;
 
 	@PutMapping("/password")
 	@PreAuthorize("isAuthenticated()")
@@ -66,16 +65,29 @@ public class SecurityController {
 		return ResponseEntity.ok(ApiResponse.success("Password reset completed"));
 	}
 
+	@PostMapping("/mfa/setup")
+	@PreAuthorize("isAuthenticated()")
+	@Operation(summary = "Start MFA setup", description = "Generate a TOTP secret and otpauth URI for the authenticated user")
+	public ResponseEntity<ApiResponse<MfaSetupResponse>> setupMfa(
+			Authentication authentication,
+			@ClientIp String clientIp,
+			@Valid @RequestBody MfaSetupRequest request) {
+		var result = initiateMfaSetupInputPort
+				.execute(securityDtoMapper.toInitiateMfaSetupCommand(authentication.getName(), clientIp, request));
+		return noStoreResponseFactory
+				.ok(ApiResponse.success(securityDtoMapper.toMfaSetupResponse(result), "MFA setup initiated"));
+	}
+
 	@PostMapping("/mfa/enable")
 	@PreAuthorize("isAuthenticated()")
-	@Operation(summary = "Enable MFA", description = "Enable multi-factor authentication for the authenticated user")
+	@Operation(summary = "Enable MFA", description = "Confirm TOTP setup and enable multi-factor authentication for the authenticated user")
 	public ResponseEntity<ApiResponse<MfaResponse>> enableMfa(
 			Authentication authentication,
 			@ClientIp String clientIp,
 			@Valid @RequestBody MfaToggleRequest request) {
 		var result = enableMfaInputPort
 				.execute(securityDtoMapper.toEnableMfaCommand(authentication.getName(), clientIp, request));
-		return ResponseEntity.ok(ApiResponse.success(securityDtoMapper.toMfaResponse(result), "MFA enabled"));
+		return noStoreResponseFactory.ok(ApiResponse.success(securityDtoMapper.toMfaResponse(result), "MFA enabled"));
 	}
 
 	@PostMapping("/mfa/disable")
@@ -87,7 +99,7 @@ public class SecurityController {
 			@Valid @RequestBody MfaToggleRequest request) {
 		var result = disableMfaInputPort
 				.execute(securityDtoMapper.toDisableMfaCommand(authentication.getName(), clientIp, request));
-		return ResponseEntity.ok(ApiResponse.success(securityDtoMapper.toMfaResponse(result), "MFA disabled"));
+		return noStoreResponseFactory.ok(ApiResponse.success(securityDtoMapper.toMfaResponse(result), "MFA disabled"));
 	}
 
 	@PostMapping("/mfa/backup-codes")
@@ -99,8 +111,8 @@ public class SecurityController {
 			@Valid @RequestBody MfaToggleRequest request) {
 		var result = regenerateBackupCodesInputPort
 				.execute(securityDtoMapper.toRegenerateBackupCodesCommand(
-						authentication.getName(), request.password(), clientIp));
-		return ResponseEntity.ok(
+						authentication.getName(), request.password(), request.mfaCode(), clientIp));
+		return noStoreResponseFactory.ok(
 				ApiResponse.success(securityDtoMapper.toBackupCodesResponse(result), "Backup codes regenerated"));
 	}
 
@@ -113,4 +125,3 @@ public class SecurityController {
 				ApiResponse.success(securityDtoMapper.toAuditLogResponse(result), "Security audit logs"));
 	}
 }
-

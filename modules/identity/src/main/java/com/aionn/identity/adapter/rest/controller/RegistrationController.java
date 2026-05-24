@@ -3,7 +3,9 @@ package com.aionn.identity.adapter.rest.controller;
 import com.aionn.identity.adapter.rest.dto.auth.AuthTokenResponse;
 import com.aionn.identity.adapter.rest.dto.registration.*;
 import com.aionn.identity.adapter.rest.mapper.registration.RegistrationDtoMapper;
+import com.aionn.identity.adapter.rest.support.AuthClientType;
 import com.aionn.identity.adapter.rest.support.AuthTokenResponseHandler;
+import com.aionn.identity.adapter.rest.support.ClientUserAgent;
 import com.aionn.identity.application.port.in.registration.CompleteRegistrationInputPort;
 import com.aionn.identity.application.port.in.registration.InitiateRegistrationInputPort;
 import com.aionn.identity.application.port.in.registration.ResendRegistrationOtpInputPort;
@@ -12,7 +14,6 @@ import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import com.aionn.sharedkernel.adapter.web.support.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -57,12 +58,12 @@ public class RegistrationController {
 			@PathVariable String regId,
 			@Valid @RequestBody CompleteRegistrationRequest request,
 			@ClientIp String ipAddress,
-			HttpServletRequest httpRequest) {
+			@ClientUserAgent String userAgent,
+			@AuthClientType String clientType) {
 		var result = completeRegistrationInputPort.execute(
-				registrationDtoMapper.toCompleteCommand(regId, request, ipAddress,
-						httpRequest.getHeader("User-Agent")));
+				registrationDtoMapper.toCompleteCommand(regId, request, ipAddress, userAgent));
 		AuthTokenResponse response = registrationDtoMapper.toAuthTokenResponse(result);
-		return authTokenResponseHandler.success(response, httpRequest, "Registration completed!");
+		return authTokenResponseHandler.success(response, clientType, "Registration completed!");
 	}
 
 	@Operation(summary = "Resend OTP", description = "Resend OTP code for a registration session")
@@ -76,4 +77,3 @@ public class RegistrationController {
 	}
 
 }
-

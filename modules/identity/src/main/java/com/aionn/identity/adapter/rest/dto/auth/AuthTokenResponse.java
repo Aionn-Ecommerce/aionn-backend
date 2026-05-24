@@ -7,6 +7,6 @@ public record AuthTokenResponse(
                 String sessionId,
                 String refreshToken,
                 String accessToken,
-                LocalDateTime expiresAt) {
+                LocalDateTime expiresAt,
+                LocalDateTime sessionExpiresAt) {
 }
-

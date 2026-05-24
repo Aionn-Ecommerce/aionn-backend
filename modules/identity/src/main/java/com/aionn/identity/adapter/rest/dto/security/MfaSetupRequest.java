@@ -2,11 +2,7 @@ package com.aionn.identity.adapter.rest.dto.security;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record MfaToggleRequest(
+public record MfaSetupRequest(
         @NotBlank(message = "Password is required")
-        String password,
-        @NotBlank(message = "MFA code is required")
-        String mfaCode) {
+        String password) {
 }
-
-

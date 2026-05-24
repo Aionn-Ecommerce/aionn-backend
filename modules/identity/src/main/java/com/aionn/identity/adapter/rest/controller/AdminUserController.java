@@ -42,8 +42,6 @@ public class AdminUserController {
 			@RequestParam(required = false) String role,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		// Clamp at the controller boundary so a malicious caller can't ask for
-		// size=10000.
 		OffsetPagination safe = OffsetPagination.safe(page, size);
 		var result = listUsersQueryPort.execute(
 				adminUserDtoMapper.toListUsersQuery(status, role, safe.page(), safe.size()));
@@ -70,11 +68,11 @@ public class AdminUserController {
 
 	@DeleteMapping("/{userId}/roles")
 	@Operation(summary = "Remove user roles", description = "Remove specific roles from a user account")
-	public ResponseEntity<Void> removeRoles(
+	public ResponseEntity<ApiResponse<Void>> removeRoles(
 			@PathVariable String userId,
 			@Valid @RequestBody UpdateRolesRequest request) {
 		removeUserRolesInputPort.execute(adminUserDtoMapper.toRemoveRolesCommand(userId, request));
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(ApiResponse.success("Roles removed"));
 	}
 
 	@PatchMapping("/{userId}/status")
@@ -86,11 +84,6 @@ public class AdminUserController {
 		return ResponseEntity.ok(ApiResponse.success(adminUserDtoMapper.toStatusResponse(result), "Status updated"));
 	}
 
-	/**
-	 * Admin operation moved away from {@code SecurityController} to keep the
-	 * URL hierarchy consistent: every {@code /api/v1/admin/**} endpoint lives
-	 * here.
-	 */
 	@PostMapping("/unlock")
 	@Operation(summary = "Unlock account", description = "Unlock a locked user account by admin")
 	public ResponseEntity<ApiResponse<Void>> unlockAccount(@Valid @RequestBody UnlockAccountRequest request) {
@@ -98,4 +91,3 @@ public class AdminUserController {
 		return ResponseEntity.ok(ApiResponse.success("Account unlocked"));
 	}
 }
-

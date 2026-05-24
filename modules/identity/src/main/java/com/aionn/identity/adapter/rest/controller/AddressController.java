@@ -63,11 +63,11 @@ public class AddressController {
 
 	@DeleteMapping("/{addressId}")
 	@Operation(summary = "Delete address", description = "Delete a delivery address by address ID")
-	public ResponseEntity<Void> delete(
+	public ResponseEntity<ApiResponse<Void>> delete(
 			Authentication authentication,
 			@PathVariable String addressId) {
 		deleteAddressInputPort.execute(addressDtoMapper.toDeleteCommand(authentication.getName(), addressId));
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(ApiResponse.success("Address deleted"));
 	}
 
 	@PatchMapping("/{addressId}/default")
@@ -81,6 +81,5 @@ public class AddressController {
 		return ResponseEntity.ok(ApiResponse.success(response, "Default address updated"));
 	}
 }
-
 
 

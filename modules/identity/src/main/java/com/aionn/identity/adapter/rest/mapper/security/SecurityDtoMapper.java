@@ -4,6 +4,8 @@ import com.aionn.identity.adapter.rest.dto.security.BackupCodesResponse;
 import com.aionn.identity.adapter.rest.dto.security.ChangePasswordRequest;
 import com.aionn.identity.adapter.rest.dto.security.CompletePasswordResetRequest;
 import com.aionn.identity.adapter.rest.dto.security.MfaResponse;
+import com.aionn.identity.adapter.rest.dto.security.MfaSetupRequest;
+import com.aionn.identity.adapter.rest.dto.security.MfaSetupResponse;
 import com.aionn.identity.adapter.rest.dto.security.MfaToggleRequest;
 import com.aionn.identity.adapter.rest.dto.security.PasswordResetRequestCommand;
 import com.aionn.identity.adapter.rest.dto.security.PasswordResetResponse;
@@ -11,7 +13,9 @@ import com.aionn.identity.adapter.rest.dto.security.SecurityAuditLogResponse;
 import com.aionn.identity.application.dto.security.result.BackupCodesResult;
 import com.aionn.identity.application.dto.security.command.ChangePasswordCommand;
 import com.aionn.identity.application.dto.security.command.EnableMfaCommand;
+import com.aionn.identity.application.dto.security.command.InitiateMfaSetupCommand;
 import com.aionn.identity.application.dto.security.result.MfaResult;
+import com.aionn.identity.application.dto.security.result.MfaSetupResult;
 import com.aionn.identity.application.dto.security.result.SecurityAuditLogResult;
 import com.aionn.identity.application.dto.security.command.CompletePasswordResetCommand;
 import com.aionn.identity.application.dto.security.command.DisableMfaCommand;
@@ -47,14 +51,25 @@ public interface SecurityDtoMapper {
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "password", source = "request.password")
     @Mapping(target = "clientIp", source = "clientIp")
+    InitiateMfaSetupCommand toInitiateMfaSetupCommand(String userId, String clientIp, MfaSetupRequest request);
+
+    @Mapping(target = "userId", source = "userId")
+    @Mapping(target = "password", source = "request.password")
+    @Mapping(target = "mfaCode", source = "request.mfaCode")
+    @Mapping(target = "clientIp", source = "clientIp")
     EnableMfaCommand toEnableMfaCommand(String userId, String clientIp, MfaToggleRequest request);
 
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "password", source = "request.password")
+    @Mapping(target = "mfaCode", source = "request.mfaCode")
     @Mapping(target = "clientIp", source = "clientIp")
     DisableMfaCommand toDisableMfaCommand(String userId, String clientIp, MfaToggleRequest request);
 
-    RegenerateBackupCodesCommand toRegenerateBackupCodesCommand(String userId, String password, String clientIp);
+    @Mapping(target = "userId", source = "userId")
+    @Mapping(target = "password", source = "password")
+    @Mapping(target = "mfaCode", source = "mfaCode")
+    @Mapping(target = "clientIp", source = "clientIp")
+    RegenerateBackupCodesCommand toRegenerateBackupCodesCommand(String userId, String password, String mfaCode, String clientIp);
 
     UnlockAccountCommand toUnlockAccountCommand(String userId);
 
@@ -62,7 +77,14 @@ public interface SecurityDtoMapper {
     @Mapping(target = "accepted", source = "accepted")
     PasswordResetResponse toPasswordResetResponse(PasswordResetResult result);
 
+    @Mapping(target = "secret", source = "secret")
+    @Mapping(target = "otpauthUri", source = "otpauthUri")
+    @Mapping(target = "issuer", source = "issuer")
+    @Mapping(target = "accountName", source = "accountName")
+    MfaSetupResponse toMfaSetupResponse(MfaSetupResult result);
+
     @Mapping(target = "mfaEnabled", source = "mfaEnabled")
+    @Mapping(target = "backupCodes", source = "backupCodes")
     MfaResponse toMfaResponse(MfaResult result);
 
     @Mapping(target = "backupCodes", source = "backupCodes")
@@ -78,4 +100,3 @@ public interface SecurityDtoMapper {
 
     List<SecurityAuditLogResponse> toAuditLogResponse(List<SecurityAuditLogResult> logs);
 }
-
