@@ -4,6 +4,7 @@ import com.aionn.identity.adapter.rest.dto.user.*;
 import com.aionn.identity.adapter.rest.mapper.user.UserDtoMapper;
 import com.aionn.identity.application.port.in.user.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -74,27 +75,28 @@ public class UserController {
 
 	@PatchMapping("/email")
 	@Operation(summary = "Change email", description = "Request or complete email change flow for the authenticated user")
-	public ResponseEntity<ApiResponse<?>> changeEmail(
+	public ResponseEntity<ApiResponse<UserProfileResponse>> changeEmail(
 			Authentication authentication,
 			@Valid @RequestBody ChangeEmailRequest request) {
 		var result = changeEmailInputPort
 				.execute(userDtoMapper.toChangeEmailCommand(authentication.getName(), request));
-		var response = userDtoMapper.toOutcomeResponse(result);
+		var response = userDtoMapper.toProfileActionResponse(result);
 		return ResponseEntity.ok(ApiResponse.success(response, result.message()));
 	}
 
 	@PatchMapping("/phone")
 	@Operation(summary = "Change phone", description = "Request or complete phone change flow for the authenticated user")
-	public ResponseEntity<ApiResponse<?>> changePhone(
+	public ResponseEntity<ApiResponse<UserProfileResponse>> changePhone(
 			Authentication authentication,
 			@Valid @RequestBody ChangePhoneRequest request) {
 		var result = changePhoneInputPort
 				.execute(userDtoMapper.toChangePhoneCommand(authentication.getName(), request));
-		var response = userDtoMapper.toOutcomeResponse(result);
+		var response = userDtoMapper.toProfileActionResponse(result);
 		return ResponseEntity.ok(ApiResponse.success(response, result.message()));
 	}
 
 	@PostMapping("/deletion-requests")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Request account deletion", description = "Create account deletion request for the authenticated user")
 	public ResponseEntity<ApiResponse<DeletionRequestResponse>> requestAccountDeletion(Authentication authentication) {
 		var result = requestAccountDeletionInputPort
@@ -111,6 +113,7 @@ public class UserController {
 	}
 
 	@PostMapping("/data-exports")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Request data export", description = "Create personal data export request for the authenticated user")
 	public ResponseEntity<ApiResponse<DataExportRequestResponse>> requestDataExport(Authentication authentication) {
 		var result = requestDataExportInputPort
@@ -119,5 +122,3 @@ public class UserController {
 		return ApiResponse.createdResponse("Data export requested", response);
 	}
 }
-
-

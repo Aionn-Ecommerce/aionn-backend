@@ -11,6 +11,7 @@ import com.aionn.identity.application.port.in.registration.InitiateRegistrationI
 import com.aionn.identity.application.port.in.registration.ResendRegistrationOtpInputPort;
 import com.aionn.identity.application.port.in.registration.VerifyRegistrationOtpInputPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import com.aionn.sharedkernel.adapter.web.support.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +35,7 @@ public class RegistrationController {
 
 	@Operation(summary = "Initiate registration", description = "Start registration and send OTP to user")
 	@PostMapping("/initiate")
+	@IdempotentRequest(ttlSeconds = 300)
 	public ResponseEntity<ApiResponse<RegistrationSessionResponse>> initRegistration(
 			@Valid @RequestBody InitiateRegistrationRequest request,
 			@ClientIp String ipAddress) {
@@ -68,6 +70,7 @@ public class RegistrationController {
 
 	@Operation(summary = "Resend OTP", description = "Resend OTP code for a registration session")
 	@PostMapping("/{regId}/resend-otp")
+	@IdempotentRequest(ttlSeconds = 120)
 	public ResponseEntity<ApiResponse<RegistrationSessionResponse>> resendOtp(
 			@PathVariable String regId,
 			@ClientIp String ipAddress) {

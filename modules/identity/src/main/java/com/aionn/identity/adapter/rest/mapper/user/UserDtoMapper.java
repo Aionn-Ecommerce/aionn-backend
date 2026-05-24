@@ -21,6 +21,7 @@ import com.aionn.identity.application.dto.user.query.GetMyProfileQuery;
 import com.aionn.identity.application.dto.user.view.DataExportRequestView;
 import com.aionn.identity.application.dto.user.view.DeletionRequestView;
 import com.aionn.identity.application.dto.user.view.UserActionOutcomeView;
+import com.aionn.identity.application.dto.user.view.UserProfileActionOutcomeView;
 import com.aionn.identity.application.dto.user.view.UserProfileView;
 
 import org.mapstruct.Mapper;
@@ -92,13 +93,8 @@ public interface UserDtoMapper {
     @Mapping(target = "requestedAt", source = "requestedAt")
     DataExportRequestResponse toDataExportResponse(DataExportRequestView view);
 
-    // Helper method
-    default Object toOutcomeResponse(UserActionOutcomeView outcome) {
-        if (outcome.profile() != null) {
-            return toProfileResponse(outcome.profile());
-        }
-        return toActionResponse(outcome.action());
+    default UserProfileResponse toProfileActionResponse(UserProfileActionOutcomeView outcome) {
+        return toProfileResponse(outcome.profile());
     }
 }
-
 

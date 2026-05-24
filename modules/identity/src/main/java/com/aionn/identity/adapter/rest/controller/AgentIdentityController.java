@@ -7,6 +7,7 @@ import com.aionn.identity.adapter.rest.dto.agent.UpdateAgentPermissionsRequest;
 import com.aionn.identity.adapter.rest.mapper.agent.AgentIdentityDtoMapper;
 import com.aionn.identity.application.port.in.agent.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -54,6 +55,7 @@ public class AgentIdentityController {
         }
 
         @PostMapping
+        @IdempotentRequest(ttlSeconds = 300)
         @Operation(summary = "Create agent identity", description = "Create a new AI agent identity for the authenticated user")
         public ResponseEntity<ApiResponse<AgentIdentityResponse>> create(
                         Authentication authentication,
@@ -107,5 +109,4 @@ public class AgentIdentityController {
                 return ResponseEntity.ok(ApiResponse.success("Agent identity revoked"));
         }
 }
-
 

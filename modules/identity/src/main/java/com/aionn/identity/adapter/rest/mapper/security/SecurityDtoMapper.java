@@ -74,7 +74,7 @@ public interface SecurityDtoMapper {
     UnlockAccountCommand toUnlockAccountCommand(String userId);
 
     // Result -> Response
-    @Mapping(target = "accepted", source = "accepted")
+    @Mapping(target = "message", source = "message")
     PasswordResetResponse toPasswordResetResponse(PasswordResetResult result);
 
     @Mapping(target = "secret", source = "secret")

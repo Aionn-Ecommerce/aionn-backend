@@ -6,6 +6,7 @@ import com.aionn.identity.adapter.rest.support.NoStoreResponseFactory;
 import com.aionn.identity.application.port.in.security.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import com.aionn.sharedkernel.adapter.web.support.ClientIp;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -47,6 +48,7 @@ public class SecurityController {
 	}
 
 	@PostMapping("/password-reset-requests")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Request password reset", description = "Create a password reset request for an account")
 	public ResponseEntity<ApiResponse<PasswordResetResponse>> requestPasswordReset(
 			@ClientIp String clientIp,
@@ -57,6 +59,7 @@ public class SecurityController {
 	}
 
 	@PostMapping("/password-reset")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Complete password reset", description = "Complete password reset using reset token and new password")
 	public ResponseEntity<ApiResponse<Void>> completePasswordReset(
 			@ClientIp String clientIp,

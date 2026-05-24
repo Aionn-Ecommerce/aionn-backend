@@ -9,6 +9,7 @@ import com.aionn.identity.application.port.in.kyc.GenerateKycVerificationSession
 import com.aionn.identity.application.port.in.kyc.GetKycQueryPort;
 import com.aionn.identity.application.port.in.kyc.ListMyKycQueryPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -54,6 +55,7 @@ public class KycController {
 
 	@PostMapping
 	@PreAuthorize("isAuthenticated()")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Create KYC profile", description = "Create a new KYC profile for the authenticated user")
 	public ResponseEntity<ApiResponse<KycResponse>> createKyc(
 			Authentication authentication,
@@ -65,6 +67,7 @@ public class KycController {
 
 	@PostMapping("/{kycId}/verification-session")
 	@PreAuthorize("isAuthenticated()")
+	@IdempotentRequest(ttlSeconds = 120)
 	@Operation(summary = "Generate KYC verification session", description = "Generate a provider verification session token for the authenticated user's KYC profile")
 	public ResponseEntity<ApiResponse<KycVerificationSessionResponse>> generateVerificationSession(
 			Authentication authentication,

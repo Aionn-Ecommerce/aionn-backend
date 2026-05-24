@@ -6,6 +6,7 @@ import com.aionn.identity.adapter.rest.mapper.auth.AuthDtoMapper;
 import com.aionn.identity.application.port.in.auth.LinkSocialInputPort;
 import com.aionn.identity.application.port.in.auth.UnlinkSocialInputPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,6 +28,7 @@ public class SocialController {
 
 	@PostMapping("/social-links")
 	@PreAuthorize("isAuthenticated()")
+	@IdempotentRequest(ttlSeconds = 300)
 	@Operation(summary = "Link social account", description = "Link a social provider account to the authenticated user")
 	public ResponseEntity<ApiResponse<SocialLinkResponse>> linkSocial(
 			Authentication authentication,
