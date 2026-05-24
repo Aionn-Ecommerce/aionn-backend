@@ -99,17 +99,6 @@ security:
         max-requests: ${SECURITY_IP_RESET_REQ_MAX_REQUESTS:3}
         window-seconds: ${SECURITY_IP_RESET_REQ_WINDOW_SECONDS:300}
 
-resilience4j:
-  ratelimiter:
-    instances:
-      registration-initiate:
-        limit-for-period: ${RL_REGISTER_LIMIT:5}
-        limit-refresh-period: 60s
-        timeout-duration: 0
-      login:
-        limit-for-period: ${RL_LOGIN_LIMIT:10}
-        limit-refresh-period: 60s
-        timeout-duration: 0
 
 catalog:
   search:

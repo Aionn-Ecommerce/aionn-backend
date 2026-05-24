@@ -3,6 +3,7 @@ package com.aionn.config;
 import com.aionn.config.security.IpSecurityFilter;
 import com.aionn.config.security.SecurityIpProperties;
 import com.aionn.identity.infrastructure.security.BearerAuthenticationFilter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@Slf4j
 @EnableConfigurationProperties(SecurityIpProperties.class)
 @EnableMethodSecurity
 public class ApiSecurityConfig {
@@ -79,13 +81,14 @@ public class ApiSecurityConfig {
                 CorsConfiguration cfg = new CorsConfiguration();
                 List<String> origins = properties.getCors().getAllowedOrigins();
                 if (origins.isEmpty()) {
+                        log.warn("No CORS allowed origins configured; defaulting to http://localhost:3000");
                         cfg.setAllowedOrigins(List.of("http://localhost:3000"));
                 } else {
                         cfg.setAllowedOrigins(origins);
                 }
                 cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 cfg.setAllowedHeaders(List.of("*"));
-                cfg.setExposedHeaders(List.of("X-Request-Id"));
+                cfg.setExposedHeaders(List.of("X-Request-Id", "Idempotent-Replay"));
                 cfg.setAllowCredentials(true);
                 cfg.setMaxAge(3600L);
 

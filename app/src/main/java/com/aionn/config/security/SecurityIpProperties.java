@@ -55,5 +55,16 @@ public class SecurityIpProperties {
 	@Setter
 	public static class Cors {
 		private List<String> allowedOrigins = new ArrayList<>();
+
+		public void setAllowedOrigins(List<String> allowedOrigins) {
+			if (allowedOrigins == null) {
+				this.allowedOrigins = new ArrayList<>();
+				return;
+			}
+			this.allowedOrigins = allowedOrigins.stream()
+					.filter(origin -> origin != null && !origin.isBlank())
+					.map(String::trim)
+					.toList();
+		}
 	}
 }
