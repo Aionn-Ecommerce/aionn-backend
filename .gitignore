@@ -25,6 +25,10 @@ Thumbs.db
 *.log
 logs/
 
+# Test tooling
+.jqwik-database
+**/.jqwik-database
+
 # Application
 application-local.yml
 application-dev.yml
