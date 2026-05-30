@@ -18,4 +18,3 @@ public class ClientIpResolver {
         return request.getRemoteAddr();
     }
 }
-

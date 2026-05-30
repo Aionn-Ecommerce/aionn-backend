@@ -37,4 +37,3 @@ public class ClientIpArgumentResolver implements HandlerMethodArgumentResolver {
         return clientIpResolver.resolve(request);
     }
 }
-
