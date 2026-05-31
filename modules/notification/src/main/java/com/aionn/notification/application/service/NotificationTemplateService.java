@@ -52,4 +52,3 @@ public class NotificationTemplateService {
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.TEMPLATE_NOT_FOUND)));
     }
 }
-

@@ -15,9 +15,6 @@ dependencies {
 
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 
-    // JWT - reuse the same parser the identity module uses for HTTP auth.
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'

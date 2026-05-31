@@ -79,6 +79,26 @@ public class NotificationDispatchService {
         return results;
     }
 
+    public NotificationResult sendDirectByEvent(NotificationCommands.SendDirectByEvent command) {
+        String locale = command.locale() == null ? "vi-VN" : command.locale();
+        NotificationTemplate template = templateRepository.findByEventChannelLocale(
+                command.eventType(), command.channel(), locale)
+                .or(() -> templateRepository.findByEventChannelLocale(command.eventType(), command.channel(), "vi-VN"))
+                .orElseThrow(() -> new NotificationException(
+                        NotificationErrorCode.TEMPLATE_NOT_FOUND,
+                        "No template for event=" + command.eventType()
+                                + " channel=" + command.channel()
+                                + " locale=" + locale));
+
+        NotificationTemplate.Rendered rendered = template.render(
+                command.context() == null ? Map.of() : command.context());
+        Notification notification = Notification.create(IdGenerator.ulid(),
+                command.userId(), template.getTemplateId(), command.channel(), command.category(),
+                rendered.subject(), rendered.content(), command.campaignId());
+        Notification saved = notificationRepository.save(notification);
+        return attemptDelivery(saved, command.recipient());
+    }
+
     public NotificationResult markRead(NotificationCommands.MarkRead command) {
         Notification n = ownedBy(command.notiId(), command.userId());
         n.markRead();
@@ -124,10 +144,16 @@ public class NotificationDispatchService {
     }
 
     private NotificationResult attemptDelivery(Notification notification) {
+        return attemptDelivery(notification, null);
+    }
+
+    private NotificationResult attemptDelivery(Notification notification, String recipientOverride) {
         ChannelSender sender = sender(notification.getChannel());
         String to;
         try {
-            to = recipientResolver.resolve(notification.getUserId(), notification.getChannel());
+            to = recipientOverride != null && !recipientOverride.isBlank()
+                    ? recipientOverride
+                    : recipientResolver.resolve(notification.getUserId(), notification.getChannel());
         } catch (RuntimeException ex) {
             notification.markFailed("RECIPIENT_RESOLVE_FAILED:" + ex.getMessage());
             Notification saved = notificationRepository.save(notification);

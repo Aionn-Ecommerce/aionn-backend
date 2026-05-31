@@ -21,10 +21,10 @@ public enum NotificationErrorCode {
     PROVIDER_NOT_ACTIVE("NTF_302", "Notification provider is not active"),
 
     DEVICE_TOKEN_NOT_FOUND("NTF_401", "Device token not found"),
+    RECIPIENT_NOT_FOUND("NTF_402", "Notification recipient not found"),
 
     INVALID_ARGUMENT("NTF_900", "Invalid argument");
 
     private final String code;
     private final String defaultMessage;
 }
-

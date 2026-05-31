@@ -28,6 +28,17 @@ public final class NotificationCommands {
             Map<String, String> context) implements Command {
     }
 
+    public record SendDirectByEvent(
+            String userId,
+            String eventType,
+            NotificationCategory category,
+            NotificationChannel channel,
+            String recipient,
+            String locale,
+            String campaignId,
+            Map<String, String> context) implements Command {
+    }
+
     public record MarkRead(String userId, String notiId) implements Command {
     }
 
