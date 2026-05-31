@@ -10,9 +10,9 @@ public record RegistrationProperties(
                 @DefaultValue("5") int maxVerifyAttempts,
                 @DefaultValue("60") int resendCooldownSeconds,
                 @DefaultValue("300") int otpExpirySeconds,
+                @DefaultValue("30") int lockTimeoutSeconds,
                 @DefaultValue("30") long sessionExpiresDays,
                 @DefaultValue("+84") String defaultCountryCallingCode,
-                @DefaultValue("false") boolean exposeOtpInResponse,
                 @DefaultValue RateLimit rateLimit,
                 @DefaultValue Captcha captcha,
                 @DefaultValue Twilio twilio) {
@@ -27,7 +27,7 @@ public record RegistrationProperties(
 
         @Builder
         public record Captcha(
-                        @DefaultValue("mock") String provider,
+                        @DefaultValue("google") String provider,
                         @DefaultValue("") String expectedToken,
                         @DefaultValue("") String googleSiteKey,
                         @DefaultValue("") String googleSecretKey) {
@@ -41,4 +41,3 @@ public record RegistrationProperties(
                         @DefaultValue("") String fromPhoneNumber) {
         }
 }
-

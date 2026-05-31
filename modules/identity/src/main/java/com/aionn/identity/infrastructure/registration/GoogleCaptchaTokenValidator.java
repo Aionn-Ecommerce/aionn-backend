@@ -1,17 +1,20 @@
 package com.aionn.identity.infrastructure.registration;
 
-import com.aionn.identity.application.port.out.registration.CaptchaTokenValidator;
+import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
 import com.aionn.identity.infrastructure.config.properties.RegistrationProperties;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
 @Component
 @ConditionalOnProperty(prefix = "identity.registration.captcha", name = "provider", havingValue = "google")
-public class GoogleCaptchaTokenValidator implements CaptchaTokenValidator {
+public class GoogleCaptchaTokenValidator implements CaptchaTokenValidatorPort {
 
     private static final String VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 
@@ -30,19 +33,26 @@ public class GoogleCaptchaTokenValidator implements CaptchaTokenValidator {
             return false;
         }
 
-        Map<String, Object> response = restClient.post()
-                .uri(VERIFY_URL)
-                .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
-                .body("secret=" + secret + "&response=" + captchaToken)
-                .retrieve()
-                .body(Map.class);
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("secret", secret);
+        form.add("response", captchaToken);
 
-        if (response == null) {
+        try {
+            Map<String, Object> response = restClient.post()
+                    .uri(VERIFY_URL)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(Map.class);
+
+            if (response == null) {
+                return false;
+            }
+
+            Object success = response.get("success");
+            return success instanceof Boolean ok && ok;
+        } catch (Exception ex) {
             return false;
         }
-
-        Object success = response.get("success");
-        return success instanceof Boolean ok && ok;
     }
 }
-

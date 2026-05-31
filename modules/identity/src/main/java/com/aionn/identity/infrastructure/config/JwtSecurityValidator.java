@@ -1,6 +1,7 @@
 package com.aionn.identity.infrastructure.config;
 
 import com.aionn.identity.infrastructure.config.properties.JwtProperties;
+import com.aionn.identity.infrastructure.config.properties.MfaProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -10,20 +11,15 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
-/**
- * Validates that JWT secrets are not using dev-default values in production.
- * Fails fast at startup to prevent insecure deployments.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtSecurityValidator {
 
-    private static final String DEV_SECRET = "dev-only-secret-please-override-min-32-bytes!!";
-    private static final String DEV_JWT_SECRET = "dev-jwt-secret-please-override-and-use-min-32-bytes!!";
     private static final int MIN_SECRET_LENGTH = 32;
 
     private final JwtProperties jwtProperties;
+    private final MfaProperties mfaProperties;
     private final Environment environment;
 
     @EventListener(ApplicationReadyEvent.class)
@@ -32,23 +28,34 @@ public class JwtSecurityValidator {
                 || Arrays.asList(environment.getActiveProfiles()).contains("production");
 
         String secret = jwtProperties.secret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("Missing required configuration: IDENTITY_JWT_SECRET");
+        }
+        String mfaKey = mfaProperties.encryptionKey();
+        if (mfaKey == null || mfaKey.isBlank()) {
+            throw new IllegalStateException("Missing required configuration: IDENTITY_MFA_ENCRYPTION_KEY");
+        }
 
         if (isProd) {
-            if (DEV_SECRET.equals(secret) || DEV_JWT_SECRET.equals(secret)) {
-                throw new IllegalStateException(
-                        "CRITICAL: JWT secret is using dev-default value in production! " +
-                                "Set IDENTITY_JWT_SECRET environment variable with a secure random string (min 32 chars).");
-            }
             if (secret.length() < MIN_SECRET_LENGTH) {
                 throw new IllegalStateException(
                         "CRITICAL: JWT secret must be at least " + MIN_SECRET_LENGTH +
                                 " characters for HS256. Current length: " + secret.length());
             }
+            if (MfaProperties.DEFAULT_ENCRYPTION_KEY.equals(mfaKey)) {
+                throw new IllegalStateException(
+                        "CRITICAL: MFA encryption key is using dev-default value in production! " +
+                                "Set IDENTITY_MFA_ENCRYPTION_KEY to a secure random string.");
+            }
             log.info("JWT security validation passed for production profile");
         } else {
-            if (DEV_SECRET.equals(secret) || DEV_JWT_SECRET.equals(secret)) {
+            if (secret.length() < MIN_SECRET_LENGTH) {
+                log.warn("JWT secret is shorter than {} characters. Override via IDENTITY_JWT_SECRET.",
+                        MIN_SECRET_LENGTH);
+            }
+            if (MfaProperties.DEFAULT_ENCRYPTION_KEY.equals(mfaKey)) {
                 log.warn(
-                        "JWT secret is using dev-default value. Override via IDENTITY_JWT_SECRET for non-dev environments.");
+                        "MFA encryption key is using dev-default value. Override via IDENTITY_MFA_ENCRYPTION_KEY for non-dev environments.");
             }
         }
     }

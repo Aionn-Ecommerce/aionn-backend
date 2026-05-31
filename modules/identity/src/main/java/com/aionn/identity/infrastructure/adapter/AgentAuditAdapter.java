@@ -13,10 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Adapter implementation for agent audit log operations.
- * Provides database-level filtering for optimal performance.
- */
 @Component
 @RequiredArgsConstructor
 public class AgentAuditAdapter implements AgentAuditPort {
@@ -28,19 +24,14 @@ public class AgentAuditAdapter implements AgentAuditPort {
     @Override
     public SecurityAudit save(SecurityAudit securityAudit) {
         SecurityAuditEntity entity = mapper.toEntity(securityAudit);
-
-        // Set the user relationship
         UserEntity user = userRepository.getReferenceById(securityAudit.getUserId());
         entity.setUser(user);
-
         SecurityAuditEntity saved = securityAuditRepository.save(entity);
         return mapper.toDomain(saved);
     }
 
     @Override
     public List<SecurityAudit> findByAgentId(String agentId, int limit) {
-        // Use database-level filtering with LIKE query
-        // This performs filtering at the database level instead of in-memory
         PageRequest pageRequest = PageRequest.of(0, limit);
         return securityAuditRepository
                 .findByDescriptionContainingOrderByTimestampDesc(agentId, pageRequest)
@@ -49,4 +40,3 @@ public class AgentAuditAdapter implements AgentAuditPort {
                 .toList();
     }
 }
-

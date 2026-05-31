@@ -1,7 +1,10 @@
 package com.aionn.identity.infrastructure.persistence.entity;
 
+import com.aionn.identity.domain.valueobject.AccountDeletionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -37,8 +40,9 @@ public class AccountDeletionRequestEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    private AccountDeletionStatus status;
 
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
@@ -49,6 +53,5 @@ public class AccountDeletionRequestEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 }
-
 
 

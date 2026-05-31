@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.persistence.repository.geography;
 
-import com.aionn.identity.domain.geography.Ward;
+import com.aionn.identity.infrastructure.persistence.entity.geography.WardEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,21 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface WardRepository extends JpaRepository<Ward, String> {
+public interface WardRepository extends JpaRepository<WardEntity, String> {
 
-    List<Ward> findByDistrictCodeAndActiveTrue(String districtCode);
+    List<WardEntity> findByDistrictCodeAndActiveTrue(String districtCode);
 
-    Optional<Ward> findByCodeAndActiveTrue(String code);
+    Optional<WardEntity> findByCodeAndActiveTrue(String code);
 
-    /**
-     * Fetch ward with district and province in a SINGLE query using JOIN FETCH.
-     * This avoids N+1 queries when resolving complete location.
-     * Returns ward with district and province eagerly loaded.
-     */
-    @Query("SELECT w FROM Ward w " +
-            "JOIN FETCH w.district d " +
-            "JOIN FETCH d.province p " +
-            "WHERE w.code = :code AND w.active = true")
-    Optional<Ward> findByCodeWithDistrictAndProvince(@Param("code") String code);
+    @Query("SELECT w FROM WardEntity w "
+            + "JOIN FETCH w.district d "
+            + "JOIN FETCH d.province p "
+            + "WHERE w.code = :code AND w.active = true")
+    Optional<WardEntity> findByCodeWithDistrictAndProvince(@Param("code") String code);
 }
-

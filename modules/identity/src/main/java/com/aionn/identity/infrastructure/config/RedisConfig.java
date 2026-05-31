@@ -18,14 +18,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    /**
-     * RedisTemplate uses an ObjectMapper with default typing (writes the
-     * concrete class as {@code @class}) so polymorphic values like
-     * {@code RegistrationVerificationSession} round-trip correctly. We do not
-     * share the application's primary ObjectMapper because we deliberately want
-     * type tags here that we do not want in REST responses.
-     */
-    @Bean
+        @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
@@ -43,8 +36,6 @@ public class RedisConfig {
     }
 
     private static ObjectMapper redisObjectMapper() {
-        // Allow our domain models in the identity module without opening up to
-        // arbitrary classes: only types under com.aionn.* may carry typing.
         PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
                 .allowIfBaseType(Object.class)
                 .allowIfSubType("com.aionn.")

@@ -2,6 +2,7 @@ package com.aionn.identity.infrastructure.adapter;
 
 import com.aionn.identity.application.dto.user.view.DeletionRequestView;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
+import com.aionn.identity.domain.valueobject.AccountDeletionStatus;
 import com.aionn.identity.infrastructure.persistence.entity.AccountDeletionRequestEntity;
 import com.aionn.identity.infrastructure.persistence.entity.UserEntity;
 import com.aionn.identity.infrastructure.persistence.repository.account.AccountDeletionRequestRepository;
@@ -15,7 +16,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-public class AccountDeletionAdapter implements AccountDeletionPort {
+public class AccountDeletionPersistenceAdapter implements AccountDeletionPort {
 
     private final AccountDeletionRequestRepository accountDeletionRequestRepository;
     private final UserRepository userRepository;
@@ -26,7 +27,7 @@ public class AccountDeletionAdapter implements AccountDeletionPort {
         AccountDeletionRequestEntity request = AccountDeletionRequestEntity.builder()
                 .deletionRequestId(IdGenerator.ulid())
                 .user(user)
-                .status("PENDING")
+                .status(AccountDeletionStatus.PENDING)
                 .requestedAt(LocalDateTime.now())
                 .scheduledDeletionAt(scheduledDeletionAt)
                 .build();
@@ -36,15 +37,15 @@ public class AccountDeletionAdapter implements AccountDeletionPort {
 
     @Override
     public Optional<DeletionRequestView> findPendingByUserId(String userId) {
-        return accountDeletionRequestRepository.findByUser_UserIdAndStatus(userId, "PENDING")
+        return accountDeletionRequestRepository.findByUser_UserIdAndStatus(userId, AccountDeletionStatus.PENDING)
                 .map(this::toView);
     }
 
     @Override
     public void cancel(String userId) {
-        accountDeletionRequestRepository.findByUser_UserIdAndStatus(userId, "PENDING")
+        accountDeletionRequestRepository.findByUser_UserIdAndStatus(userId, AccountDeletionStatus.PENDING)
                 .ifPresent(request -> {
-                    request.setStatus("CANCELED");
+                    request.setStatus(AccountDeletionStatus.CANCELLED);
                     request.setCanceledAt(LocalDateTime.now());
                     accountDeletionRequestRepository.save(request);
                 });
@@ -53,9 +54,8 @@ public class AccountDeletionAdapter implements AccountDeletionPort {
     private DeletionRequestView toView(AccountDeletionRequestEntity entity) {
         return new DeletionRequestView(
                 entity.getDeletionRequestId(),
-                entity.getStatus(),
+                entity.getStatus().name(),
                 entity.getRequestedAt(),
                 entity.getScheduledDeletionAt());
     }
 }
-

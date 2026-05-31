@@ -4,11 +4,6 @@ import com.aionn.identity.domain.model.SecurityAudit;
 import com.aionn.identity.infrastructure.persistence.entity.SecurityAuditEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
-/**
- * MapStruct mapper for converting between SecurityAudit domain model and
- * SecurityAuditEntity.
- */
 @Mapper(componentModel = "spring")
 public interface SecurityAuditDomainMapper {
 

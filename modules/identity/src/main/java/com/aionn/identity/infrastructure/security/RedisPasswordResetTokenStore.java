@@ -12,12 +12,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HexFormat;
 import java.util.Optional;
-
-/**
- * Redis-backed password-reset token store. Replaces the previous in-memory
- * map (which was lost on restart and unsafe across instances). The token id
- * is hashed before storage so a leaked Redis dump cannot be replayed.
- */
 @Component
 @RequiredArgsConstructor
 public class RedisPasswordResetTokenStore {
@@ -39,7 +33,14 @@ public class RedisPasswordResetTokenStore {
     }
 
     public Optional<PasswordResetTokenData> find(String token) {
-        String value = redisTemplate.opsForValue().get(key(token));
+        return parse(redisTemplate.opsForValue().get(key(token)));
+    }
+
+    public Optional<PasswordResetTokenData> consume(String token) {
+        return parse(redisTemplate.opsForValue().getAndDelete(key(token)));
+    }
+
+    private Optional<PasswordResetTokenData> parse(String value) {
         if (value == null) {
             return Optional.empty();
         }
@@ -76,4 +77,3 @@ public class RedisPasswordResetTokenStore {
         }
     }
 }
-

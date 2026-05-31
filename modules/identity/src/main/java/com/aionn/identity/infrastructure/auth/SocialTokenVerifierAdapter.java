@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.auth;
 
-import com.aionn.identity.application.port.out.auth.SocialTokenVerifier;
+import com.aionn.identity.application.port.out.social.SocialTokenVerifierPort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.valueobject.AuthProvider;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class SocialTokenVerifierAdapter implements SocialTokenVerifier {
+public class SocialTokenVerifierAdapter implements SocialTokenVerifierPort {
 
     private final GoogleSocialTokenVerifier googleSocialTokenVerifier;
     private final FacebookSocialTokenVerifier facebookSocialTokenVerifier;
@@ -23,6 +23,3 @@ public class SocialTokenVerifierAdapter implements SocialTokenVerifier {
         };
     }
 }
-
-
-

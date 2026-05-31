@@ -1,12 +1,12 @@
 package com.aionn.identity.infrastructure.user;
 
-import com.aionn.identity.application.port.out.user.OtpChannel;
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStore;
-import com.aionn.identity.application.port.out.user.UserOtpPurpose;
-import com.aionn.identity.application.port.out.user.model.UserOtpChallenge;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort.UserOtpChallenge;
+import com.aionn.identity.domain.valueobject.OtpChannel;
+import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -15,24 +15,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-/**
- * Redis-backed OTP challenge store. Replaces the in-memory implementation
- * for production use (multi-pod safe, survives restarts).
- * <p>
- * Key format: {@code identity:otp:{userId}:{purpose}}
- * Value format: pipe-delimited fields for simplicity (no JSON dependency).
- * TTL: aligned with the challenge expiry time.
- */
 @Slf4j
-@Primary
 @Component
+@ConditionalOnProperty(prefix = "identity.account.otp-challenge", name = "provider", havingValue = "redis", matchIfMissing = true)
 @RequiredArgsConstructor
-public class RedisUserOtpChallengeStore implements UserOtpChallengeStore {
+public class RedisUserOtpChallengeStore implements UserOtpChallengeStorePort {
 
     private static final String KEY_PREFIX = "identity:otp:";
     private static final String DELIMITER = "|";
     private static final DateTimeFormatter DT_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-    // Extra buffer beyond the stated expiry to avoid race conditions
     private static final Duration EXPIRY_BUFFER = Duration.ofMinutes(2);
 
     private final StringRedisTemplate redisTemplate;

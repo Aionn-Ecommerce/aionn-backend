@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "identity.auth")
 public record AuthProperties(
         @DefaultValue("X-Client-Type") String clientTypeHeader,
-        @DefaultValue("mobile") String mobileClientValue) {
+        @DefaultValue("mobile") String mobileClientValue,
+        @DefaultValue("5") int maxFailedLoginAttempts,
+        @DefaultValue("15") int lockoutMinutes) {
 }
-

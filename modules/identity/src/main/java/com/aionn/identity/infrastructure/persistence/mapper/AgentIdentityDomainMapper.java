@@ -5,11 +5,6 @@ import com.aionn.identity.domain.valueobject.AgentStatus;
 import com.aionn.identity.infrastructure.persistence.entity.AgentIdentityEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
-/**
- * MapStruct mapper for converting between AgentIdentity domain model and
- * AgentIdentityEntity.
- */
 @Mapper(componentModel = "spring", imports = { AgentStatus.class })
 public interface AgentIdentityDomainMapper {
 

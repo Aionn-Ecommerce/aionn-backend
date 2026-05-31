@@ -13,10 +13,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Adapter implementation for agent identity persistence operations.
- * Maps between domain models and infrastructure entities.
- */
 @Component
 @RequiredArgsConstructor
 public class AgentPersistenceAdapter implements AgentPersistencePort {
@@ -28,11 +24,8 @@ public class AgentPersistenceAdapter implements AgentPersistencePort {
     @Override
     public AgentIdentity save(AgentIdentity agentIdentity) {
         AgentIdentityEntity entity = mapper.toEntity(agentIdentity);
-
-        // Set the owner relationship
         UserEntity owner = userRepository.getReferenceById(agentIdentity.getOwnerId());
         entity.setOwner(owner);
-
         AgentIdentityEntity saved = agentIdentityRepository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -53,9 +46,8 @@ public class AgentPersistenceAdapter implements AgentPersistencePort {
 
     @Override
     public Optional<AgentIdentity> findByKeyHash(String keyHash) {
-        // Note: This method requires a repository method to be added
-        // For now, returning empty as the repository doesn't have this method yet
-        return Optional.empty();
+        return agentIdentityRepository.findByKeyHash(keyHash)
+                .map(mapper::toDomain);
     }
 
     @Override
@@ -67,11 +59,8 @@ public class AgentPersistenceAdapter implements AgentPersistencePort {
     @Override
     public AgentIdentity update(AgentIdentity agentIdentity) {
         AgentIdentityEntity entity = mapper.toEntity(agentIdentity);
-
-        // Set the owner relationship
         UserEntity owner = userRepository.getReferenceById(agentIdentity.getOwnerId());
         entity.setOwner(owner);
-
         AgentIdentityEntity updated = agentIdentityRepository.save(entity);
         return mapper.toDomain(updated);
     }
@@ -81,4 +70,3 @@ public class AgentPersistenceAdapter implements AgentPersistencePort {
         agentIdentityRepository.deleteById(agentId);
     }
 }
-

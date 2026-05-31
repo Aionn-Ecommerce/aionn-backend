@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.persistence.repository.geography;
 
-import com.aionn.identity.domain.geography.Province;
+import com.aionn.identity.infrastructure.persistence.entity.geography.ProvinceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,12 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProvinceRepository extends JpaRepository<Province, String> {
+public interface ProvinceRepository extends JpaRepository<ProvinceEntity, String> {
 
-    List<Province> findByCountryCodeAndActiveTrue(String countryCode);
+    List<ProvinceEntity> findByCountryCodeAndActiveTrue(String countryCode);
 
-    List<Province> findByActiveTrue();
+    List<ProvinceEntity> findByActiveTrue();
 
-    Optional<Province> findByCodeAndActiveTrue(String code);
+    Optional<ProvinceEntity> findByCodeAndActiveTrue(String code);
 }
-

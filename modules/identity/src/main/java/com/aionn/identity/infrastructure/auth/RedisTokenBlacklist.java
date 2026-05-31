@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.auth;
 
-import com.aionn.identity.application.port.out.auth.TokenBlacklist;
+import com.aionn.identity.application.port.out.auth.TokenBlacklistPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -8,16 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
-/**
- * Redis-backed token blacklist. Keys auto-expire when the token would have
- * expired naturally, so no manual cleanup is needed.
- * <p>
- * Key format: {@code identity:token-blacklist:{jti}}
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RedisTokenBlacklist implements TokenBlacklist {
+public class RedisTokenBlacklist implements TokenBlacklistPort {
 
     private static final String KEY_PREFIX = "identity:token-blacklist:";
 

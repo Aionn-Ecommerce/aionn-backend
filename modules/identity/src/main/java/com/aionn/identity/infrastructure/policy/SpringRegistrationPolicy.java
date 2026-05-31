@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.policy;
 
-import com.aionn.identity.application.port.out.registration.RegistrationPolicy;
+import com.aionn.identity.application.policy.RegistrationPolicy;
 import com.aionn.identity.infrastructure.config.properties.RegistrationProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +27,11 @@ public class SpringRegistrationPolicy implements RegistrationPolicy {
     }
 
     @Override
+    public int getLockTimeoutSeconds() {
+        return properties.lockTimeoutSeconds();
+    }
+
+    @Override
     public long getSessionExpiresDays() {
         return properties.sessionExpiresDays();
     }
@@ -38,7 +43,7 @@ public class SpringRegistrationPolicy implements RegistrationPolicy {
 
     @Override
     public boolean isExposeOtpInResponse() {
-        return properties.exposeOtpInResponse();
+        return !properties.twilio().enabled();
     }
 
     @Override
@@ -61,4 +66,3 @@ public class SpringRegistrationPolicy implements RegistrationPolicy {
         return properties.rateLimit().phoneWindowSeconds();
     }
 }
-

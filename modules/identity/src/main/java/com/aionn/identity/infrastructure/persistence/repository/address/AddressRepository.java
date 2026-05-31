@@ -15,14 +15,9 @@ public interface AddressRepository extends JpaRepository<UserAddressEntity, Stri
 
     Optional<UserAddressEntity> findByAddressIdAndUser_UserId(String addressId, String userId);
 
-    Optional<UserAddressEntity> findByUser_UserIdAndIsDefaultTrue(String userId);
-
     long countByUser_UserId(String userId);
 
     @Modifying
     @Query("UPDATE UserAddressEntity a SET a.isDefault = false WHERE a.user.userId = :userId AND a.isDefault = true")
     void clearDefaultAddressByUserId(@Param("userId") String userId);
 }
-
-
-

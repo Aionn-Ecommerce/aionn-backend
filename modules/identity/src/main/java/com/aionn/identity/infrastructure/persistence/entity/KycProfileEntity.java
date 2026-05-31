@@ -35,6 +35,21 @@ public class KycProfileEntity {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    @Column(name = "provider", length = 30)
+    private String provider;
+
+    @Column(name = "provider_applicant_id", length = 64)
+    private String providerApplicantId;
+
+    @Column(name = "provider_level_name", length = 128)
+    private String providerLevelName;
+
+    @Column(name = "provider_review_status", length = 50)
+    private String providerReviewStatus;
+
+    @Column(name = "provider_correlation_id", length = 128)
+    private String providerCorrelationId;
+
     @Column(name = "reviewer_id", length = 26)
     private String reviewerId;
 
@@ -60,4 +75,3 @@ public class KycProfileEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
-

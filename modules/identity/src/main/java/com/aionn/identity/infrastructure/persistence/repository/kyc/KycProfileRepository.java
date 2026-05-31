@@ -11,7 +11,8 @@ public interface KycProfileRepository extends JpaRepository<KycProfileEntity, St
     List<KycProfileEntity> findByUser_UserIdOrderBySubmittedAtDesc(String userId);
 
     Optional<KycProfileEntity> findByKycIdAndUser_UserId(String kycId, String userId);
-}
 
+    Optional<KycProfileEntity> findByProviderApplicantId(String providerApplicantId);
+}
 
 

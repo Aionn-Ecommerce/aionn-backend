@@ -10,8 +10,9 @@ public interface AgentIdentityRepository extends JpaRepository<AgentIdentityEnti
 
     List<AgentIdentityEntity> findByOwner_UserIdOrderByCreatedAtDesc(String ownerUserId);
 
+    Optional<AgentIdentityEntity> findByKeyHash(String keyHash);
+
     Optional<AgentIdentityEntity> findByAgentIdAndOwner_UserId(String agentId, String ownerUserId);
 }
-
 
 

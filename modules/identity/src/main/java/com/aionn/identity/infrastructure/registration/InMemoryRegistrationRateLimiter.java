@@ -1,6 +1,7 @@
 package com.aionn.identity.infrastructure.registration;
 
-import com.aionn.identity.application.port.out.registration.RegistrationRateLimiter;
+import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -9,7 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class InMemoryRegistrationRateLimiter implements RegistrationRateLimiter {
+@ConditionalOnProperty(prefix = "identity.registration.ratelimit", name = "provider", havingValue = "memory")
+public class InMemoryRegistrationRateLimiter implements RegistrationRateLimiterPort {
 
     private final Map<String, ArrayDeque<Long>> requestsByKey = new ConcurrentHashMap<>();
 
@@ -36,6 +38,3 @@ public class InMemoryRegistrationRateLimiter implements RegistrationRateLimiter 
         }
     }
 }
-
-
-

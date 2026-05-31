@@ -5,9 +5,9 @@ import com.aionn.identity.application.dto.geography.result.ResolvedLocation;
 import com.aionn.identity.application.port.out.geography.GeographyPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.domain.geography.District;
-import com.aionn.identity.domain.geography.Province;
-import com.aionn.identity.domain.geography.Ward;
+import com.aionn.identity.infrastructure.persistence.entity.geography.DistrictEntity;
+import com.aionn.identity.infrastructure.persistence.entity.geography.ProvinceEntity;
+import com.aionn.identity.infrastructure.persistence.entity.geography.WardEntity;
 import com.aionn.identity.infrastructure.persistence.repository.geography.CountryRepository;
 import com.aionn.identity.infrastructure.persistence.repository.geography.DistrictRepository;
 import com.aionn.identity.infrastructure.persistence.repository.geography.ProvinceRepository;
@@ -19,11 +19,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Geography reads. Caches only resolved (non-empty) lookups so that newly
- * activated rows become visible immediately. {@code unless} on each cacheable
- * method skips caching of empty optionals.
- */
 @Component
 @RequiredArgsConstructor
 public class GeographyPersistenceAdapter implements GeographyPersistencePort {
@@ -98,13 +93,13 @@ public class GeographyPersistenceAdapter implements GeographyPersistencePort {
 
     @Override
     public ResolvedLocation resolveLocationWithValidation(String provinceCode, String districtCode, String wardCode) {
-        Ward ward = wardRepository.findByCodeWithDistrictAndProvince(wardCode)
+        WardEntity ward = wardRepository.findByCodeWithDistrictAndProvince(wardCode)
                 .orElseThrow(() -> new IdentityException(
                         IdentityErrorCode.INVALID_GEOGRAPHY_CODE,
                         "Invalid ward code: " + wardCode));
 
-        District district = ward.getDistrict();
-        Province province = district.getProvince();
+        DistrictEntity district = ward.getDistrict();
+        ProvinceEntity province = district.getProvince();
 
         if (!ward.getDistrictCode().equals(districtCode)) {
             throw new IdentityException(
@@ -124,4 +119,3 @@ public class GeographyPersistenceAdapter implements GeographyPersistencePort {
                 new GeographyResult(ward.getCode(), ward.getName(), ward.getNameEn()));
     }
 }
-

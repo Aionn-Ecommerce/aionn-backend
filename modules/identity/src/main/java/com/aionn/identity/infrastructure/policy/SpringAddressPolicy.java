@@ -1,6 +1,6 @@
 package com.aionn.identity.infrastructure.policy;
 
-import com.aionn.identity.application.port.out.address.AddressPolicy;
+import com.aionn.identity.application.policy.AddressPolicy;
 import com.aionn.identity.infrastructure.config.properties.AddressProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,4 +16,3 @@ public class SpringAddressPolicy implements AddressPolicy {
         return addressProperties.maxAddressNumbers();
     }
 }
-

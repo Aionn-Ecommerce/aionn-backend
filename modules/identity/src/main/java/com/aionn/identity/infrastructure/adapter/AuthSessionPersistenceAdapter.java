@@ -9,7 +9,9 @@ import com.aionn.identity.infrastructure.persistence.repository.user.UserReposit
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -43,11 +45,11 @@ public class AuthSessionPersistenceAdapter implements AuthSessionPersistencePort
 
     @Override
     public List<AuthSession> saveAll(List<AuthSession> sessions) {
+        Map<String, UserEntity> userRefs = new HashMap<>();
         var entities = sessions.stream()
-                .map(session -> {
-                    UserEntity userEntity = userRepository.getReferenceById(session.getUserId());
-                    return authSessionDomainMapper.toEntity(session, userEntity);
-                })
+                .map(session -> authSessionDomainMapper.toEntity(
+                        session,
+                        userRefs.computeIfAbsent(session.getUserId(), userRepository::getReferenceById)))
                 .toList();
         var savedEntities = authSessionRepository.saveAll(entities);
         return savedEntities.stream()
@@ -55,4 +57,3 @@ public class AuthSessionPersistenceAdapter implements AuthSessionPersistencePort
                 .toList();
     }
 }
-

@@ -8,9 +8,4 @@ import java.util.List;
 public interface AuthSessionRepository extends JpaRepository<AuthSessionEntity, String> {
 
     List<AuthSessionEntity> findByUser_UserIdOrderByCreatedAtDesc(String userId);
-
-    int countByUser_UserIdAndStatus(String userId, String status);
 }
-
-
-

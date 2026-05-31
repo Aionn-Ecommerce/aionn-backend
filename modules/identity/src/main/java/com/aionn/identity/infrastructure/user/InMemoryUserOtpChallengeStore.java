@@ -1,8 +1,9 @@
 package com.aionn.identity.infrastructure.user;
 
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStore;
-import com.aionn.identity.application.port.out.user.UserOtpPurpose;
-import com.aionn.identity.application.port.out.user.model.UserOtpChallenge;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort.UserOtpChallenge;
+import com.aionn.identity.domain.valueobject.UserOtpPurpose;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -10,7 +11,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class InMemoryUserOtpChallengeStore implements UserOtpChallengeStore {
+@ConditionalOnProperty(prefix = "identity.account.otp-challenge", name = "provider", havingValue = "memory")
+public class InMemoryUserOtpChallengeStore implements UserOtpChallengeStorePort {
 
     private final Map<String, UserOtpChallenge> storage = new ConcurrentHashMap<>();
 
@@ -33,6 +35,3 @@ public class InMemoryUserOtpChallengeStore implements UserOtpChallengeStore {
         return userId + ":" + purpose.name();
     }
 }
-
-
-

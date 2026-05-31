@@ -7,10 +7,7 @@ import java.util.List;
 
 public interface BackupCodeRepository extends JpaRepository<BackupCodeEntity, String> {
 
-    List<BackupCodeEntity> findByUser_UserIdOrderByGeneratedAtDesc(String userId);
+    List<BackupCodeEntity> findByUser_UserIdAndUsedAtIsNullOrderByGeneratedAtDesc(String userId);
 
     void deleteByUser_UserId(String userId);
 }
-
-
-

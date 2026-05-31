@@ -16,7 +16,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class DataExportAdapter implements DataExportPort {
+public class DataExportPersistenceAdapter implements DataExportPort {
 
     private final DataExportRequestRepository dataExportRequestRepository;
     private final UserRepository userRepository;
@@ -27,7 +27,7 @@ public class DataExportAdapter implements DataExportPort {
         DataExportRequestEntity request = DataExportRequestEntity.builder()
                 .exportRequestId(IdGenerator.ulid())
                 .user(user)
-                .status(DataExportStatus.REQUESTED.name())
+                .status(DataExportStatus.REQUESTED)
                 .requestedAt(LocalDateTime.now())
                 .build();
         DataExportRequestEntity saved = dataExportRequestRepository.save(request);
@@ -38,14 +38,13 @@ public class DataExportAdapter implements DataExportPort {
     public boolean hasActiveRequest(String userId) {
         return dataExportRequestRepository.existsByUser_UserIdAndStatusIn(
                 userId,
-                List.of(DataExportStatus.REQUESTED.name(), DataExportStatus.PROCESSING.name()));
+                List.of(DataExportStatus.REQUESTED, DataExportStatus.PROCESSING));
     }
 
     private DataExportRequestView toView(DataExportRequestEntity entity) {
         return new DataExportRequestView(
                 entity.getExportRequestId(),
-                entity.getStatus(),
+                entity.getStatus().name(),
                 entity.getRequestedAt());
     }
 }
-

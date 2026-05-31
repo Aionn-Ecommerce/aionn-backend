@@ -15,12 +15,11 @@ public class UserPersistenceAdapter implements UserPersistencePort {
 
     private final UserRepository userRepository;
     private final IdentityUserMapper identityUserMapper;
+    private final IdentityUserEntitySaveSupport identityUserEntitySaveSupport;
 
     @Override
     public IdentityUser save(IdentityUser user) {
-        var entity = identityUserMapper.toEntity(user);
-        var savedEntity = userRepository.save(entity);
-        return identityUserMapper.toDomain(savedEntity);
+        return identityUserEntitySaveSupport.save(user);
     }
 
     @Override
@@ -52,4 +51,3 @@ public class UserPersistenceAdapter implements UserPersistencePort {
         return userRepository.existsById(userId);
     }
 }
-

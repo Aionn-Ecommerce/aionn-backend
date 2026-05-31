@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-public class PasswordResetAdapter implements PasswordResetPort {
+public class PasswordResetPersistenceAdapter implements PasswordResetPort {
 
     private final UserRepository userRepository;
     private final RedisPasswordResetTokenStore tokenStore;
@@ -30,6 +30,12 @@ public class PasswordResetAdapter implements PasswordResetPort {
     }
 
     @Override
+    public Optional<PasswordResetTokenData> consumePasswordResetToken(String token) {
+        return tokenStore.consume(token)
+                .map(data -> new PasswordResetTokenData(data.userId(), data.expiresAt()));
+    }
+
+    @Override
     public void deletePasswordResetToken(String token) {
         tokenStore.delete(token);
     }
@@ -42,4 +48,3 @@ public class PasswordResetAdapter implements PasswordResetPort {
         userRepository.save(user);
     }
 }
-

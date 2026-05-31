@@ -24,10 +24,8 @@ public class KycPersistenceAdapter implements KycPersistencePort {
     @Override
     public KycProfile save(KycProfile kycProfile) {
         KycProfileEntity entity = mapper.toEntity(kycProfile);
-        // Reference the existing user without an extra SELECT.
         UserEntity userRef = userRepository.getReferenceById(kycProfile.getUserId());
         entity.setUser(userRef);
-
         KycProfileEntity saved = kycRepository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -45,6 +43,12 @@ public class KycPersistenceAdapter implements KycPersistencePort {
     }
 
     @Override
+    public Optional<KycProfile> findByProviderApplicantId(String providerApplicantId) {
+        return kycRepository.findByProviderApplicantId(providerApplicantId)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public List<KycProfile> findByUserIdOrderBySubmittedAtDesc(String userId) {
         return kycRepository.findByUser_UserIdOrderBySubmittedAtDesc(userId).stream()
                 .map(mapper::toDomain)
@@ -56,4 +60,3 @@ public class KycPersistenceAdapter implements KycPersistencePort {
         kycRepository.deleteById(kycProfile.getKycId());
     }
 }
-

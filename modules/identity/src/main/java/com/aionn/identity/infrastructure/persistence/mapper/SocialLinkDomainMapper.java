@@ -1,7 +1,6 @@
 package com.aionn.identity.infrastructure.persistence.mapper;
 
 import com.aionn.identity.domain.model.SocialLink;
-import com.aionn.identity.domain.valueobject.AuthProvider;
 import com.aionn.identity.infrastructure.persistence.entity.SocialAccountEntity;
 import com.aionn.identity.infrastructure.persistence.entity.UserEntity;
 import org.mapstruct.Mapper;
@@ -19,4 +18,3 @@ public interface SocialLinkDomainMapper {
     @Mapping(target = "createdAt", source = "domain.createdAt")
     SocialAccountEntity toEntity(SocialLink domain, UserEntity userEntity);
 }
-
