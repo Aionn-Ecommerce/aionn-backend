@@ -3,7 +3,7 @@ package com.aionn.identity.application.port.out.auth;
 import java.time.Duration;
 import java.util.Optional;
 
-public interface RefreshTokenStore {
+public interface RefreshTokenStorePort {
 
     void store(String tokenId, String sessionId, Duration ttl);
 

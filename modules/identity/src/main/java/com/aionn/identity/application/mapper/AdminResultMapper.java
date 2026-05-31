@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface AdminResultMapper {
 
-    @Mapping(target = "userId", expression = "java(user.getId().toString())")
+    @Mapping(target = "userId", expression = "java(user.getUserId())")
     @Mapping(target = "roles", expression = "java(mapRoles(user))")
     @Mapping(target = "status", expression = "java(user.getStatus().name())")
     UserDetailResult toUserDetailResult(IdentityUser user);

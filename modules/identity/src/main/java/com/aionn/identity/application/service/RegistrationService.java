@@ -9,20 +9,19 @@ import com.aionn.identity.application.dto.registration.result.InitiateRegistrati
 import com.aionn.identity.application.dto.registration.result.ResendRegistrationOtpResult;
 import com.aionn.identity.application.dto.registration.result.VerifyRegistrationOtpResult;
 import com.aionn.identity.application.mapper.RegistrationResultMapper;
-import com.aionn.identity.application.port.out.auth.AccessTokenIssuer;
+import com.aionn.identity.application.policy.RegistrationPolicy;
+import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
-import com.aionn.identity.application.port.out.auth.RefreshTokenStore;
-import com.aionn.identity.application.port.out.registration.CaptchaTokenValidator;
-import com.aionn.identity.application.port.out.registration.RegistrationLockManager;
-import com.aionn.identity.application.port.out.registration.RegistrationOtpSender;
-import com.aionn.identity.application.port.out.registration.RegistrationPolicy;
-import com.aionn.identity.application.port.out.registration.RegistrationRateLimiter;
-import com.aionn.identity.application.port.out.registration.RegistrationSessionStore;
-import com.aionn.identity.application.port.out.security.PasswordHasher;
+import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
+import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
+import com.aionn.identity.application.port.out.registration.RegistrationLockManagerPort;
+import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
+import com.aionn.identity.application.port.out.registration.RegistrationSessionStorePort;
+import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.domain.id.UserId;
 import com.aionn.identity.domain.model.AuthSession;
 import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.model.RegistrationVerificationSession;
@@ -45,20 +44,19 @@ public class RegistrationService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int REFRESH_TOKEN_BYTES = 48;
-    private static final int LOCK_TIMEOUT_SECONDS = 30;
 
     private final UserPersistencePort userPersistencePort;
     private final AuthSessionPersistencePort authSessionPersistencePort;
-    private final RegistrationOtpSender otpSender;
-    private final CaptchaTokenValidator captchaTokenValidator;
-    private final RegistrationRateLimiter registrationRateLimiter;
-    private final RegistrationSessionStore registrationSessionStore;
-    private final AccessTokenIssuer accessTokenIssuer;
-    private final RefreshTokenStore refreshTokenStore;
-    private final PasswordHasher passwordHasher;
+    private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final CaptchaTokenValidatorPort captchaTokenValidator;
+    private final RegistrationRateLimiterPort registrationRateLimiter;
+    private final RegistrationSessionStorePort registrationSessionStore;
+    private final AccessTokenIssuerPort accessTokenIssuer;
+    private final RefreshTokenStorePort refreshTokenStore;
+    private final PasswordHasherPort passwordHasher;
     private final RegistrationResultMapper registrationResultMapper;
     private final RegistrationPolicy registrationPolicy;
-    private final RegistrationLockManager registrationLockManager;
+    private final RegistrationLockManagerPort registrationLockManager;
 
     public InitiateRegistrationResult initiate(InitiateRegistrationCommand command) {
         log.debug("Initiating registration for identity: {}", command.identity());
@@ -92,7 +90,7 @@ public class RegistrationService {
                 null);
 
         registrationSessionStore.save(session);
-        otpSender.sendOtp(phoneNumber.value(), otp.getCode());
+        notificationDispatcher.sendRegistrationOtp(phoneNumber.value(), otp.getCode());
 
         String responseOtpCode = registrationPolicy.isExposeOtpInResponse() ? otp.getCode() : null;
         return registrationResultMapper.toInitiateResult(session, responseOtpCode);
@@ -124,7 +122,7 @@ public class RegistrationService {
 
         session.resend(newOtp.getCode(), newOtp.getResendAvailableAt(), newOtp.getExpiredAt());
         registrationSessionStore.save(session);
-        otpSender.sendOtp(session.getPhoneNumber(), newOtp.getCode());
+        notificationDispatcher.sendRegistrationOtp(session.getPhoneNumber(), newOtp.getCode());
 
         String responseOtpCode = registrationPolicy.isExposeOtpInResponse() ? newOtp.getCode() : null;
         return registrationResultMapper.toResendOtpResult(session, responseOtpCode);
@@ -135,49 +133,48 @@ public class RegistrationService {
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.REGISTRATION_NOT_FOUND));
 
         String phoneNumber = session.getPhoneNumber();
-        String lockToken = registrationLockManager.tryLock(phoneNumber, LOCK_TIMEOUT_SECONDS);
+        String lockToken = registrationLockManager.tryLock(
+                phoneNumber,
+                registrationPolicy.getLockTimeoutSeconds());
         if (lockToken == null || lockToken.isEmpty()) {
             throw new IdentityException(IdentityErrorCode.REGISTRATION_IN_PROGRESS);
         }
-        try {
-            if (session.isExpired()) {
-                throw new IdentityException(IdentityErrorCode.REGISTRATION_EXPIRED);
-            }
-            if (!session.isVerified() || !command.verificationToken().equals(session.getVerificationToken())) {
-                throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID);
-            }
-
-            validateUniqueIdentity(phoneNumber, command.username());
-
-            IdentityUser user = createUser(phoneNumber, command.username(), command.password());
-            IdentityUser savedUser = userPersistencePort.save(user);
-
-            AuthSession authSession = createAuthSession(
-                    savedUser.getId().toString(),
-                    command.ipAddress(),
-                    command.userAgent());
-            AuthSession savedSession = authSessionPersistencePort.save(authSession);
-
-            String accessToken = accessTokenIssuer.issueAccessToken(
-                    savedUser.getId().toString(),
-                    savedSession.getSessionId(),
-                    savedSession.getExpiresAt(),
-                    savedUser.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()));
-            String refreshToken = issueRefreshToken(savedSession);
-            LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
-
-            registrationSessionStore.deleteByRegId(command.regId());
-
-            log.info("Registration completed for userId: {}, sessionId: {}",
-                    savedUser.getId(), savedSession.getSessionId());
-            return registrationResultMapper.toCompleteResult(
-                    savedSession,
-                    accessToken,
-                    refreshToken,
-                    accessTokenExpiresAt);
-        } finally {
-            registrationLockManager.unlock(phoneNumber, lockToken);
+        registrationLockManager.unlockAfterCompletion(phoneNumber, lockToken);
+        if (session.isExpired()) {
+            throw new IdentityException(IdentityErrorCode.REGISTRATION_EXPIRED);
         }
+        if (!session.isVerified() || !command.verificationToken().equals(session.getVerificationToken())) {
+            throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID);
+        }
+
+        validateUniqueIdentity(phoneNumber, command.username());
+
+        IdentityUser user = createUser(phoneNumber, command.username(), command.password());
+        IdentityUser savedUser = userPersistencePort.save(user);
+
+        AuthSession authSession = createAuthSession(
+                savedUser.getUserId(),
+                command.ipAddress(),
+                command.userAgent());
+        AuthSession savedSession = authSessionPersistencePort.save(authSession);
+
+        String accessToken = accessTokenIssuer.issueAccessToken(
+                savedUser.getUserId(),
+                savedSession.getSessionId(),
+                savedSession.getExpiresAt(),
+                savedUser.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()));
+        String refreshToken = issueRefreshToken(savedSession);
+        LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
+
+        registrationSessionStore.deleteByRegId(command.regId());
+
+        log.info("Registration completed for userId: {}, sessionId: {}",
+                savedUser.getUserId(), savedSession.getSessionId());
+        return registrationResultMapper.toCompleteResult(
+                savedSession,
+                accessToken,
+                refreshToken,
+                accessTokenExpiresAt);
     }
 
     private void validateUniqueIdentity(String phoneNumber, String username) {
@@ -216,7 +213,7 @@ public class RegistrationService {
 
     private IdentityUser createUser(String phoneNumber, String username, String password) {
         IdentityUser user = IdentityUser.createNew(
-                UserId.of(IdGenerator.ulid()),
+                IdGenerator.ulid(),
                 null,
                 phoneNumber,
                 username);

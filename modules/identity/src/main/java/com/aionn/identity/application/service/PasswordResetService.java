@@ -1,13 +1,13 @@
 package com.aionn.identity.application.service;
 
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
-import com.aionn.identity.application.port.out.auth.RefreshTokenStore;
-import com.aionn.identity.application.port.out.security.PasswordHasher;
+import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
+import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.PasswordResetPort;
-import com.aionn.identity.application.port.out.security.SecurityAuditEvent;
 import com.aionn.identity.application.port.out.security.SecurityAuditPort;
 import com.aionn.identity.application.port.out.security.UserSecurityPort;
-import com.aionn.identity.application.port.out.user.AccountChangeNotifier;
+import com.aionn.identity.domain.valueobject.SecurityAuditEventType;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.AuthSession;
@@ -34,10 +34,10 @@ public class PasswordResetService {
     private final UserSecurityPort userSecurityPort;
     private final PasswordResetPort passwordResetPort;
     private final SecurityAuditPort securityAuditPort;
-    private final PasswordHasher passwordHasher;
+    private final PasswordHasherPort passwordHasher;
     private final AuthSessionPersistencePort authSessionPersistencePort;
-    private final RefreshTokenStore refreshTokenStore;
-    private final AccountChangeNotifier accountChangeNotifier;
+    private final RefreshTokenStorePort refreshTokenStore;
+    private final IdentityNotificationDispatcherPort notificationDispatcher;
 
     public void changePassword(String userId, String currentPassword, String newPassword, String ipAddress) {
         log.info("Processing password change for user: {}", userId);
@@ -55,8 +55,12 @@ public class PasswordResetService {
 
         passwordResetPort.updatePassword(userId, passwordHasher.hash(newPassword));
         revokeOtherSessions(userId);
-        securityAuditPort.saveAuditLog(userId, SecurityAuditEvent.PASSWORD_CHANGED, ipAddress);
-        accountChangeNotifier.notifyPasswordChanged(userId, "self-service");
+        securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.PASSWORD_CHANGED, ipAddress);
+        try {
+            notificationDispatcher.sendPasswordChanged(userId, "self-service");
+        } catch (RuntimeException ex) {
+            log.error("Failed to dispatch password-changed notification for user {}", userId, ex);
+        }
     }
 
     public void requestPasswordReset(String identity, String ipAddress) {
@@ -73,9 +77,9 @@ public class PasswordResetService {
 
         passwordResetPort.savePasswordResetToken(token, user.get().userId(),
                 LocalDateTime.now().plusMinutes(RESET_TOKEN_TTL_MINUTES));
-        securityAuditPort.saveAuditLog(user.get().userId(), SecurityAuditEvent.PASSWORD_RESET_REQUESTED, ipAddress);
+        securityAuditPort.saveAuditLog(user.get().userId(), SecurityAuditEventType.PASSWORD_RESET_REQUESTED, ipAddress);
         try {
-            accountChangeNotifier.notifyPasswordResetRequested(user.get().userId(), token);
+            notificationDispatcher.sendPasswordResetRequested(user.get().userId(), token);
         } catch (RuntimeException ex) {
             log.error("Failed to dispatch password reset token for user {}", user.get().userId(), ex);
         }
@@ -96,11 +100,11 @@ public class PasswordResetService {
 
         passwordResetPort.updatePassword(data.userId(), passwordHasher.hash(newPassword));
         revokeOtherSessions(data.userId());
-        securityAuditPort.saveAuditLog(data.userId(), SecurityAuditEvent.PASSWORD_RESET_COMPLETED, ipAddress);
+        securityAuditPort.saveAuditLog(data.userId(), SecurityAuditEventType.PASSWORD_RESET_COMPLETED, ipAddress);
         try {
-            accountChangeNotifier.notifyPasswordChanged(data.userId(), "reset");
+            notificationDispatcher.sendPasswordChanged(data.userId(), "password reset");
         } catch (RuntimeException ex) {
-            log.warn("Failed to notify user {} after password reset completion", data.userId(), ex);
+            log.error("Failed to dispatch password-changed notification for user {}", data.userId(), ex);
         }
     }
 

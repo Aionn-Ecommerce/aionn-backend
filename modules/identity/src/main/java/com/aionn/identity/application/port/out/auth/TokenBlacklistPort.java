@@ -1,6 +1,6 @@
 package com.aionn.identity.application.port.out.auth;
 
-public interface TokenBlacklist {
+public interface TokenBlacklistPort {
 
     void blacklist(String jti, long ttlSeconds);
 

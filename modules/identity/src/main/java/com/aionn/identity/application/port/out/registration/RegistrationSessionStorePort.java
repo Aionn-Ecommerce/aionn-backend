@@ -4,7 +4,7 @@ import com.aionn.identity.domain.model.RegistrationVerificationSession;
 
 import java.util.Optional;
 
-public interface RegistrationSessionStore {
+public interface RegistrationSessionStorePort {
 
     void save(RegistrationVerificationSession session);
 
@@ -12,6 +12,3 @@ public interface RegistrationSessionStore {
 
     void deleteByRegId(String regId);
 }
-
-
-

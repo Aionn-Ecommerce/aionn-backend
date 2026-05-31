@@ -1,4 +1,4 @@
-package com.aionn.identity.application.port.out.auth;
+package com.aionn.identity.application.policy;
 
 public interface AuthPolicy {
 

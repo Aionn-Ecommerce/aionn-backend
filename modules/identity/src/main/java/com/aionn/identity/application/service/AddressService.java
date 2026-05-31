@@ -4,7 +4,7 @@ import com.aionn.identity.application.dto.address.command.CreateAddressCommand;
 import com.aionn.identity.application.dto.address.command.UpdateAddressCommand;
 import com.aionn.identity.application.dto.geography.result.ResolvedLocation;
 import com.aionn.identity.application.port.out.address.AddressPersistencePort;
-import com.aionn.identity.application.port.out.address.AddressPolicy;
+import com.aionn.identity.application.policy.AddressPolicy;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;

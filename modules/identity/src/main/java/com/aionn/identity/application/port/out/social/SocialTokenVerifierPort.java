@@ -1,10 +1,7 @@
-package com.aionn.identity.application.port.out.auth;
+package com.aionn.identity.application.port.out.social;
 
 import com.aionn.identity.domain.valueobject.AuthProvider;
 
-public interface SocialTokenVerifier {
+public interface SocialTokenVerifierPort {
 	String verifyAndExtractProviderUserId(AuthProvider provider, String providerToken);
 }
-
-
-

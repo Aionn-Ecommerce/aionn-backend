@@ -7,24 +7,22 @@ import com.aionn.identity.application.dto.user.view.DataExportRequestView;
 import com.aionn.identity.application.dto.user.view.DeletionRequestView;
 import com.aionn.identity.application.dto.user.view.UserProfileView;
 import com.aionn.identity.application.mapper.UserResultMapper;
+import com.aionn.identity.application.policy.AccountManagementPolicy;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
-import com.aionn.identity.application.port.out.auth.RefreshTokenStore;
-import com.aionn.identity.application.port.out.user.AccountChangeNotifier;
+import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
+import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.identity.domain.valueobject.UserOtpPurpose;
+import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
 import com.aionn.identity.application.port.out.user.DataExportPort;
-import com.aionn.identity.application.port.out.user.EmailOtpSender;
-import com.aionn.identity.application.port.out.user.OtpChannel;
-import com.aionn.identity.application.port.out.user.PhoneOtpSender;
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStore;
-import com.aionn.identity.application.port.out.user.UserOtpPurpose;
-import com.aionn.identity.application.port.out.user.UserPersistencePort;
-import com.aionn.identity.application.port.out.user.model.UserOtpChallenge;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort.UserOtpChallenge;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.AuthSession;
 import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.valueobject.AuthSessionStatus;
-import com.aionn.identity.infrastructure.config.properties.AccountManagementProperties;
+import com.aionn.identity.domain.valueobject.OtpChannel;
 import com.aionn.sharedkernel.util.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,15 +36,13 @@ import java.time.LocalDateTime;
 public class AccountManagementService {
 
     private final UserPersistencePort userPersistencePort;
-    private final EmailOtpSender emailOtpSender;
-    private final PhoneOtpSender phoneOtpSender;
-    private final UserOtpChallengeStore userOtpChallengeStore;
+    private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final UserOtpChallengeStorePort userOtpChallengeStore;
     private final AccountDeletionPort accountDeletionPort;
     private final DataExportPort dataExportPort;
     private final AuthSessionPersistencePort authSessionPersistencePort;
-    private final RefreshTokenStore refreshTokenStore;
-    private final AccountChangeNotifier accountChangeNotifier;
-    private final AccountManagementProperties accountManagementProperties;
+    private final RefreshTokenStorePort refreshTokenStore;
+    private final AccountManagementPolicy accountManagementPolicy;
     private final UserResultMapper userResultMapper;
 
     public DeletionRequestView requestAccountDeletion(RequestAccountDeletionCommand command) {
@@ -74,9 +70,9 @@ public class AccountManagementService {
                 user.getEmail(),
                 otpCode,
                 null,
-                LocalDateTime.now().plusSeconds(accountManagementProperties.otp().expirySeconds()),
+                LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        emailOtpSender.sendOtp(user.getEmail(), otpCode);
+        notificationDispatcher.sendEmailOtp(user.getEmail(), otpCode);
         log.info("Verification OTP sent to email for user: {}", userId);
     }
 
@@ -112,9 +108,9 @@ public class AccountManagementService {
                 newEmail,
                 otpCode,
                 newEmail,
-                LocalDateTime.now().plusSeconds(accountManagementProperties.otp().expirySeconds()),
+                LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        emailOtpSender.sendOtp(newEmail, otpCode);
+        notificationDispatcher.sendEmailOtp(newEmail, otpCode);
         log.info("Email change OTP sent to new email for user: {}", userId);
     }
 
@@ -136,12 +132,10 @@ public class AccountManagementService {
         userOtpChallengeStore.delete(userId, UserOtpPurpose.CHANGE_EMAIL);
 
         revokeAllSessions(userId);
-        if (oldEmail != null && !oldEmail.isBlank()) {
-            try {
-                accountChangeNotifier.notifyEmailChanged(userId, oldEmail, saved.getEmail());
-            } catch (RuntimeException ex) {
-                log.warn("Failed to notify previous email of change for user {}", userId, ex);
-            }
+        try {
+            notificationDispatcher.sendEmailChanged(userId, oldEmail, saved.getEmail());
+        } catch (RuntimeException ex) {
+            log.error("Failed to dispatch email-changed notification for user {}", userId, ex);
         }
         log.info("Email changed for user: {}", userId);
         return userResultMapper.toUserProfileView(saved);
@@ -164,9 +158,9 @@ public class AccountManagementService {
                 newPhone,
                 otpCode,
                 newPhone,
-                LocalDateTime.now().plusSeconds(accountManagementProperties.otp().expirySeconds()),
+                LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        phoneOtpSender.sendOtp(newPhone, otpCode);
+        notificationDispatcher.sendPhoneOtp(newPhone, otpCode);
         log.info("Phone change OTP sent to new phone for user: {}", userId);
     }
 
@@ -187,12 +181,10 @@ public class AccountManagementService {
         userOtpChallengeStore.delete(userId, UserOtpPurpose.CHANGE_PHONE);
 
         revokeAllSessions(userId);
-        if (oldPhone != null && !oldPhone.isBlank()) {
-            try {
-                accountChangeNotifier.notifyPhoneChanged(userId, oldPhone, saved.getPhone());
-            } catch (RuntimeException ex) {
-                log.warn("Failed to notify previous phone of change for user {}", userId, ex);
-            }
+        try {
+            notificationDispatcher.sendPhoneChanged(userId, oldPhone, saved.getPhone());
+        } catch (RuntimeException ex) {
+            log.error("Failed to dispatch phone-changed notification for user {}", userId, ex);
         }
         log.info("Phone changed for user: {}", userId);
         return userResultMapper.toUserProfileView(saved);
@@ -204,7 +196,7 @@ public class AccountManagementService {
             throw new IdentityException(IdentityErrorCode.ACCOUNT_DELETION_ALREADY_REQUESTED);
         }
         LocalDateTime scheduledDeletionAt = LocalDateTime.now()
-                .plusDays(accountManagementProperties.deletion().graceDays());
+                .plusDays(accountManagementPolicy.getDeletionGraceDays());
         DeletionRequestView result = accountDeletionPort.save(userId, scheduledDeletionAt);
         log.info("Account deletion requested for user: {}, scheduled at: {}", userId, scheduledDeletionAt);
         return result;
@@ -255,7 +247,7 @@ public class AccountManagementService {
         }
         if (!challenge.otpCode().equals(otpCode)) {
             int attempts = challenge.attempts() + 1;
-            if (attempts >= accountManagementProperties.otp().maxAttempts()) {
+            if (attempts >= accountManagementPolicy.getOtpMaxAttempts()) {
                 userOtpChallengeStore.delete(challenge.userId(), challenge.purpose());
                 throw new IdentityException(IdentityErrorCode.OTP_ATTEMPTS_EXCEEDED);
             }

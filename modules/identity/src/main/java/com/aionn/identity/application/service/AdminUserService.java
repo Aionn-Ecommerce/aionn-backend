@@ -2,6 +2,7 @@ package com.aionn.identity.application.service;
 
 import com.aionn.identity.application.dto.admin.result.UserDetailResult;
 import com.aionn.identity.application.dto.admin.result.UserListResult;
+import com.aionn.identity.application.dto.common.PageResult;
 import com.aionn.identity.application.mapper.AdminResultMapper;
 import com.aionn.identity.application.port.out.admin.AdminUserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
@@ -12,9 +13,6 @@ import com.aionn.identity.domain.valueobject.UserStatus;
 import com.aionn.sharedkernel.domain.vo.OffsetPagination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -73,13 +71,12 @@ public class AdminUserService {
         log.debug("Listing users status={}, role={}, page={}, size={}", status, role,
                 pagination.page(), pagination.size());
 
-        Pageable pageable = PageRequest.of(pagination.page(), pagination.size());
-        Page<IdentityUser> userPage = adminUserPersistencePort.findUsersWithFilters(
-                status, role, pageable);
+        PageResult<IdentityUser> userPage = adminUserPersistencePort.findUsersWithFilters(
+                status, role, pagination);
 
-        var users = userPage.getContent().stream()
+        var users = userPage.content().stream()
                 .map(user -> new UserListResult.UserSummary(
-                        user.getId().toString(),
+                        user.getUserId(),
                         user.getEmail(),
                         user.getDisplayName(),
                         user.getStatus() != null ? user.getStatus().name() : null,
@@ -90,7 +87,7 @@ public class AdminUserService {
                 .toList();
 
         return adminResultMapper.toUserListResult(users, pagination.page(), pagination.size(),
-                (int) userPage.getTotalElements());
+                (int) userPage.totalElements());
     }
 
     public UserDetailResult getUserById(String userId) {

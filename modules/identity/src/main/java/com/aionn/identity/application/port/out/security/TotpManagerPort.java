@@ -1,6 +1,6 @@
 package com.aionn.identity.application.port.out.security;
 
-public interface TotpManager {
+public interface TotpManagerPort {
 
     String generateSecret();
 

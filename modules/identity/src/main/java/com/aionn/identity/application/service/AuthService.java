@@ -13,26 +13,26 @@ import com.aionn.identity.application.dto.auth.result.LogoutAllResult;
 import com.aionn.identity.application.dto.auth.result.RefreshAccessTokenResult;
 import com.aionn.identity.application.dto.auth.result.SocialLoginResult;
 import com.aionn.identity.application.mapper.AuthResultMapper;
-import com.aionn.identity.application.port.out.auth.AccessTokenIssuer;
-import com.aionn.identity.application.port.out.auth.AuthPolicy;
+import com.aionn.identity.application.policy.AuthPolicy;
+import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
-import com.aionn.identity.application.port.out.auth.RefreshTokenStore;
-import com.aionn.identity.application.port.out.auth.SocialTokenVerifier;
-import com.aionn.identity.application.port.out.auth.TokenBlacklist;
+import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
+import com.aionn.identity.application.port.out.auth.TokenBlacklistPort;
 import com.aionn.identity.application.port.out.security.MfaPersistencePort;
-import com.aionn.identity.application.port.out.security.PasswordHasher;
-import com.aionn.identity.application.port.out.security.TotpManager;
+import com.aionn.identity.application.port.out.security.PasswordHasherPort;
+import com.aionn.identity.application.port.out.security.TotpManagerPort;
 import com.aionn.identity.application.port.out.security.UserSecurityPort;
 import com.aionn.identity.application.port.out.social.SocialLinkPersistencePort;
+import com.aionn.identity.application.port.out.social.SocialTokenVerifierPort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.domain.id.UserId;
 import com.aionn.identity.domain.model.AuthSession;
 import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.model.SocialLink;
 import com.aionn.identity.domain.valueobject.AuthProvider;
 import com.aionn.identity.domain.valueobject.AuthSessionStatus;
+import com.aionn.identity.domain.valueobject.UserStatus;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,28 +58,28 @@ public class AuthService {
     private final AuthSessionPersistencePort authSessionPersistencePort;
     private final SocialLinkPersistencePort socialLinkPersistencePort;
     private final MfaPersistencePort mfaPersistencePort;
-    private final PasswordHasher passwordHasher;
-    private final TotpManager totpManager;
-    private final AccessTokenIssuer accessTokenIssuer;
-    private final SocialTokenVerifier socialTokenVerifier;
+    private final PasswordHasherPort passwordHasher;
+    private final TotpManagerPort totpManager;
+    private final AccessTokenIssuerPort accessTokenIssuer;
+    private final SocialTokenVerifierPort socialTokenVerifier;
     private final AuthPolicy authPolicy;
-    private final RefreshTokenStore refreshTokenStore;
+    private final RefreshTokenStorePort refreshTokenStore;
     private final AuthResultMapper authResultMapper;
-    private final TokenBlacklist tokenBlacklist;
+    private final TokenBlacklistPort tokenBlacklist;
 
     public LoginResult login(LoginCommand command) {
         log.debug("Login attempt for identity: {}", command.identity());
         IdentityUser user = validateCredentials(command.identity(), command.password());
-        validateMfa(user.getId().toString(), command.mfaCode());
-        userSecurityPort.resetFailedLoginAttempts(user.getId().toString());
+        validateMfa(user.getUserId(), command.mfaCode());
+        userSecurityPort.resetFailedLoginAttempts(user.getUserId());
 
-        AuthSession session = createSession(user.getId().toString(), command.ipAddress(), command.userAgent());
+        AuthSession session = createSession(user.getUserId(), command.ipAddress(), command.userAgent());
         AuthSession savedSession = authSessionPersistencePort.save(session);
         String accessToken = issueAccessToken(savedSession);
         String refreshToken = issueRefreshToken(savedSession);
         LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
-        log.info("User logged in: userId={}, sessionId={}", user.getId(), savedSession.getSessionId());
+        log.info("User logged in: userId={}, sessionId={}", user.getUserId(), savedSession.getSessionId());
         return authResultMapper.toLoginResult(savedSession, accessToken, refreshToken, accessTokenExpiresAt);
     }
 
@@ -100,17 +100,17 @@ public class AuthService {
             IdentityUser savedUser = userPersistencePort.save(user);
             SocialLink newSocialLink = SocialLink.createNew(
                     IdGenerator.ulid(),
-                    savedUser.getId().toString(),
+                    savedUser.getUserId(),
                     provider,
                     providerUserId);
-            socialLinkPersistencePort.save(newSocialLink, savedUser.getId().toString());
+            socialLinkPersistencePort.save(newSocialLink, savedUser.getUserId());
             user = savedUser;
             isNewUser = true;
-            log.info("New user via social login: userId={}, provider={}", user.getId(), provider);
+            log.info("New user via social login: userId={}, provider={}", user.getUserId(), provider);
         }
 
         validateActiveUser(user);
-        AuthSession session = createSession(user.getId().toString(), command.ipAddress(), command.userAgent());
+        AuthSession session = createSession(user.getUserId(), command.ipAddress(), command.userAgent());
         AuthSession savedSession = authSessionPersistencePort.save(session);
         String accessToken = issueAccessToken(savedSession);
         String refreshToken = issueRefreshToken(savedSession);
@@ -141,10 +141,10 @@ public class AuthService {
 
         SocialLink domainSocialLink = SocialLink.createNew(
                 IdGenerator.ulid(),
-                user.getId().toString(),
+                user.getUserId(),
                 provider,
                 providerUserId);
-        return socialLinkPersistencePort.save(domainSocialLink, user.getId().toString());
+        return socialLinkPersistencePort.save(domainSocialLink, user.getUserId());
     }
 
     public void unlinkSocial(UnlinkSocialCommand command) {
@@ -247,7 +247,7 @@ public class AuthService {
         var userSecurity = userSecurityPort.findByIdentity(identity)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS));
 
-        if (!userSecurity.status().equals(com.aionn.identity.domain.valueobject.UserStatus.ACTIVE)) {
+        if (!userSecurity.status().equals(UserStatus.ACTIVE)) {
             throw new IdentityException(IdentityErrorCode.USER_INACTIVE);
         }
         if (isLocked(userSecurity.lockedUntil())) {
@@ -321,7 +321,7 @@ public class AuthService {
 
     private IdentityUser createUserForSocial(AuthProvider provider, String providerUserId) {
         return IdentityUser.createNew(
-                UserId.of(IdGenerator.ulid()),
+                IdGenerator.ulid(),
                 null,
                 null,
                 generateSocialUsername(provider, providerUserId));

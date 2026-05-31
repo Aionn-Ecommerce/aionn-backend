@@ -2,15 +2,15 @@ package com.aionn.identity.application.service;
 
 import com.aionn.identity.application.dto.security.result.MfaResult;
 import com.aionn.identity.application.dto.security.result.MfaSetupResult;
+import com.aionn.identity.application.policy.MfaPolicy;
 import com.aionn.identity.application.port.out.security.MfaPersistencePort;
-import com.aionn.identity.application.port.out.security.PasswordHasher;
-import com.aionn.identity.application.port.out.security.SecurityAuditEvent;
+import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.SecurityAuditPort;
-import com.aionn.identity.application.port.out.security.TotpManager;
+import com.aionn.identity.application.port.out.security.TotpManagerPort;
+import com.aionn.identity.domain.valueobject.SecurityAuditEventType;
 import com.aionn.identity.application.port.out.security.UserSecurityPort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.infrastructure.config.properties.AuthProperties;
 import com.aionn.sharedkernel.util.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +30,9 @@ public class MfaService {
     private final UserSecurityPort userSecurityPort;
     private final MfaPersistencePort mfaPersistencePort;
     private final SecurityAuditPort securityAuditPort;
-    private final PasswordHasher passwordHasher;
-    private final TotpManager totpManager;
-    private final AuthProperties authProperties;
+    private final PasswordHasherPort passwordHasher;
+    private final TotpManagerPort totpManager;
+    private final MfaPolicy mfaPolicy;
 
     public MfaSetupResult initiateSetup(
             String userId,
@@ -49,11 +49,11 @@ public class MfaService {
         mfaPersistencePort.saveMfaSecret(userId, secret);
         mfaPersistencePort.updateMfaStatus(userId, false);
         mfaPersistencePort.deleteBackupCodes(userId);
-        securityAuditPort.saveAuditLog(userId, SecurityAuditEvent.MFA_SETUP_INITIATED, ipAddress);
+        securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.MFA_SETUP_INITIATED, ipAddress);
         return new MfaSetupResult(
                 secret,
-                totpManager.buildOtpAuthUri(authProperties.mfaIssuer(), userId, secret),
-                authProperties.mfaIssuer(),
+                totpManager.buildOtpAuthUri(mfaPolicy.getMfaIssuer(), userId, secret),
+                mfaPolicy.getMfaIssuer(),
                 userId);
     }
 
@@ -68,7 +68,7 @@ public class MfaService {
         verifyTotpChallenge(user, mfaCode);
         mfaPersistencePort.updateMfaStatus(userId, true);
         List<String> backupCodes = replaceBackupCodes(userId);
-        securityAuditPort.saveAuditLog(userId, SecurityAuditEvent.MFA_ENABLED, ipAddress);
+        securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.MFA_ENABLED, ipAddress);
         return new MfaResult(true, backupCodes);
     }
 
@@ -82,7 +82,7 @@ public class MfaService {
         verifyPassword(user, password);
         verifySecondFactor(user, mfaCode);
         mfaPersistencePort.clearMfa(userId);
-        securityAuditPort.saveAuditLog(userId, SecurityAuditEvent.MFA_DISABLED, ipAddress);
+        securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.MFA_DISABLED, ipAddress);
         return new MfaResult(false, null);
     }
 
@@ -93,7 +93,7 @@ public class MfaService {
         verifySecondFactor(user, mfaCode);
         List<String> rawCodes = replaceBackupCodes(userId);
 
-        securityAuditPort.saveAuditLog(userId, SecurityAuditEvent.MFA_BACKUP_CODES_REGENERATED, ipAddress);
+        securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.MFA_BACKUP_CODES_REGENERATED, ipAddress);
         return rawCodes;
     }
 

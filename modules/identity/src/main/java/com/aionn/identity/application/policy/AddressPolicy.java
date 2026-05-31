@@ -1,7 +1,6 @@
-package com.aionn.identity.application.port.out.address;
+package com.aionn.identity.application.policy;
 
 public interface AddressPolicy {
 
     long getMaxAddressNumbers();
 }
-

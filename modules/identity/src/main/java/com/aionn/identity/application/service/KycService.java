@@ -1,6 +1,7 @@
 package com.aionn.identity.application.service;
 
 import com.aionn.identity.application.dto.kyc.result.KycVerificationSessionResult;
+import com.aionn.identity.application.policy.KycPolicy;
 import com.aionn.identity.application.port.out.kyc.ExternalKycVerificationPort;
 import com.aionn.identity.application.port.out.kyc.KycPersistencePort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
@@ -8,8 +9,8 @@ import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.model.KycProfile;
+import com.aionn.identity.domain.valueobject.KycReviewAnswer;
 import com.aionn.identity.domain.valueobject.KycStatus;
-import com.aionn.identity.infrastructure.config.properties.KycProperties;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +26,13 @@ public class KycService {
 
     private final KycPersistencePort kycPersistencePort;
     private final UserPersistencePort userPersistencePort;
-    private final KycProperties kycProperties;
+    private final KycPolicy kycPolicy;
     private final ExternalKycVerificationPort externalKycVerificationPort;
 
     public KycProfile createKyc(String userId, String docType) {
         log.info("Creating KYC profile for user: {}, docType: {}", userId, docType);
         IdentityUser user = requireUser(userId);
-        boolean managedProviderEnabled = kycProperties.usesManagedProvider();
+        boolean managedProviderEnabled = kycPolicy.usesManagedProvider();
 
         KycProfile kyc = new KycProfile(
                 IdGenerator.ulid(),
@@ -63,11 +64,11 @@ public class KycService {
                 applicant.levelName(),
                 applicant.reviewStatus(),
                 applicant.correlationId());
-        if (kycProperties.isLocalDevelopmentEnabled()) {
+        if (kycPolicy.isLocalDevelopmentEnabled()) {
             kyc.syncExternalReview(
                     applicant.reviewStatus(),
                     applicant.correlationId(),
-                    "GREEN",
+                    KycReviewAnswer.GREEN,
                     "Local development KYC auto-approved",
                     null);
         }
@@ -87,7 +88,7 @@ public class KycService {
     }
 
     public KycVerificationSessionResult generateVerificationSession(String userId, String kycId) {
-        if (!kycProperties.usesManagedProvider()) {
+        if (!kycPolicy.usesManagedProvider()) {
             throw new IdentityException(IdentityErrorCode.KYC_MANAGED_EXTERNALLY,
                     "External KYC session is only available when a managed KYC provider is enabled");
         }
@@ -122,7 +123,7 @@ public class KycService {
             String moderationComment,
             String clientComment,
             String correlationId) {
-        if (!kycProperties.isSumsubEnabled()) {
+        if (!kycPolicy.isSumsubEnabled()) {
             log.info("Ignoring Sumsub webhook because provider is not enabled");
             return;
         }
@@ -135,7 +136,12 @@ public class KycService {
 
         KycProfile kyc = kycPersistencePort.findByProviderApplicantId(providerApplicantId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
-        kyc.syncExternalReview(providerReviewStatus, correlationId, reviewAnswer, moderationComment, clientComment);
+        kyc.syncExternalReview(
+                providerReviewStatus,
+                correlationId,
+                KycReviewAnswer.from(reviewAnswer),
+                moderationComment,
+                clientComment);
         kycPersistencePort.save(kyc);
     }
 
@@ -143,6 +149,7 @@ public class KycService {
         return kycPersistencePort.findByKycIdAndUserId(kycId, userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
     }
+
     private void validateUserExists(String userId) {
         requireUser(userId);
     }

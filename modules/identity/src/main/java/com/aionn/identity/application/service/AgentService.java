@@ -1,5 +1,6 @@
 package com.aionn.identity.application.service;
 
+import com.aionn.identity.application.policy.AgentPolicy;
 import com.aionn.identity.application.port.out.agent.AgentAuditPort;
 import com.aionn.identity.application.port.out.agent.AgentPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
@@ -7,7 +8,6 @@ import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.AgentIdentity;
 import com.aionn.identity.domain.model.SecurityAudit;
 import com.aionn.identity.domain.valueobject.AgentStatus;
-import com.aionn.identity.infrastructure.config.properties.AgentProperties;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class AgentService {
 
     private final AgentPersistencePort agentPersistencePort;
     private final AgentAuditPort agentAuditPort;
-    private final AgentProperties agentProperties;
+    private final AgentPolicy agentPolicy;
     private final BCryptPasswordEncoder passwordEncoder;
 
     private static final int KEY_LENGTH_BYTES = 32;
@@ -46,7 +46,7 @@ public class AgentService {
                 .keyHash(keyHash)
                 .permissions("{\"scope\":\"basic\"}")
                 .status(AgentStatus.ACTIVE)
-                .expiresAt(LocalDateTime.now().plusYears(agentProperties.keyExpiryYears()))
+                .expiresAt(LocalDateTime.now().plusYears(agentPolicy.getKeyExpiryYears()))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -111,4 +111,3 @@ public class AgentService {
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.AGENT_NOT_FOUND, "Agent not found"));
     }
 }
-

@@ -13,7 +13,7 @@ public interface MfaPersistencePort {
 
     void deleteBackupCodes(String userId);
 
-    List<String> saveBackupCodes(String userId, List<String> codeHashes);
+    void saveBackupCodes(String userId, List<String> codeHashes);
 
     List<BackupCodeData> findActiveBackupCodes(String userId);
 

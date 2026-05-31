@@ -1,4 +1,4 @@
-package com.aionn.identity.application.port.out.registration;
+package com.aionn.identity.application.policy;
 
 public interface RegistrationPolicy {
 
@@ -7,6 +7,8 @@ public interface RegistrationPolicy {
     int getResendCooldownSeconds();
 
     int getOtpExpirySeconds();
+
+    int getLockTimeoutSeconds();
 
     long getSessionExpiresDays();
 
@@ -22,4 +24,3 @@ public interface RegistrationPolicy {
 
     int getPhoneRateLimitWindowSeconds();
 }
-

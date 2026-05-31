@@ -1,7 +1,5 @@
 package com.aionn.identity.application.port.out.registration;
 
-public interface CaptchaTokenValidator {
+public interface CaptchaTokenValidatorPort {
     boolean isValid(String captchaToken);
 }
-
-
