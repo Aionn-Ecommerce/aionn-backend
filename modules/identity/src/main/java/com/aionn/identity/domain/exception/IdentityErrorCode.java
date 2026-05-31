@@ -46,6 +46,13 @@ public enum IdentityErrorCode {
 	EMAIL_VERIFICATION_NOT_FOUND("IDENTITY_217", "Email verification challenge not found"),
 	EMAIL_CHANGE_NOT_FOUND("IDENTITY_218", "Email change challenge not found"),
 	PHONE_CHANGE_NOT_FOUND("IDENTITY_219", "Phone change challenge not found"),
+	MFA_ALREADY_ENABLED("IDENTITY_221", "MFA is already enabled"),
+	MFA_NOT_ENABLED("IDENTITY_222", "MFA is not enabled"),
+	MFA_SETUP_NOT_INITIATED("IDENTITY_223", "MFA setup has not been initiated"),
+	AUTHENTICATION_REQUIRED("IDENTITY_224", "Authentication required"),
+	ACCESS_DENIED("IDENTITY_225", "Access denied"),
+	INVALID_USER_STATUS("IDENTITY_226", "Invalid user status"),
+	INVALID_USER_ROLE("IDENTITY_227", "Invalid user role"),
 
 	INVALID_ADDRESS_TYPE("IDENTITY_301", "Invalid address type. Supported types are HOME or OFFICE"),
 	ADDRESS_NOT_FOUND("IDENTITY_302", "Address not found"),
@@ -56,6 +63,10 @@ public enum IdentityErrorCode {
 	KYC_NOT_FOUND("IDENTITY_401", "KYC profile not found"),
 	KYC_INVALID_STATUS_TRANSITION("IDENTITY_402", "Invalid KYC status transition"),
 	KYC_CANNOT_BE_CANCELLED("IDENTITY_403", "KYC cannot be cancelled in current status"),
+	KYC_MANAGED_EXTERNALLY("IDENTITY_404", "KYC is managed by an external provider"),
+	KYC_PROVIDER_NOT_CONFIGURED("IDENTITY_405", "KYC provider is not configured"),
+	KYC_PROVIDER_ERROR("IDENTITY_406", "External KYC provider error"),
+	KYC_WEBHOOK_SIGNATURE_INVALID("IDENTITY_407", "Invalid KYC webhook signature"),
 
 	AGENT_NOT_FOUND("IDENTITY_501", "Agent identity not found"),
 	AGENT_CREATION_NOT_ALLOWED("IDENTITY_502", "User is not allowed to create agents"),
@@ -66,4 +77,3 @@ public enum IdentityErrorCode {
 	private final String code;
 	private final String defaultMessage;
 }
-

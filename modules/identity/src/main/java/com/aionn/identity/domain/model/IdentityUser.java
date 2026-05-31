@@ -2,17 +2,17 @@ package com.aionn.identity.domain.model;
 
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.domain.id.UserId;
 import com.aionn.identity.domain.valueobject.UserRole;
 import com.aionn.identity.domain.valueobject.UserStatus;
-import com.aionn.sharedkernel.domain.model.Entity;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
-public class IdentityUser extends Entity<UserId> {
+public class IdentityUser {
 
+    private final String userId;
     private String email;
     private String phone;
     private final String username;
@@ -27,7 +27,7 @@ public class IdentityUser extends Entity<UserId> {
     private final LocalDateTime createdAt;
 
     public IdentityUser(
-            UserId id,
+            String userId,
             String email,
             String phone,
             String username,
@@ -40,7 +40,7 @@ public class IdentityUser extends Entity<UserId> {
             LocalDateTime phoneVerifiedAt,
             LocalDateTime lockedUntil,
             LocalDateTime createdAt) {
-        super(id);
+        this.userId = Objects.requireNonNull(userId, "userId must not be null");
         this.email = email;
         this.phone = phone;
         this.username = username;
@@ -57,7 +57,7 @@ public class IdentityUser extends Entity<UserId> {
         this.createdAt = createdAt;
     }
 
-    public static IdentityUser createNew(UserId userId, String email, String phone, String username) {
+    public static IdentityUser createNew(String userId, String email, String phone, String username) {
         return new IdentityUser(
                 userId,
                 email,
@@ -72,14 +72,6 @@ public class IdentityUser extends Entity<UserId> {
                 null,
                 null,
                 LocalDateTime.now());
-    }
-
-    public void updateProfile(String displayName, String avatarUrl) {
-        if (displayName != null && displayName.isBlank()) {
-            throw new IdentityException(IdentityErrorCode.INVALID_DISPLAY_NAME);
-        }
-        this.displayName = displayName;
-        this.avatarUrl = avatarUrl;
     }
 
     public void updateDisplayName(String displayName) {
@@ -136,16 +128,10 @@ public class IdentityUser extends Entity<UserId> {
         }
     }
 
-    /**
-     * Lock the account until {@code lockedUntil}. A null value clears the lock.
-     */
     public void lockUntil(LocalDateTime lockedUntil) {
         this.lockedUntil = lockedUntil;
     }
 
-    /**
-     * Clear any active lock.
-     */
     public void unlock() {
         this.lockedUntil = null;
     }
@@ -159,7 +145,7 @@ public class IdentityUser extends Entity<UserId> {
     }
 
     public String getUserId() {
-        return getId().toString();
+        return userId;
     }
 
     public String getEmail() {
@@ -225,5 +211,21 @@ public class IdentityUser extends Entity<UserId> {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-}
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IdentityUser that = (IdentityUser) o;
+        return Objects.equals(userId, that.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
+    }
+}

@@ -63,7 +63,7 @@ public class AuthSession {
     }
 
     public void extendExpiry(LocalDateTime newExpiresAt) {
-        if (newExpiresAt == null || newExpiresAt.isBefore(LocalDateTime.now())) {
+        if (newExpiresAt == null || !newExpiresAt.isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("New expiry must be in the future");
         }
         this.expiresAt = newExpiresAt;
@@ -77,7 +77,6 @@ public class AuthSession {
     }
 
     public boolean isExpired() {
-        return expiresAt != null && expiresAt.isBefore(LocalDateTime.now());
+        return expiresAt != null && !expiresAt.isAfter(LocalDateTime.now());
     }
 }
-

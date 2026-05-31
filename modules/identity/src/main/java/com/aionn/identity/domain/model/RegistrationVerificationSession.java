@@ -10,11 +10,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Domain aggregate for the multi-step phone-OTP registration flow. Persisted
- * in Redis between steps; the {@code @JsonCreator} constructor is the contract
- * the Jackson Redis serializer uses to round-trip the value.
- */
 public class RegistrationVerificationSession implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -55,7 +50,7 @@ public class RegistrationVerificationSession implements Serializable {
     }
 
     public boolean isExpired() {
-        return expiredAt != null && expiredAt.isBefore(LocalDateTime.now());
+        return expiredAt != null && !expiredAt.isAfter(LocalDateTime.now());
     }
 
     public boolean isLocked() {
@@ -79,6 +74,7 @@ public class RegistrationVerificationSession implements Serializable {
         }
 
         verified = true;
+        otpCode = null;
         verificationToken = IdGenerator.ulid();
         verifiedAt = LocalDateTime.now();
     }
@@ -100,9 +96,6 @@ public class RegistrationVerificationSession implements Serializable {
         otpCode = newOtpCode;
         resendAvailableAt = newResendAvailableAt;
         expiredAt = newExpiredAt;
-        // Resending issues a fresh OTP, so the previous attempt counter must reset
-        // otherwise users that mistyped earlier could be locked instantly on a
-        // brand-new OTP.
         attemptCount = 0;
     }
 
@@ -146,4 +139,3 @@ public class RegistrationVerificationSession implements Serializable {
         return verifiedAt;
     }
 }
-

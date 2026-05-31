@@ -10,15 +10,12 @@ class RegistrationOtpTest {
 
     @Test
     void generate_shouldCreateOtpWithCorrectTimings() {
-        // Given
         int resendCooldownSeconds = 60;
         int expirySeconds = 300;
         LocalDateTime beforeGeneration = LocalDateTime.now();
 
-        // When
         RegistrationOtp otp = RegistrationOtp.generate(resendCooldownSeconds, expirySeconds);
 
-        // Then
         assertNotNull(otp.getCode(), "OTP code should not be null");
         assertEquals(6, otp.getCode().length(), "OTP code should be 6 digits");
         assertTrue(otp.getCode().matches("\\d{6}"), "OTP code should contain only digits");
@@ -43,7 +40,6 @@ class RegistrationOtpTest {
 
     @Test
     void generate_shouldThrowException_whenResendCooldownIsNegative() {
-        // When & Then
         assertThrows(IllegalArgumentException.class,
                 () -> RegistrationOtp.generate(-1, 300),
                 "Should throw exception for negative resend cooldown");
@@ -51,7 +47,6 @@ class RegistrationOtpTest {
 
     @Test
     void generate_shouldThrowException_whenExpirySecondsIsNegative() {
-        // When & Then
         assertThrows(IllegalArgumentException.class,
                 () -> RegistrationOtp.generate(60, -1),
                 "Should throw exception for negative expiry seconds");
@@ -59,67 +54,44 @@ class RegistrationOtpTest {
 
     @Test
     void isExpired_shouldReturnFalse_whenOtpIsNotExpired() {
-        // Given
         RegistrationOtp otp = RegistrationOtp.generate(60, 300);
 
-        // When & Then
         assertFalse(otp.isExpired(), "OTP should not be expired immediately after generation");
     }
 
     @Test
     void isExpired_shouldReturnTrue_whenOtpIsExpired() {
-        // Given - create OTP with 0 second expiry (expires immediately)
         RegistrationOtp otp = RegistrationOtp.generate(0, 0);
 
-        // Wait a tiny bit to ensure time has passed
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        // When & Then
         assertTrue(otp.isExpired(), "OTP should be expired after expiry time has passed");
     }
 
     @Test
     void toString_shouldMaskOtpCode() {
-        // Given
         RegistrationOtp otp = RegistrationOtp.generate(60, 300);
 
-        // When
         String otpString = otp.toString();
 
-        // Then
         assertFalse(otpString.contains(otp.getCode()), "toString should not expose the actual OTP code");
         assertTrue(otpString.contains("***"), "toString should mask the OTP code with ***");
     }
 
     @Test
     void equals_shouldReturnTrue_forSameValues() {
-        // Given
         RegistrationOtp otp1 = RegistrationOtp.generate(60, 300);
         RegistrationOtp otp2 = RegistrationOtp.generate(60, 300);
 
-        // When & Then
-        // Note: These will likely not be equal because they have different codes and
-        // timestamps
-        // This test verifies the equals method works correctly
         assertNotEquals(otp1, otp2, "Different OTPs should not be equal");
         assertEquals(otp1, otp1, "Same OTP instance should be equal to itself");
     }
 
     @Test
     void hashCode_shouldBeConsistent() {
-        // Given
         RegistrationOtp otp = RegistrationOtp.generate(60, 300);
 
-        // When
         int hashCode1 = otp.hashCode();
         int hashCode2 = otp.hashCode();
 
-        // Then
         assertEquals(hashCode1, hashCode2, "Hash code should be consistent");
     }
 }
-

@@ -11,9 +11,9 @@ public enum KycStatus {
     public boolean canTransitionTo(KycStatus newStatus) {
         return switch (this) {
             case DRAFT -> newStatus == SUBMITTED || newStatus == CANCELLED;
-            case SUBMITTED -> newStatus == IN_REVIEW || newStatus == REJECTED || newStatus == CANCELLED;
+            case SUBMITTED -> newStatus == IN_REVIEW || newStatus == APPROVED || newStatus == REJECTED
+                    || newStatus == CANCELLED;
             case IN_REVIEW -> newStatus == APPROVED || newStatus == REJECTED;
-            // Allow user to start a fresh attempt after rejection.
             case REJECTED -> newStatus == DRAFT;
             case APPROVED, CANCELLED -> false;
         };
@@ -23,4 +23,3 @@ public enum KycStatus {
         return this == DRAFT || this == SUBMITTED;
     }
 }
-
