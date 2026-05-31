@@ -8,26 +8,35 @@ spring:
 
 identity:
   registration:
-    max-verify-attempts: ${MAX_VERIFY_ATTEMPTS:5}
-    resend-cooldown-seconds: ${RESEND_COOLDOWN_SECONDS:60}
-    otp-expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
-    session-expires-days: ${REGISTRATION_SESSION_EXPIRES_DAYS:30}
+    max-verify-attempts: ${IDENTITY_REGISTRATION_MAX_VERIFY_ATTEMPTS:5}
+    resend-cooldown-seconds: ${IDENTITY_REGISTRATION_RESEND_COOLDOWN_SECONDS:60}
+    otp-expiry-seconds: ${IDENTITY_REGISTRATION_OTP_EXPIRY_SECONDS:300}
+    lock-timeout-seconds: ${IDENTITY_REGISTRATION_LOCK_TIMEOUT_SECONDS:30}
+    session-expires-days: ${IDENTITY_REGISTRATION_SESSION_EXPIRES_DAYS:30}
     rate-limit:
-      ip-max-attempts: ${REGISTRATION_IP_MAX_ATTEMPTS:3}
-      ip-window-seconds: ${REGISTRATION_IP_WINDOW_SECONDS:300}
-      phone-max-attempts: ${REGISTRATION_PHONE_MAX_ATTEMPTS:1}
-      phone-window-seconds: ${REGISTRATION_PHONE_WINDOW_SECONDS:60}
+      ip-max-attempts: ${IDENTITY_REGISTRATION_IP_MAX_ATTEMPTS:3}
+      ip-window-seconds: ${IDENTITY_REGISTRATION_IP_WINDOW_SECONDS:300}
+      phone-max-attempts: ${IDENTITY_REGISTRATION_PHONE_MAX_ATTEMPTS:1}
+      phone-window-seconds: ${IDENTITY_REGISTRATION_PHONE_WINDOW_SECONDS:60}
     captcha:
+      provider: ${CAPTCHA_PROVIDER:google}
       expected-token: ${CAPTCHA_EXPECTED_TOKEN:}
+      google-site-key: ${CAPTCHA_GOOGLE_SITE_KEY:}
+      google-secret-key: ${CAPTCHA_GOOGLE_SECRET_KEY:}
     twilio:
       enabled: ${TWILIO_ENABLED:false}
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
       from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}
   auth:
-    client-type-header: ${AUTH_CLIENT_TYPE_HEADER:X-Client-Type}
-    mobile-client-value: ${AUTH_MOBILE_CLIENT_VALUE:mobile}
+    client-type-header: ${IDENTITY_AUTH_CLIENT_TYPE_HEADER:X-Client-Type}
+    mobile-client-value: ${IDENTITY_AUTH_MOBILE_CLIENT_VALUE:mobile}
+    max-failed-login-attempts: ${IDENTITY_AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
+    lockout-minutes: ${IDENTITY_AUTH_LOCKOUT_MINUTES:15}
     session:
-      expires-days: ${AUTH_SESSION_EXPIRES_DAYS:30}
+      expires-days: ${IDENTITY_AUTH_SESSION_EXPIRES_DAYS:30}
+  mfa:
+    issuer: ${IDENTITY_MFA_ISSUER:Aionn}
+    encryption-key: ${IDENTITY_MFA_ENCRYPTION_KEY:dev-only-mfa-encryption-key-override-in-prod}
   address:
-    max-address-numbers: ${MAX_ADDRESS_NUMBERS:5}
+    max-address-numbers: ${IDENTITY_ADDRESS_MAX_NUMBERS:5}
