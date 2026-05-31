@@ -2,6 +2,8 @@ package com.aionn.config;
 
 import com.aionn.config.security.IpSecurityFilter;
 import com.aionn.config.security.SecurityIpProperties;
+import com.aionn.identity.adapter.rest.exception.IdentityAccessDeniedHandler;
+import com.aionn.identity.adapter.rest.exception.IdentityAuthenticationEntryPoint;
 import com.aionn.identity.infrastructure.security.BearerAuthenticationFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -31,7 +33,9 @@ public class ApiSecurityConfig {
         public SecurityFilterChain securityFilterChain(
                         HttpSecurity http,
                         IpSecurityFilter ipSecurityFilter,
-                        BearerAuthenticationFilter bearerAuthenticationFilter)
+                        BearerAuthenticationFilter bearerAuthenticationFilter,
+                        IdentityAuthenticationEntryPoint identityAuthenticationEntryPoint,
+                        IdentityAccessDeniedHandler identityAccessDeniedHandler)
                         throws Exception {
                 http
                                 .csrf(AbstractHttpConfigurer::disable)
@@ -47,15 +51,16 @@ public class ApiSecurityConfig {
                                                                 ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                .requestMatchers(
-                                                                "/swagger-ui.html",
-                                                                "/swagger-ui/**",
-                                                                "/v3/api-docs/**",
-                                                                "/api/v1/auth/login",
-                                                                "/api/v1/auth/social-login",
-                                                                "/api/v1/auth/refresh",
-                                                                "/api/v1/security/password-reset-requests",
-                                                                "/api/v1/security/password-reset",
+                                                 .requestMatchers(
+                                                                 "/swagger-ui.html",
+                                                                 "/swagger-ui/**",
+                                                                 "/v3/api-docs/**",
+                                                                 "/api/v1/auth/login",
+                                                                 "/api/v1/auth/social-login",
+                                                                 "/api/v1/auth/refresh",
+                                                                 "/api/v1/security/password-reset-requests",
+                                                                 "/api/v1/security/password-reset",
+                                                                "/api/v1/kyc/webhooks/**",
                                                                 "/api/v1/registrations/**",
                                                                 "/api/v1/geography/**",
                                                                 "/api/v1/payments/webhooks/**",
@@ -69,6 +74,9 @@ public class ApiSecurityConfig {
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(identityAuthenticationEntryPoint)
+                                                .accessDeniedHandler(identityAccessDeniedHandler))
                                 .addFilterBefore(ipSecurityFilter, UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(bearerAuthenticationFilter,
                                                 UsernamePasswordAuthenticationFilter.class);

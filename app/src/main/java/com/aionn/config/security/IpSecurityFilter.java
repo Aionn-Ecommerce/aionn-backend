@@ -31,6 +31,7 @@ public class IpSecurityFilter extends OncePerRequestFilter {
 
 	private final ObjectMapper objectMapper;
 	private final IpRateLimiter ipRateLimiter;
+	private final RedisIpBlacklistStore ipBlacklistStore;
 	private final SecurityIpProperties securityIpProperties;
 
 	@Override
@@ -47,7 +48,7 @@ public class IpSecurityFilter extends OncePerRequestFilter {
 		String clientIp = extractClientIp(request);
 		request.setAttribute(RequestAttributeKeys.CLIENT_IP, clientIp);
 
-		if (clientIp != null && securityIpProperties.getBlacklist().contains(clientIp)) {
+		if (clientIp != null && ipBlacklistStore.isBlacklisted(clientIp)) {
 			log.warn("Blocked request from blacklisted IP: {}", clientIp);
 			writeError(response, HttpStatus.FORBIDDEN, "Access denied: Your IP is blacklisted");
 			return;
@@ -102,4 +103,3 @@ public class IpSecurityFilter extends OncePerRequestFilter {
 		response.getWriter().write(objectMapper.writeValueAsString(body));
 	}
 }
-
