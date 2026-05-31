@@ -7,9 +7,9 @@ import com.aionn.identity.adapter.rest.dto.registration.request.VerifyOtpRequest
 import com.aionn.identity.adapter.rest.dto.registration.response.RegistrationSessionResponse;
 import com.aionn.identity.adapter.rest.dto.registration.response.VerifyOtpResponse;
 import com.aionn.identity.adapter.rest.mapper.registration.RegistrationDtoMapper;
-import com.aionn.identity.adapter.rest.support.AuthClientType;
-import com.aionn.identity.adapter.rest.support.AuthTokenResponseHandler;
-import com.aionn.identity.adapter.rest.support.ClientUserAgent;
+import com.aionn.identity.adapter.rest.support.client.AuthClientType;
+import com.aionn.identity.adapter.rest.support.client.ClientUserAgent;
+import com.aionn.identity.adapter.rest.support.response.AuthTokenResponseHandler;
 import com.aionn.identity.application.port.in.registration.CompleteRegistrationInputPort;
 import com.aionn.identity.application.port.in.registration.InitiateRegistrationInputPort;
 import com.aionn.identity.application.port.in.registration.ResendRegistrationOtpInputPort;

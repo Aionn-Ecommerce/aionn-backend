@@ -1,12 +1,11 @@
-package com.aionn.identity.adapter.rest.support;
+package com.aionn.identity.adapter.rest.support.response;
 
 import com.aionn.identity.adapter.rest.dto.auth.response.AuthTokenResponse;
 import com.aionn.identity.adapter.rest.dto.auth.response.LogoutAllResponse;
-import com.aionn.identity.application.port.out.auth.AuthClientPolicy;
+import com.aionn.identity.infrastructure.config.properties.AuthCookieProperties;
+import com.aionn.identity.infrastructure.config.properties.AuthProperties;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -19,23 +18,20 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthTokenResponseHandler {
 
-    private final AuthClientPolicy authClientPolicy;
+    private static final String REFRESH_COOKIE_NAME = "refresh_token";
+    private static final String REFRESH_COOKIE_PATH = "/api/v1/auth";
 
-    @Value("${identity.auth.cookie.secure:true}")
-    private boolean cookieSecure;
-
-    @Value("${identity.auth.cookie.same-site:Strict}")
-    private String cookieSameSite;
+    private final AuthProperties authProperties;
+    private final AuthCookieProperties cookieProperties;
+    private final NoStoreResponseFactory noStoreResponseFactory;
 
     public ResponseEntity<ApiResponse<AuthTokenResponse>> success(
             AuthTokenResponse response,
             String clientType,
             String message) {
-        ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
-        applyNoStore(builder);
 
         if (isMobileClient(clientType)) {
-            return builder.body(ApiResponse.success(response, message));
+            return noStoreResponseFactory.ok(ApiResponse.success(response, message));
         }
 
         AuthTokenResponse webResponse = new AuthTokenResponse(
@@ -46,40 +42,31 @@ public class AuthTokenResponseHandler {
                 response.expiresAt(),
                 response.sessionExpiresAt());
 
+        HttpHeaders cookieHeaders = new HttpHeaders();
         if (response.refreshToken() != null) {
-            builder.header(HttpHeaders.SET_COOKIE,
+            cookieHeaders.add(HttpHeaders.SET_COOKIE,
                     buildRefreshCookie(response.refreshToken(), response.sessionExpiresAt()).toString());
         }
-        return builder.body(ApiResponse.success(webResponse, message));
+        return noStoreResponseFactory.ok(ApiResponse.success(webResponse, message), cookieHeaders);
     }
 
     public ResponseEntity<ApiResponse<Void>> logoutSuccess(String message) {
-        ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
-        applyNoStore(builder);
-        return builder
-                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
-                .body(ApiResponse.success(message));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString());
+        return noStoreResponseFactory.ok(ApiResponse.success(message), headers);
     }
 
     public ResponseEntity<ApiResponse<LogoutAllResponse>> logoutAllSuccess(LogoutAllResponse response) {
-        ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
-        applyNoStore(builder);
-        return builder
-                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
-                .body(ApiResponse.success(response, "All sessions revoked"));
-    }
-
-    public void applyNoStore(ResponseEntity.BodyBuilder builder) {
-        builder.cacheControl(CacheControl.noStore().mustRevalidate().cachePrivate())
-                .header(HttpHeaders.PRAGMA, "no-cache")
-                .header(HttpHeaders.EXPIRES, "0");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString());
+        return noStoreResponseFactory.ok(ApiResponse.success(response, "All sessions revoked"), headers);
     }
 
     private boolean isMobileClient(String clientType) {
         if (clientType == null || clientType.isBlank()) {
             return false;
         }
-        return authClientPolicy.getMobileClientValue().equalsIgnoreCase(clientType.trim());
+        return authProperties.mobileClientValue().equalsIgnoreCase(clientType.trim());
     }
 
     private ResponseCookie buildRefreshCookie(String refreshToken, LocalDateTime expiresAt) {
@@ -87,22 +74,21 @@ public class AuthTokenResponseHandler {
         if (maxAgeSeconds < 0) {
             maxAgeSeconds = 0;
         }
-
-        return ResponseCookie.from("refresh_token", refreshToken)
+        return ResponseCookie.from(REFRESH_COOKIE_NAME, refreshToken)
                 .httpOnly(true)
-                .secure(cookieSecure)
-                .sameSite(cookieSameSite)
-                .path("/api/v1/auth")
+                .secure(cookieProperties.secure())
+                .sameSite(cookieProperties.sameSite())
+                .path(REFRESH_COOKIE_PATH)
                 .maxAge(maxAgeSeconds)
                 .build();
     }
 
     private ResponseCookie clearRefreshCookie() {
-        return ResponseCookie.from("refresh_token", "")
+        return ResponseCookie.from(REFRESH_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(cookieSecure)
-                .sameSite(cookieSameSite)
-                .path("/api/v1/auth")
+                .secure(cookieProperties.secure())
+                .sameSite(cookieProperties.sameSite())
+                .path(REFRESH_COOKIE_PATH)
                 .maxAge(0)
                 .build();
     }

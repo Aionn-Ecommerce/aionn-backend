@@ -1,4 +1,4 @@
-package com.aionn.identity.adapter.rest.support;
+package com.aionn.identity.adapter.rest.support.session;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,5 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ClientUserAgent {
+public @interface CurrentSessionId {
 }
-
-
-

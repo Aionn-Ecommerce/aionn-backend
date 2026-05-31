@@ -1,7 +1,8 @@
-package com.aionn.identity.adapter.rest.support;
+package com.aionn.identity.adapter.rest.support.client;
 
-import com.aionn.identity.infrastructure.security.SecurityRequestAttributeKeys;
+import com.aionn.identity.infrastructure.config.properties.AuthProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -9,12 +10,20 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+/**
+ * Resolves controller parameters annotated with {@link AuthClientType} by
+ * reading
+ * the request header configured in {@code identity.auth.client-type-header}.
+ */
 @Component
-public class CurrentSessionIdArgumentResolver implements HandlerMethodArgumentResolver {
+@RequiredArgsConstructor
+public class AuthClientTypeArgumentResolver implements HandlerMethodArgumentResolver {
+
+    private final AuthProperties authProperties;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(CurrentSessionId.class)
+        return parameter.hasParameterAnnotation(AuthClientType.class)
                 && String.class.equals(parameter.getParameterType());
     }
 
@@ -28,7 +37,6 @@ public class CurrentSessionIdArgumentResolver implements HandlerMethodArgumentRe
         if (request == null) {
             return null;
         }
-        Object sessionAttribute = request.getAttribute(SecurityRequestAttributeKeys.SESSION_ID);
-        return sessionAttribute instanceof String sessionId ? sessionId : null;
+        return request.getHeader(authProperties.clientTypeHeader());
     }
 }

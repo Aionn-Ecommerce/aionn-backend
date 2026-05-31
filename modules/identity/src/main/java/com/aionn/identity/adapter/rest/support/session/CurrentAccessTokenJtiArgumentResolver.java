@@ -1,6 +1,7 @@
-package com.aionn.identity.adapter.rest.support;
+package com.aionn.identity.adapter.rest.support.session;
 
-import com.aionn.identity.infrastructure.auth.AccessTokenIssuerAdapter;
+import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
+import com.aionn.identity.application.port.out.auth.AccessTokenClaims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
@@ -15,7 +16,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @RequiredArgsConstructor
 public class CurrentAccessTokenJtiArgumentResolver implements HandlerMethodArgumentResolver {
 
-    private final AccessTokenIssuerAdapter accessTokenIssuerAdapter;
+    private final AccessTokenIssuerPort accessTokenIssuerPort;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -34,8 +35,8 @@ public class CurrentAccessTokenJtiArgumentResolver implements HandlerMethodArgum
             return null;
         }
         String token = authentication.getCredentials().toString();
-        return accessTokenIssuerAdapter.parse(token)
-                .map(claims -> claims.getId())
+        return accessTokenIssuerPort.parseClaims(token)
+                .map(AccessTokenClaims::jti)
                 .orElse(null);
     }
 }

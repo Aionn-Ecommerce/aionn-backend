@@ -1,7 +1,7 @@
-package com.aionn.identity.adapter.rest.support;
+package com.aionn.identity.adapter.rest.support.session;
 
+import com.aionn.identity.infrastructure.security.SecurityRequestAttributeKeys;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -10,14 +10,11 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @Component
-@RequiredArgsConstructor
-public class ClientUserAgentArgumentResolver implements HandlerMethodArgumentResolver {
-
-    private final ClientUserAgentResolver clientUserAgentResolver;
+public class CurrentSessionIdArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(ClientUserAgent.class)
+        return parameter.hasParameterAnnotation(CurrentSessionId.class)
                 && String.class.equals(parameter.getParameterType());
     }
 
@@ -29,11 +26,9 @@ public class ClientUserAgentArgumentResolver implements HandlerMethodArgumentRes
             WebDataBinderFactory binderFactory) {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         if (request == null) {
-            return "unknown";
+            return null;
         }
-        return clientUserAgentResolver.resolve(request);
+        Object sessionAttribute = request.getAttribute(SecurityRequestAttributeKeys.SESSION_ID);
+        return sessionAttribute instanceof String sessionId ? sessionId : null;
     }
 }
-
-
-
