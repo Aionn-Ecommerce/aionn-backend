@@ -4,12 +4,32 @@ server:
 spring:
   application:
     name: ${APP_NAME:aionn-backend}
+  config:
+    import:
+      - classpath:application-identity.yml
+      - classpath:application-catalog.yml
+      - classpath:application-inventory.yml
+      - classpath:application-ordering.yml
+      - classpath:application-payment.yml
+      - classpath:application-shipping.yml
+      - classpath:application-notification.yml
+      - classpath:application-promotion.yml
+      - classpath:application-chat.yml
+      - classpath:application-ucp.yml
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_LOCAL_PORT:5432}/${POSTGRES_DB_NAME:aionn}}
     username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_DB_USER:postgres}}
     password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_DB_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:30}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1800000}
+      leak-detection-threshold: ${DB_POOL_LEAK_DETECTION_MS:60000}
+      pool-name: aionn-hikari
 
   data:
     redis:
@@ -42,74 +62,11 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
-identity:
-  jwt:
-    issuer: ${IDENTITY_JWT_ISSUER:aionn-identity}
-    secret: ${IDENTITY_JWT_SECRET}
-    access-token-expiry-minutes: ${IDENTITY_JWT_ACCESS_TOKEN_EXPIRY_MINUTES:15}
-  media:
-    provider: ${IDENTITY_MEDIA_PROVIDER:cloudinary}
-    cloudinary:
-      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-      api-key: ${CLOUDINARY_API_KEY:}
-      api-secret: ${CLOUDINARY_API_SECRET:}
-      avatar-folder: ${CLOUDINARY_AVATAR_FOLDER:identity/avatars}
-      kyc-folder: ${CLOUDINARY_KYC_FOLDER:identity/kyc}
-      signature-expiry-seconds: ${CLOUDINARY_SIGNATURE_EXPIRY_SECONDS:600}
-  address:
-    max-address-numbers: ${IDENTITY_ADDRESS_MAX_NUMBERS:5}
-  account:
-    otp:
-      expiry-seconds: ${IDENTITY_ACCOUNT_OTP_EXPIRY_SECONDS:300}
-      max-attempts: ${IDENTITY_ACCOUNT_OTP_MAX_ATTEMPTS:5}
-    deletion:
-      grace-days: ${IDENTITY_ACCOUNT_DELETION_GRACE_DAYS:30}
-  auth:
-    cookie:
-      secure: ${IDENTITY_AUTH_COOKIE_SECURE:true}
-      same-site: ${IDENTITY_AUTH_COOKIE_SAME_SITE:Strict}
-    max-failed-login-attempts: ${IDENTITY_AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
-    lockout-minutes: ${IDENTITY_AUTH_LOCKOUT_MINUTES:15}
-    session:
-      expires-days: ${IDENTITY_AUTH_SESSION_EXPIRES_DAYS:30}
-    social:
-      google:
-        provider: ${IDENTITY_AUTH_GOOGLE_PROVIDER:remote}
-        client-id: ${IDENTITY_AUTH_GOOGLE_CLIENT_ID:}
-        token-info-url: ${IDENTITY_AUTH_GOOGLE_TOKEN_INFO_URL:https://oauth2.googleapis.com/tokeninfo}
-      facebook:
-        provider: ${IDENTITY_AUTH_FACEBOOK_PROVIDER:remote}
-        app-id: ${IDENTITY_AUTH_FACEBOOK_APP_ID:}
-        app-secret: ${IDENTITY_AUTH_FACEBOOK_APP_SECRET:}
-        debug-token-url: ${IDENTITY_AUTH_FACEBOOK_DEBUG_TOKEN_URL:https://graph.facebook.com/debug_token}
-  mfa:
-    issuer: ${IDENTITY_MFA_ISSUER:Aionn}
-    encryption-key: ${IDENTITY_MFA_ENCRYPTION_KEY:dev-only-mfa-encryption-key-override-in-prod}
-  kyc:
-    provider: ${IDENTITY_KYC_PROVIDER:sumsub}
-    sumsub:
-      base-url: ${IDENTITY_KYC_SUMSUB_BASE_URL:https://api.sumsub.com}
-      app-token: ${IDENTITY_KYC_SUMSUB_APP_TOKEN:}
-      secret-key: ${IDENTITY_KYC_SUMSUB_SECRET_KEY:}
-      level-name: ${IDENTITY_KYC_SUMSUB_LEVEL_NAME:}
-      webhook-secret: ${IDENTITY_KYC_SUMSUB_WEBHOOK_SECRET:}
-      sdk-token-ttl-seconds: ${IDENTITY_KYC_SUMSUB_SDK_TOKEN_TTL_SECONDS:600}
-      sandbox: ${IDENTITY_KYC_SUMSUB_SANDBOX:true}
-  registration:
-    max-verify-attempts: ${IDENTITY_REGISTRATION_MAX_VERIFY_ATTEMPTS:5}
-    resend-cooldown-seconds: ${IDENTITY_REGISTRATION_RESEND_COOLDOWN_SECONDS:60}
-    otp-expiry-seconds: ${IDENTITY_REGISTRATION_OTP_EXPIRY_SECONDS:300}
-    lock-timeout-seconds: ${IDENTITY_REGISTRATION_LOCK_TIMEOUT_SECONDS:30}
-    captcha:
-      provider: ${CAPTCHA_PROVIDER:google}
-      expected-token: ${CAPTCHA_EXPECTED_TOKEN:}
-      google-site-key: ${CAPTCHA_GOOGLE_SITE_KEY:}
-      google-secret-key: ${CAPTCHA_GOOGLE_SECRET_KEY:}
-    twilio:
-      enabled: ${TWILIO_ENABLED:false}
-      account-sid: ${TWILIO_ACCOUNT_SID:}
-      auth-token: ${TWILIO_AUTH_TOKEN:}
-      from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}
+shared-kernel:
+  cache:
+    two-tier:
+      enabled: ${SHARED_KERNEL_TWO_TIER_CACHE_ENABLED:true}
+      origin: ${SHARED_KERNEL_CACHE_ORIGIN:}
 
 security:
   idempotency:
@@ -136,106 +93,18 @@ security:
         method: POST
         max-requests: ${SECURITY_IP_RESET_REQ_MAX_REQUESTS:3}
         window-seconds: ${SECURITY_IP_RESET_REQ_WINDOW_SECONDS:300}
-
-catalog:
-  search:
-    provider: ${CATALOG_SEARCH_PROVIDER:in-process}
-    opensearch:
-      host: ${CATALOG_SEARCH_OPENSEARCH_HOST:localhost}
-      port: ${CATALOG_SEARCH_OPENSEARCH_PORT:9200}
-      scheme: ${CATALOG_SEARCH_OPENSEARCH_SCHEME:http}
-  ordering:
-    provider: ${CATALOG_ORDERING_PROVIDER:assume-empty}
-
-inventory:
-  safety-stock:
-    provider: ${INVENTORY_SAFETY_STOCK_PROVIDER:logging}
-  outbound-notifier:
-    provider: ${INVENTORY_OUTBOUND_NOTIFIER_PROVIDER:logging}
-  reservation:
-    auto-release:
-      enabled: ${INVENTORY_RESERVATION_AUTORELEASE_ENABLED:true}
-      delay-ms: ${INVENTORY_RESERVATION_AUTORELEASE_DELAY_MS:30000}
-      batch-size: ${INVENTORY_RESERVATION_AUTORELEASE_BATCH_SIZE:100}
-
-ordering:
-  payment:
-    provider: ${ORDERING_PAYMENT_PROVIDER:assume-success}
-  shipping:
-    provider: ${ORDERING_SHIPPING_PROVIDER:assume-success}
-  catalog-pricing:
-    provider: ${ORDERING_CATALOG_PRICING_PROVIDER:assume-available}
-    fallback-merchant-id: ${ORDERING_FALLBACK_MERCHANT_ID:test-merchant}
-    fallback-warehouse-id: ${ORDERING_FALLBACK_WAREHOUSE_ID:test-warehouse}
-    fallback-price: ${ORDERING_FALLBACK_PRICE:99000}
-    fallback-currency: ${ORDERING_FALLBACK_CURRENCY:VND}
-  voucher:
-    provider: ${ORDERING_VOUCHER_PROVIDER:no-discount}
-  auto-cancel:
-    enabled: ${ORDERING_AUTO_CANCEL_ENABLED:true}
-    timeout-minutes: ${ORDERING_AUTO_CANCEL_TIMEOUT_MIN:15}
-    delay-ms: ${ORDERING_AUTO_CANCEL_DELAY_MS:60000}
-    batch-size: ${ORDERING_AUTO_CANCEL_BATCH:100}
-
-payment:
-  provider:
-    mock:
-      enabled: ${PAYMENT_PROVIDER_MOCK_ENABLED:true}
-    stripe:
-      enabled: ${PAYMENT_PROVIDER_STRIPE_ENABLED:false}
-      api-key: ${STRIPE_API_KEY:}
-      webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
-    vnpay:
-      enabled: ${PAYMENT_PROVIDER_VNPAY_ENABLED:false}
-      tmn-code: ${VNPAY_TMN_CODE:}
-      hash-secret: ${VNPAY_HASH_SECRET:}
-      pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-      return-url: ${VNPAY_RETURN_URL:}
-  invoice:
-    provider: ${PAYMENT_INVOICE_PROVIDER:local}
-    base-url: ${PAYMENT_INVOICE_BASE_URL:https://invoices.test/}
-
-shipping:
-  carrier:
-    provider: ${SHIPPING_CARRIER_PROVIDER:assume-success}
-    ghn:
-      api-token: ${GHN_API_TOKEN:}
-      shop-id: ${GHN_SHOP_ID:}
-      base-url: ${GHN_BASE_URL:https://online-gateway.ghn.vn}
-
-notification:
-  email:
-    provider: ${NOTIFICATION_EMAIL_PROVIDER:logging}
-    from: ${NOTIFICATION_EMAIL_FROM:${SPRING_MAIL_USERNAME:${DEV_MAIL_USERNAME:}}}
-  sms:
-    provider: ${NOTIFICATION_SMS_PROVIDER:logging}
-  push:
-    provider: ${NOTIFICATION_PUSH_PROVIDER:logging}
-  recipient:
-    provider: ${NOTIFICATION_RECIPIENT_PROVIDER:identity}
-  retry:
-    enabled: ${NOTIFICATION_RETRY_ENABLED:true}
-    delay-ms: ${NOTIFICATION_RETRY_DELAY_MS:30000}
-    batch-size: ${NOTIFICATION_RETRY_BATCH:100}
-
-promotion:
-  scheduler:
-    enabled: ${PROMOTION_SCHEDULER_ENABLED:true}
-    delay-ms: ${PROMOTION_SCHEDULER_DELAY_MS:30000}
-    batch-size: ${PROMOTION_SCHEDULER_BATCH:100}
-  voucher:
-    auto-release:
-      enabled: ${PROMOTION_VOUCHER_AUTORELEASE_ENABLED:true}
-      delay-ms: ${PROMOTION_VOUCHER_AUTORELEASE_DELAY_MS:30000}
-      batch-size: ${PROMOTION_VOUCHER_AUTORELEASE_BATCH:100}
-
-chat:
-  realtime:
-    provider: ${CHAT_REALTIME_PROVIDER:stomp}
-  presence:
-    provider: ${CHAT_PRESENCE_PROVIDER:redis}
-  push-notifier:
-    provider: ${CHAT_PUSH_NOTIFIER_PROVIDER:logging}
+      - path: /api/v1/auth/social-login
+        method: POST
+        max-requests: ${SECURITY_IP_SOCIAL_LOGIN_MAX_REQUESTS:10}
+        window-seconds: ${SECURITY_IP_SOCIAL_LOGIN_WINDOW_SECONDS:60}
+      - path: /api/v1/registrations/*/verify-otp
+        method: POST
+        max-requests: ${SECURITY_IP_VERIFY_OTP_MAX_REQUESTS:5}
+        window-seconds: ${SECURITY_IP_VERIFY_OTP_WINDOW_SECONDS:300}
+      - path: /api/v1/security/password-reset
+        method: POST
+        max-requests: ${SECURITY_IP_RESET_COMPLETE_MAX_REQUESTS:5}
+        window-seconds: ${SECURITY_IP_RESET_COMPLETE_WINDOW_SECONDS:300}
 
 springdoc:
   api-docs:
@@ -255,3 +124,10 @@ management:
   endpoint:
     health:
       show-details: never
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}

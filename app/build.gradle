@@ -30,14 +30,18 @@ dependencies {
 
     // Monitoring
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    // Distributed tracing (Micrometer + OpenTelemetry bridge)
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+    // Prometheus metrics endpoint
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    // ArchUnit is not managed by the Spring Boot BOM; pin an explicit version (synced with shared-kernel).
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
-    // Reuse SharedKernelArchRules from shared-kernel testFixtures for the single-source-of-truth ArchUnit test.
     testImplementation(testFixtures(project(':shared-kernel')))
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
