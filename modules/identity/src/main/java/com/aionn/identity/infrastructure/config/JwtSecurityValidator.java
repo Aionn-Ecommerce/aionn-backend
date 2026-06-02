@@ -17,6 +17,7 @@ import java.util.Arrays;
 public class JwtSecurityValidator {
 
     private static final int MIN_SECRET_LENGTH = 32;
+    private static final int MIN_MFA_KEY_LENGTH = 32;
 
     private final JwtProperties jwtProperties;
     private final MfaProperties mfaProperties;
@@ -47,6 +48,11 @@ public class JwtSecurityValidator {
                         "CRITICAL: MFA encryption key is using dev-default value in production! " +
                                 "Set IDENTITY_MFA_ENCRYPTION_KEY to a secure random string.");
             }
+            if (mfaKey.length() < MIN_MFA_KEY_LENGTH) {
+                throw new IllegalStateException(
+                        "CRITICAL: MFA encryption key must be at least " + MIN_MFA_KEY_LENGTH +
+                                " characters. Current length: " + mfaKey.length());
+            }
             log.info("JWT security validation passed for production profile");
         } else {
             if (secret.length() < MIN_SECRET_LENGTH) {
@@ -56,6 +62,9 @@ public class JwtSecurityValidator {
             if (MfaProperties.DEFAULT_ENCRYPTION_KEY.equals(mfaKey)) {
                 log.warn(
                         "MFA encryption key is using dev-default value. Override via IDENTITY_MFA_ENCRYPTION_KEY for non-dev environments.");
+            } else if (mfaKey.length() < MIN_MFA_KEY_LENGTH) {
+                log.warn("MFA encryption key is shorter than {} characters. Override via IDENTITY_MFA_ENCRYPTION_KEY.",
+                        MIN_MFA_KEY_LENGTH);
             }
         }
     }

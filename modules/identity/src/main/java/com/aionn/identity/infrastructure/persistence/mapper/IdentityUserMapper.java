@@ -15,5 +15,6 @@ public interface IdentityUserMapper {
     @Mapping(target = "mfaEnabled", ignore = true)
     @Mapping(target = "mfaSecret", ignore = true)
     @Mapping(target = "failedLoginAttempts", ignore = true)
+    @Mapping(target = "version", ignore = true)
     UserEntity toEntity(IdentityUser user);
 }
