@@ -13,7 +13,8 @@ import com.aionn.identity.application.policy.RegistrationPolicy;
 import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
 import com.aionn.identity.application.port.out.registration.RegistrationLockManagerPort;
 import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
@@ -31,6 +32,7 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -40,10 +42,10 @@ import java.util.Base64;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class RegistrationService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final int REFRESH_TOKEN_BYTES = 48;
 
     private final UserPersistencePort userPersistencePort;
     private final AuthSessionPersistencePort authSessionPersistencePort;
@@ -57,6 +59,7 @@ public class RegistrationService {
     private final RegistrationResultMapper registrationResultMapper;
     private final RegistrationPolicy registrationPolicy;
     private final RegistrationLockManagerPort registrationLockManager;
+    private final IdentityMetricsPort identityMetrics;
 
     public InitiateRegistrationResult initiate(InitiateRegistrationCommand command) {
         log.debug("Initiating registration for identity: {}", command.identity());
@@ -93,6 +96,7 @@ public class RegistrationService {
         notificationDispatcher.sendRegistrationOtp(phoneNumber.value(), otp.getCode());
 
         String responseOtpCode = registrationPolicy.isExposeOtpInResponse() ? otp.getCode() : null;
+        identityMetrics.registrationLifecycle("initiated");
         return registrationResultMapper.toInitiateResult(session, responseOtpCode);
     }
 
@@ -109,6 +113,7 @@ public class RegistrationService {
         } finally {
             registrationSessionStore.save(session);
         }
+        identityMetrics.registrationLifecycle("otp_verified");
         return registrationResultMapper.toVerifyOtpResult(session.getRegId(), session.getVerificationToken());
     }
 
@@ -170,6 +175,7 @@ public class RegistrationService {
 
         log.info("Registration completed for userId: {}, sessionId: {}",
                 savedUser.getUserId(), savedSession.getSessionId());
+        identityMetrics.registrationLifecycle("completed");
         return registrationResultMapper.toCompleteResult(
                 savedSession,
                 accessToken,
@@ -233,7 +239,7 @@ public class RegistrationService {
     }
 
     private String issueRefreshToken(AuthSession session) {
-        byte[] bytes = new byte[REFRESH_TOKEN_BYTES];
+        byte[] bytes = new byte[com.aionn.identity.application.policy.IdentityValidationConstants.REFRESH_TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         String tokenId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 

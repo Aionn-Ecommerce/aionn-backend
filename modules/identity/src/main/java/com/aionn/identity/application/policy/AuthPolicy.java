@@ -9,4 +9,6 @@ public interface AuthPolicy {
     int getMaxFailedLoginAttempts();
 
     int getLockoutMinutes();
+
+    int getPasswordResetTokenTtlMinutes();
 }

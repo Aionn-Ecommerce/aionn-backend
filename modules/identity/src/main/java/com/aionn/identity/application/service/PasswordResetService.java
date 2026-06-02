@@ -1,8 +1,12 @@
 package com.aionn.identity.application.service;
 
+import com.aionn.identity.application.policy.AuthPolicy;
+import com.aionn.identity.application.policy.IdentityValidationConstants;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.integration.IdentityIntegrationEventPublisherPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.PasswordResetPort;
 import com.aionn.identity.application.port.out.security.SecurityAuditPort;
@@ -15,6 +19,7 @@ import com.aionn.identity.domain.valueobject.AuthSessionStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -23,13 +28,10 @@ import java.util.Base64;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class PasswordResetService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final int RESET_TOKEN_BYTES = 32;
-    private static final int RESET_TOKEN_TTL_MINUTES = 15;
-    private static final int MIN_PASSWORD_LENGTH = 8;
-    private static final int MAX_PASSWORD_LENGTH = 128;
 
     private final UserSecurityPort userSecurityPort;
     private final PasswordResetPort passwordResetPort;
@@ -38,6 +40,9 @@ public class PasswordResetService {
     private final AuthSessionPersistencePort authSessionPersistencePort;
     private final RefreshTokenStorePort refreshTokenStore;
     private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final IdentityIntegrationEventPublisherPort integrationEventPublisher;
+    private final IdentityMetricsPort identityMetrics;
+    private final AuthPolicy authPolicy;
 
     public void changePassword(String userId, String currentPassword, String newPassword, String ipAddress) {
         log.info("Processing password change for user: {}", userId);
@@ -56,11 +61,7 @@ public class PasswordResetService {
         passwordResetPort.updatePassword(userId, passwordHasher.hash(newPassword));
         revokeOtherSessions(userId);
         securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.PASSWORD_CHANGED, ipAddress);
-        try {
-            notificationDispatcher.sendPasswordChanged(userId, "self-service");
-        } catch (RuntimeException ex) {
-            log.error("Failed to dispatch password-changed notification for user {}", userId, ex);
-        }
+        integrationEventPublisher.publishPasswordChanged(userId, "self-service");
     }
 
     public void requestPasswordReset(String identity, String ipAddress) {
@@ -71,13 +72,14 @@ public class PasswordResetService {
             return;
         }
 
-        byte[] bytes = new byte[RESET_TOKEN_BYTES];
+        byte[] bytes = new byte[IdentityValidationConstants.RESET_TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
         passwordResetPort.savePasswordResetToken(token, user.get().userId(),
-                LocalDateTime.now().plusMinutes(RESET_TOKEN_TTL_MINUTES));
+                LocalDateTime.now().plusMinutes(authPolicy.getPasswordResetTokenTtlMinutes()));
         securityAuditPort.saveAuditLog(user.get().userId(), SecurityAuditEventType.PASSWORD_RESET_REQUESTED, ipAddress);
+        identityMetrics.passwordResetLifecycle("requested");
         try {
             notificationDispatcher.sendPasswordResetRequested(user.get().userId(), token);
         } catch (RuntimeException ex) {
@@ -101,11 +103,8 @@ public class PasswordResetService {
         passwordResetPort.updatePassword(data.userId(), passwordHasher.hash(newPassword));
         revokeOtherSessions(data.userId());
         securityAuditPort.saveAuditLog(data.userId(), SecurityAuditEventType.PASSWORD_RESET_COMPLETED, ipAddress);
-        try {
-            notificationDispatcher.sendPasswordChanged(data.userId(), "password reset");
-        } catch (RuntimeException ex) {
-            log.error("Failed to dispatch password-changed notification for user {}", data.userId(), ex);
-        }
+        identityMetrics.passwordResetLifecycle("completed");
+        integrationEventPublisher.publishPasswordChanged(data.userId(), "password reset");
     }
 
     private void revokeOtherSessions(String userId) {
@@ -120,11 +119,12 @@ public class PasswordResetService {
     }
 
     private void validateNewPassword(String newPassword) {
-        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH
-                || newPassword.length() > MAX_PASSWORD_LENGTH) {
+        if (newPassword == null
+                || newPassword.length() < IdentityValidationConstants.PASSWORD_MIN_LENGTH
+                || newPassword.length() > IdentityValidationConstants.PASSWORD_MAX_LENGTH) {
             throw new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS,
-                    "Password must be between " + MIN_PASSWORD_LENGTH + " and "
-                            + MAX_PASSWORD_LENGTH + " characters");
+                    "Password must be between " + IdentityValidationConstants.PASSWORD_MIN_LENGTH + " and "
+                            + IdentityValidationConstants.PASSWORD_MAX_LENGTH + " characters");
         }
         boolean hasLetter = newPassword.chars().anyMatch(Character::isLetter);
         boolean hasDigit = newPassword.chars().anyMatch(Character::isDigit);

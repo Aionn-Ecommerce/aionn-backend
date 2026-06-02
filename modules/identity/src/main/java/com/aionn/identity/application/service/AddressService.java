@@ -14,6 +14,7 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AddressService {
 
 	private final AddressPersistencePort addressPersistencePort;
@@ -28,6 +30,7 @@ public class AddressService {
 	private final AddressPolicy addressPolicy;
 	private final GeographyService geographyService;
 
+	@Transactional(readOnly = true)
 	public List<Address> listAddressesByUserId(String userId) {
 		return addressPersistencePort.findByUserId(userId);
 	}
