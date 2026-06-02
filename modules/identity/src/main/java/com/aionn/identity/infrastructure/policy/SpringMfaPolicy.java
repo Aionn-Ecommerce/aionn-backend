@@ -15,4 +15,9 @@ public class SpringMfaPolicy implements MfaPolicy {
     public String getMfaIssuer() {
         return properties.issuer();
     }
+
+    @Override
+    public int getBackupCodeCount() {
+        return properties.backupCodeCount();
+    }
 }

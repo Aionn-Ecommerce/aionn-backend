@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -52,10 +53,26 @@ public class UserEntity {
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
 
+    /**
+     * NOTE: keep this EAGER.
+     * {@link com.aionn.identity.infrastructure.security.web.IdentityUserDetailsService}
+     * resolves authorities outside an open transaction (Spring Security filter
+     * chain),
+     * so a LAZY collection would throw {@code LazyInitializationException}. The
+     * list
+     * endpoint that lists users uses
+     * {@link org.springframework.data.jpa.repository.EntityGraph}
+     * with a non-fetch-join page query, so the EAGER setting does not cause an N+1
+     * there.
+     * If a future code path needs LAZY semantics, switch to a
+     * {@code DTO projection} for
+     * that specific query rather than flipping this fetch type globally.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
+    @BatchSize(size = 50)
     @Builder.Default
     private Set<UserRole> roles = new LinkedHashSet<>();
 
@@ -91,4 +108,14 @@ public class UserEntity {
 
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts;
+
+    /**
+     * Optimistic-lock counter. Multiple endpoints mutate UserEntity concurrently
+     * (password change, MFA enrol/disable, failed-login increment, profile edit)
+     * so we rely on JPA optimistic locking to detect and reject lost-update races
+     * instead of last-write-wins.
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
 }

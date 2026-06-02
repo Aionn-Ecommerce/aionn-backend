@@ -74,4 +74,15 @@ public class KycProfileEntity {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    /**
+     * Optimistic-lock counter. KYC profiles are concurrently mutated by the Sumsub
+     * webhook ({@code syncExternalReview}) and admin decision endpoints, so we rely
+     * on
+     * JPA optimistic locking to prevent a late webhook from clobbering an admin
+     * decision (or vice versa).
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
 }

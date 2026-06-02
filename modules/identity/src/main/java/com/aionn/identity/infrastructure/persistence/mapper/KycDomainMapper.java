@@ -13,10 +13,10 @@ public interface KycDomainMapper {
     @Mapping(target = "status", expression = "java(domain.getStatus().name())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "expiredAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     KycProfileEntity toEntity(KycProfile domain);
 
     @Mapping(target = "status", expression = "java(KycStatus.valueOf(entity.getStatus()))")
     @Mapping(target = "userId", source = "user.userId")
     KycProfile toDomain(KycProfileEntity entity);
 }
-
