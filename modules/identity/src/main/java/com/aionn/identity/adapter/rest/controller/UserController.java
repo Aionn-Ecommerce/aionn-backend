@@ -11,7 +11,8 @@ import com.aionn.identity.adapter.rest.dto.user.response.UserProfileResponse;
 import com.aionn.identity.adapter.rest.mapper.user.UserDtoMapper;
 import com.aionn.identity.application.port.in.user.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
-import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
+import com.aionn.sharedkernel.adapter.web.support.idempotency.IdempotentRequest;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

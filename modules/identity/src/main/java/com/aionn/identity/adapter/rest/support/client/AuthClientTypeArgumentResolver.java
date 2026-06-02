@@ -10,11 +10,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/**
- * Resolves controller parameters annotated with {@link AuthClientType} by
- * reading
- * the request header configured in {@code identity.auth.client-type-header}.
- */
 @Component
 @RequiredArgsConstructor
 public class AuthClientTypeArgumentResolver implements HandlerMethodArgumentResolver {
