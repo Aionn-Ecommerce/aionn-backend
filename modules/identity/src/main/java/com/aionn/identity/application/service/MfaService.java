@@ -7,6 +7,7 @@ import com.aionn.identity.application.port.out.security.MfaPersistencePort;
 import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.SecurityAuditPort;
 import com.aionn.identity.application.port.out.security.TotpManagerPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
 import com.aionn.identity.domain.valueobject.SecurityAuditEventType;
 import com.aionn.identity.application.port.out.security.UserSecurityPort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
@@ -15,6 +16,7 @@ import com.aionn.sharedkernel.util.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,9 +25,8 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class MfaService {
-
-    private static final int BACKUP_CODE_COUNT = 8;
 
     private final UserSecurityPort userSecurityPort;
     private final MfaPersistencePort mfaPersistencePort;
@@ -33,6 +34,7 @@ public class MfaService {
     private final PasswordHasherPort passwordHasher;
     private final TotpManagerPort totpManager;
     private final MfaPolicy mfaPolicy;
+    private final IdentityMetricsPort identityMetrics;
 
     public MfaSetupResult initiateSetup(
             String userId,
@@ -69,6 +71,7 @@ public class MfaService {
         mfaPersistencePort.updateMfaStatus(userId, true);
         List<String> backupCodes = replaceBackupCodes(userId);
         securityAuditPort.saveAuditLog(userId, SecurityAuditEventType.MFA_ENABLED, ipAddress);
+        identityMetrics.mfaVerification("success");
         return new MfaResult(true, backupCodes);
     }
 
@@ -139,7 +142,7 @@ public class MfaService {
 
     private List<String> replaceBackupCodes(String userId) {
         mfaPersistencePort.deleteBackupCodes(userId);
-        List<String> rawCodes = IntStream.range(0, BACKUP_CODE_COUNT)
+        List<String> rawCodes = IntStream.range(0, mfaPolicy.getBackupCodeCount())
                 .mapToObj(i -> OtpGenerator.generate8DigitOtp())
                 .toList();
         List<String> codeHashes = rawCodes.stream()

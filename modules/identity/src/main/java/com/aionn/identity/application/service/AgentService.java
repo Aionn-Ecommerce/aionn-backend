@@ -1,8 +1,10 @@
 package com.aionn.identity.application.service;
 
 import com.aionn.identity.application.policy.AgentPolicy;
+import com.aionn.identity.application.policy.IdentityValidationConstants;
 import com.aionn.identity.application.port.out.agent.AgentAuditPort;
 import com.aionn.identity.application.port.out.agent.AgentPersistencePort;
+import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.AgentIdentity;
@@ -11,8 +13,8 @@ import com.aionn.identity.domain.valueobject.AgentStatus;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -22,22 +24,22 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AgentService {
 
     private final AgentPersistencePort agentPersistencePort;
     private final AgentAuditPort agentAuditPort;
     private final AgentPolicy agentPolicy;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordHasherPort passwordHasher;
 
-    private static final int KEY_LENGTH_BYTES = 32;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public AgentIdentity create(String ownerUserId) {
         log.info("Creating agent for owner: {}", ownerUserId);
-        byte[] keyBytes = new byte[KEY_LENGTH_BYTES];
+        byte[] keyBytes = new byte[IdentityValidationConstants.AGENT_KEY_BYTES];
         SECURE_RANDOM.nextBytes(keyBytes);
         String secureKey = Base64.getEncoder().encodeToString(keyBytes);
-        String keyHash = passwordEncoder.encode(secureKey);
+        String keyHash = passwordHasher.hash(secureKey);
 
         AgentIdentity agentIdentity = AgentIdentity.builder()
                 .id(IdGenerator.ulid())
@@ -83,17 +85,20 @@ public class AgentService {
         return suspended;
     }
 
+    @Transactional(readOnly = true)
     public List<SecurityAudit> getAgentAuditLogs(String ownerUserId, String agentId) {
         log.debug("Retrieving audit logs for agent: {} owned by: {}", agentId, ownerUserId);
         getOwnedAgent(ownerUserId, agentId);
         return agentAuditPort.findByAgentId(agentId, 100);
     }
 
+    @Transactional(readOnly = true)
     public List<AgentIdentity> listMy(String ownerUserId) {
         log.debug("Listing agents for owner: {}", ownerUserId);
         return agentPersistencePort.findByOwnerId(ownerUserId);
     }
 
+    @Transactional(readOnly = true)
     public AgentIdentity get(String ownerUserId, String agentId) {
         log.debug("Getting agent: {} for owner: {}", agentId, ownerUserId);
         return getOwnedAgent(ownerUserId, agentId);

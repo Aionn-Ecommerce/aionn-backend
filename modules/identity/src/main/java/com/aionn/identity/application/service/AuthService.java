@@ -18,6 +18,7 @@ import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.auth.TokenBlacklistPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
 import com.aionn.identity.application.port.out.security.MfaPersistencePort;
 import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.TotpManagerPort;
@@ -37,6 +38,7 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -48,10 +50,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final int REFRESH_TOKEN_BYTES = 48;
 
     private final UserPersistencePort userPersistencePort;
     private final UserSecurityPort userSecurityPort;
@@ -66,6 +68,7 @@ public class AuthService {
     private final RefreshTokenStorePort refreshTokenStore;
     private final AuthResultMapper authResultMapper;
     private final TokenBlacklistPort tokenBlacklist;
+    private final IdentityMetricsPort identityMetrics;
 
     public LoginResult login(LoginCommand command) {
         log.debug("Login attempt for identity: {}", command.identity());
@@ -80,6 +83,8 @@ public class AuthService {
         LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
         log.info("User logged in: userId={}, sessionId={}", user.getUserId(), savedSession.getSessionId());
+        identityMetrics.loginAttempt("success");
+        identityMetrics.sessionLifecycle("created");
         return authResultMapper.toLoginResult(savedSession, accessToken, refreshToken, accessTokenExpiresAt);
     }
 
@@ -116,6 +121,8 @@ public class AuthService {
         String refreshToken = issueRefreshToken(savedSession);
         LocalDateTime accessTokenExpiresAt = accessTokenIssuer.extractExpiry(accessToken);
 
+        identityMetrics.socialAuth(provider.name(), "success");
+        identityMetrics.sessionLifecycle("created");
         return authResultMapper.toSocialLoginResult(
                 savedSession,
                 accessToken,
@@ -124,6 +131,7 @@ public class AuthService {
                 isNewUser);
     }
 
+    @Transactional(readOnly = true)
     public List<AuthSession> listSessions(String userId) {
         validateUserExists(userId);
         return authSessionPersistencePort.findByUserId(userId);
@@ -197,16 +205,19 @@ public class AuthService {
             throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID);
         }
 
-        String sessionId = refreshTokenStore.findSessionId(tokenId)
+        // Atomic find-and-revoke: prevents two concurrent refresh calls from both
+        // succeeding with the same token and lets a replay attempt be detected later.
+        String sessionId = refreshTokenStore.consumeSessionId(tokenId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID));
 
         AuthSession session = authSessionPersistencePort.findById(sessionId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.SESSION_NOT_FOUND));
         if (!AuthSessionStatus.ACTIVE.equals(session.getStatus()) || session.isExpired()) {
-            refreshTokenStore.revoke(tokenId);
+            // Token already consumed above; revoke the whole session so any sibling tokens
+            // issued from the same family are invalidated as well.
+            refreshTokenStore.revokeBySessionId(sessionId);
             throw new IdentityException(IdentityErrorCode.VERIFICATION_TOKEN_INVALID);
         }
-        refreshTokenStore.revoke(tokenId);
 
         session.extendExpiry(LocalDateTime.now().plusDays(authPolicy.getSessionExpiresDays()));
         AuthSession refreshed = authSessionPersistencePort.save(session);
@@ -240,6 +251,7 @@ public class AuthService {
             session.revoke();
             authSessionPersistencePort.save(session);
             refreshTokenStore.revokeBySessionId(sessionId);
+            identityMetrics.sessionLifecycle("revoked");
         }
     }
 
@@ -258,6 +270,7 @@ public class AuthService {
         if (userSecurity.passwordHash() == null || !passwordHasher.matches(password, userSecurity.passwordHash())) {
             log.warn("Invalid password attempt for identity: {}", identity);
             recordFailedLoginAttempt(userSecurity);
+            identityMetrics.loginAttempt("failed");
             throw new IdentityException(IdentityErrorCode.INVALID_CREDENTIALS);
         }
         return userPersistencePort.findById(userSecurity.userId())
@@ -366,7 +379,7 @@ public class AuthService {
     }
 
     private String issueRefreshToken(AuthSession session) {
-        byte[] bytes = new byte[REFRESH_TOKEN_BYTES];
+        byte[] bytes = new byte[com.aionn.identity.application.policy.IdentityValidationConstants.REFRESH_TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         String tokenId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 

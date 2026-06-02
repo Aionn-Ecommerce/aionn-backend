@@ -7,6 +7,7 @@ import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.auth.TokenBlacklistPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
 import com.aionn.identity.application.port.out.security.MfaPersistencePort;
 import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.TotpManagerPort;
@@ -65,6 +66,8 @@ class AuthServiceTest {
         private AuthResultMapper authResultMapper;
         @Mock
         private TokenBlacklistPort tokenBlacklist;
+        @Mock
+        private IdentityMetricsPort identityMetrics;
 
         private AuthService authService;
 
@@ -83,7 +86,8 @@ class AuthServiceTest {
                                 authPolicy,
                                 refreshTokenStore,
                                 authResultMapper,
-                                tokenBlacklist);
+                                tokenBlacklist,
+                                identityMetrics);
         }
 
         @Test

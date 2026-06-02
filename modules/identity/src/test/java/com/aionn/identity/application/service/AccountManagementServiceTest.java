@@ -5,8 +5,8 @@ import com.aionn.identity.application.mapper.UserResultMapper;
 import com.aionn.identity.application.policy.AccountManagementPolicy;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
@@ -48,6 +48,8 @@ class AccountManagementServiceTest {
         @Mock
         private IdentityNotificationDispatcherPort notificationDispatcher;
         @Mock
+        private com.aionn.identity.infrastructure.integration.IdentityIntegrationEventPublisher integrationEventPublisher;
+        @Mock
         private UserOtpChallengeStorePort userOtpChallengeStore;
         @Mock
         private AccountDeletionPort accountDeletionPort;
@@ -67,6 +69,7 @@ class AccountManagementServiceTest {
                 accountManagementService = new AccountManagementService(
                                 userPersistencePort,
                                 notificationDispatcher,
+                                integrationEventPublisher,
                                 userOtpChallengeStore,
                                 accountDeletionPort,
                                 dataExportPort,
@@ -187,7 +190,7 @@ class AccountManagementServiceTest {
                 verify(refreshTokenStore).revokeBySessionId("session-1");
                 verify(refreshTokenStore, never()).revokeBySessionId("session-2");
                 verify(authSessionPersistencePort).saveAll(List.of(activeSession, revokedSession));
-                verify(notificationDispatcher).sendEmailChanged(USER_ID, "old@example.com", "new@example.com");
+                verify(integrationEventPublisher).publishEmailChanged(USER_ID, "old@example.com", "new@example.com");
         }
 
         private IdentityUser activeUser(String userId, String email, String phone) {

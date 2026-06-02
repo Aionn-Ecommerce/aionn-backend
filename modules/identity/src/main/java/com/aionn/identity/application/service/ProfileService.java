@@ -5,6 +5,7 @@ import com.aionn.identity.application.dto.user.command.UpdateDisplayNameCommand;
 import com.aionn.identity.application.dto.user.query.GetMyProfileQuery;
 import com.aionn.identity.application.dto.user.view.UserProfileView;
 import com.aionn.identity.application.mapper.UserResultMapper;
+import com.aionn.identity.application.policy.IdentityValidationConstants;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
@@ -12,6 +13,7 @@ import com.aionn.identity.domain.model.IdentityUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,14 +21,13 @@ import java.net.URISyntaxException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProfileService {
-
-    private static final int MAX_DISPLAY_NAME_LENGTH = 100;
-    private static final int MAX_AVATAR_URL_LENGTH = 2048;
 
     private final UserPersistencePort userPersistencePort;
     private final UserResultMapper userResultMapper;
 
+    @Transactional(readOnly = true)
     public UserProfileView getMyProfile(GetMyProfileQuery query) {
         log.debug("Fetching profile for user: {}", query.userId());
         return userResultMapper.toUserProfileView(getActiveUser(query.userId()));
@@ -34,9 +35,10 @@ public class ProfileService {
 
     public UserProfileView updateDisplayName(UpdateDisplayNameCommand command) {
         log.info("Updating display name for user: {}", command.userId());
-        if (command.displayName() != null && command.displayName().length() > MAX_DISPLAY_NAME_LENGTH) {
+        if (command.displayName() != null
+                && command.displayName().length() > IdentityValidationConstants.DISPLAY_NAME_MAX_LENGTH) {
             throw new IdentityException(IdentityErrorCode.INVALID_DISPLAY_NAME,
-                    "Display name exceeds " + MAX_DISPLAY_NAME_LENGTH + " characters");
+                    "Display name exceeds " + IdentityValidationConstants.DISPLAY_NAME_MAX_LENGTH + " characters");
         }
         IdentityUser user = getActiveUser(command.userId());
         user.updateDisplayName(command.displayName());
@@ -64,7 +66,7 @@ public class ProfileService {
         if (avatarUrl == null || avatarUrl.isBlank()) {
             throw new IdentityException(IdentityErrorCode.AVATAR_URL_INVALID);
         }
-        if (avatarUrl.length() > MAX_AVATAR_URL_LENGTH) {
+        if (avatarUrl.length() > IdentityValidationConstants.AVATAR_URL_MAX_LENGTH) {
             throw new IdentityException(IdentityErrorCode.AVATAR_URL_INVALID,
                     "Avatar URL exceeds maximum length");
         }
