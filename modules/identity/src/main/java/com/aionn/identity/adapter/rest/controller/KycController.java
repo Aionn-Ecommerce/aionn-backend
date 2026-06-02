@@ -9,7 +9,8 @@ import com.aionn.identity.application.port.in.kyc.GenerateKycVerificationSession
 import com.aionn.identity.application.port.in.kyc.GetKycQueryPort;
 import com.aionn.identity.application.port.in.kyc.ListMyKycQueryPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
-import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
+import com.aionn.sharedkernel.adapter.web.support.idempotency.IdempotentRequest;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

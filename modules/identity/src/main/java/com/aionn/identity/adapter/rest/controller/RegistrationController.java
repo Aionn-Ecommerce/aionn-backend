@@ -15,8 +15,9 @@ import com.aionn.identity.application.port.in.registration.InitiateRegistrationI
 import com.aionn.identity.application.port.in.registration.ResendRegistrationOtpInputPort;
 import com.aionn.identity.application.port.in.registration.VerifyRegistrationOtpInputPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
-import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
-import com.aionn.sharedkernel.adapter.web.support.ClientIp;
+import com.aionn.sharedkernel.adapter.web.support.clientip.ClientIp;
+import com.aionn.sharedkernel.adapter.web.support.idempotency.IdempotentRequest;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
