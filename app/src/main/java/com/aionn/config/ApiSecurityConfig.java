@@ -1,7 +1,7 @@
 package com.aionn.config;
 
-import com.aionn.config.security.IpSecurityFilter;
-import com.aionn.config.security.SecurityIpProperties;
+import com.aionn.sharedkernel.infrastructure.web.security.IpSecurityFilter;
+import com.aionn.sharedkernel.infrastructure.web.security.SecurityIpProperties;
 import com.aionn.identity.adapter.rest.exception.IdentityAccessDeniedHandler;
 import com.aionn.identity.adapter.rest.exception.IdentityAuthenticationEntryPoint;
 import com.aionn.identity.infrastructure.security.BearerAuthenticationFilter;
@@ -51,25 +51,31 @@ public class ApiSecurityConfig {
                                                                 ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                 .requestMatchers(
-                                                                 "/swagger-ui.html",
-                                                                 "/swagger-ui/**",
-                                                                 "/v3/api-docs/**",
-                                                                 "/api/v1/auth/login",
-                                                                 "/api/v1/auth/social-login",
-                                                                 "/api/v1/auth/refresh",
-                                                                 "/api/v1/security/password-reset-requests",
-                                                                 "/api/v1/security/password-reset",
+                                                .requestMatchers(
+                                                                "/swagger-ui.html",
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/api/v1/auth/login",
+                                                                "/api/v1/auth/social-login",
+                                                                "/api/v1/auth/refresh",
+                                                                "/api/v1/security/password-reset-requests",
+                                                                "/api/v1/security/password-reset",
                                                                 "/api/v1/kyc/webhooks/**",
                                                                 "/api/v1/registrations/**",
                                                                 "/api/v1/geography/**",
                                                                 "/api/v1/payments/webhooks/**",
                                                                 "/api/v1/shipping/webhooks/**",
                                                                 "/ws/chat/**",
-                                                                "/actuator/health")
+                                                                "/.well-known/ucp",
+                                                                "/.well-known/ucp/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/v1/inventory/**").permitAll()
+                                                .requestMatchers(
+                                                                "/actuator/health",
+                                                                "/actuator/health/**",
+                                                                "/actuator/info",
+                                                                "/actuator/prometheus")
+                                                .permitAll()
                                                 .requestMatchers("/actuator/**").denyAll()
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
@@ -95,7 +101,15 @@ public class ApiSecurityConfig {
                         cfg.setAllowedOrigins(origins);
                 }
                 cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                cfg.setAllowedHeaders(List.of("*"));
+                cfg.setAllowedHeaders(List.of(
+                                "Authorization",
+                                "Content-Type",
+                                "Accept",
+                                "X-Client-Type",
+                                "X-Request-Id",
+                                "X-Idempotency-Key",
+                                "X-Forwarded-For",
+                                "Origin"));
                 cfg.setExposedHeaders(List.of("X-Request-Id", "Idempotent-Replay"));
                 cfg.setAllowCredentials(true);
                 cfg.setMaxAge(3600L);

@@ -1,6 +1,6 @@
 package com.aionn.config;
 
-import com.aionn.config.security.SecurityIpProperties;
+import com.aionn.sharedkernel.infrastructure.web.security.SecurityIpProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
