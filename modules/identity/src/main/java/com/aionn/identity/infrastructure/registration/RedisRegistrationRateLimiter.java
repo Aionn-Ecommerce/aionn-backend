@@ -19,13 +19,6 @@ public class RedisRegistrationRateLimiter implements RegistrationRateLimiterPort
 
     private static final String KEY_PREFIX = "identity:ratelimit:";
 
-    /**
-     * Sliding-window rate-limit check expressed atomically as a single Redis
-     * command.
-     * <p>
-     * KEYS[1] = bucket, ARGV = [now, windowStart, maxAttempts, member, ttlSeconds].
-     * Returns 1 if the request is allowed and was recorded, 0 if rate-limited.
-     */
     private static final String LUA_SCRIPT = """
             redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[2])
             local count = redis.call('ZCARD', KEYS[1])

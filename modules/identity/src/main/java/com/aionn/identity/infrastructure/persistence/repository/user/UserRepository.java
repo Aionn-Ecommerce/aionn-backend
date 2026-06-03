@@ -23,29 +23,6 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
 
         boolean existsByUsernameIgnoreCase(String username);
 
-        /**
-         * Filtered list of users for admin views.
-         *
-         * <p>
-         * Previously used {@code LEFT JOIN FETCH u.roles} together with
-         * {@code Pageable},
-         * which triggers Hibernate's HHH000104 warning: the join cartesian-product is
-         * loaded
-         * entirely into memory and pagination is then applied in Java, breaking the
-         * contract
-         * of {@link Pageable} and burning memory on large result sets.
-         * </p>
-         *
-         * <p>
-         * The fetch join was dropped here. {@code roles} is an EAGER
-         * {@code @ElementCollection}
-         * with {@code @BatchSize(50)} on {@link UserEntity}, so Hibernate will issue
-         * one extra
-         * batched {@code SELECT ... IN (?, ?, ...)} for the roles of all users on the
-         * current
-         * page, which is O(1) extra round-trips per page rather than O(N).
-         * </p>
-         */
         @Query("SELECT u FROM UserEntity u " +
                         "WHERE (:status IS NULL OR u.status = :status) " +
                         "AND (:role IS NULL OR :role MEMBER OF u.roles) " +

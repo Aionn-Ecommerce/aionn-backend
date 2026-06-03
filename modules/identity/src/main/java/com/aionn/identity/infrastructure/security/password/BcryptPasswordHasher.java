@@ -8,16 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class BcryptPasswordHasher implements PasswordHasherPort {
 
-    /**
-     * Default BCrypt cost factor. 12 ≈ 250-300 ms on modern hardware, which is the
-     * OWASP
-     * recommendation for password hashing in 2024+. Spring's default is 10 which is
-     * too
-     * low for production use today. Override via
-     * {@code identity.auth.bcrypt-strength}
-     * if benchmarking shows a different value is needed for the deployment
-     * environment.
-     */
     private static final int DEFAULT_STRENGTH = 12;
     private static final int MIN_STRENGTH = 10;
     private static final int MAX_STRENGTH = 15;

@@ -7,15 +7,6 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Lives in the infrastructure layer because it maps a JPA entity to an
- * application DTO.
- * Keeping it here avoids leaking persistence types into the application layer
- * (the
- * mapper used to sit under {@code application.mapper} which forced application
- * code to
- * depend on {@link UserConsentEntity}, breaking the hexagonal boundary).
- */
 @Mapper(componentModel = "spring")
 public interface ConsentResultMapper {
 
