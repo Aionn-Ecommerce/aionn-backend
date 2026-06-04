@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.gateway;
 
 import com.aionn.catalog.application.port.out.OpenOrderQueryPort;
 import lombok.extern.slf4j.Slf4j;

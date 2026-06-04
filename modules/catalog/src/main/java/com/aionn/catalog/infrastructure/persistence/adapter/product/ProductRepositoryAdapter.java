@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.persistence.adapter.product;
 
 import com.aionn.catalog.application.port.out.ProductRepository;
 import com.aionn.catalog.domain.model.Product;

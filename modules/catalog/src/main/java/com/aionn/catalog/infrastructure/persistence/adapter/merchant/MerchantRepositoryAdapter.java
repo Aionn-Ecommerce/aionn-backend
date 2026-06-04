@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.persistence.adapter.merchant;
 
 import com.aionn.catalog.application.port.out.MerchantRepository;
 import com.aionn.catalog.domain.model.Merchant;

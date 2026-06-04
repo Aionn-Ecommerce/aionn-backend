@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.gateway;
 
 import com.aionn.catalog.application.port.out.OpenOrderQueryPort;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

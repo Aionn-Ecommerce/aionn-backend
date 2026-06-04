@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.persistence.adapter.brand;
 
 import com.aionn.catalog.application.port.out.BrandRepository;
 import com.aionn.catalog.domain.model.Brand;

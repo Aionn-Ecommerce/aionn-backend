@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.persistence.adapter.attribute;
 
 import com.aionn.catalog.application.port.out.AttributeTemplateRepository;
 import com.aionn.catalog.domain.model.AttributeTemplate;

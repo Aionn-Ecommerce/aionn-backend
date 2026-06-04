@@ -1,4 +1,4 @@
-package com.aionn.catalog.infrastructure.adapter;
+package com.aionn.catalog.infrastructure.persistence.adapter.category;
 
 import com.aionn.catalog.application.port.out.CategoryRepository;
 import com.aionn.catalog.domain.model.Category;
