@@ -84,6 +84,10 @@ public class ProductEntity {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("skuId asc")
     @Builder.Default
