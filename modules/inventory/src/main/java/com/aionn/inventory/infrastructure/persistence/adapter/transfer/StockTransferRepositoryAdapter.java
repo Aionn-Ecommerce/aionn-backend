@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.adapter;
+package com.aionn.inventory.infrastructure.persistence.adapter.transfer;
 
 import com.aionn.inventory.application.port.out.StockTransferRepository;
 import com.aionn.inventory.domain.model.StockTransfer;

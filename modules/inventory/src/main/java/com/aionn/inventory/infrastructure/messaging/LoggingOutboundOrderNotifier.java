@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.notifier;
+package com.aionn.inventory.infrastructure.messaging;
 
 import com.aionn.inventory.application.port.out.OutboundOrderNotifier;
 import lombok.extern.slf4j.Slf4j;

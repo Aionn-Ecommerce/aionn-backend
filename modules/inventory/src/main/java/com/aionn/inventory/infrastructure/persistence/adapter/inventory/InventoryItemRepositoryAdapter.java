@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.adapter;
+package com.aionn.inventory.infrastructure.persistence.adapter.inventory;
 
 import com.aionn.inventory.application.port.out.InventoryItemRepository;
 import com.aionn.inventory.domain.model.InventoryItem;

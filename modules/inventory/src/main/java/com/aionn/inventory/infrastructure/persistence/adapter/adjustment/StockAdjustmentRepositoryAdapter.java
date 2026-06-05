@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.adapter;
+package com.aionn.inventory.infrastructure.persistence.adapter.adjustment;
 
 import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
 import com.aionn.inventory.domain.model.StockAdjustment;

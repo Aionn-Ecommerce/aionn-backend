@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.notifier;
+package com.aionn.inventory.infrastructure.messaging;
 
 import com.aionn.inventory.application.port.out.OutboundOrderNotifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,4 +18,3 @@ public class RemoteOutboundOrderNotifier implements OutboundOrderNotifier {
         throw new UnsupportedOperationException("Remote OutboundOrderNotifier is not implemented yet");
     }
 }
-

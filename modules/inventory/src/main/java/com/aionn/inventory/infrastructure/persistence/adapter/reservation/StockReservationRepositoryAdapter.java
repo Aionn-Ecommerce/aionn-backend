@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.adapter;
+package com.aionn.inventory.infrastructure.persistence.adapter.reservation;
 
 import com.aionn.inventory.application.port.out.StockReservationRepository;
 import com.aionn.inventory.domain.model.StockReservation;

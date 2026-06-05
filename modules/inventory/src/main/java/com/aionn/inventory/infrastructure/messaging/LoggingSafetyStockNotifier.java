@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.notifier;
+package com.aionn.inventory.infrastructure.messaging;
 
 import com.aionn.inventory.application.port.out.SafetyStockNotifier;
 import lombok.extern.slf4j.Slf4j;
@@ -21,4 +21,3 @@ public class LoggingSafetyStockNotifier implements SafetyStockNotifier {
                 merchantId, skuId, warehouseId, availableQty, safetyStockQty);
     }
 }
-

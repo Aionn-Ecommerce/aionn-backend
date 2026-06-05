@@ -1,4 +1,4 @@
-package com.aionn.inventory.infrastructure.adapter;
+package com.aionn.inventory.infrastructure.persistence.adapter.warehouse;
 
 import com.aionn.inventory.application.port.out.WarehouseRepository;
 import com.aionn.inventory.domain.model.Warehouse;
