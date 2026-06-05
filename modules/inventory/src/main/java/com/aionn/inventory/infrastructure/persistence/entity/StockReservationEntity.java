@@ -52,5 +52,8 @@ public class StockReservationEntity {
 
     @Column(name = "decided_at")
     private Instant decidedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}

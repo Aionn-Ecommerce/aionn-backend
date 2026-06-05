@@ -55,5 +55,8 @@ public class StockTransferEntity {
 
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
