@@ -114,5 +114,8 @@ public class OrderEntity {
     @OrderBy("id.skuId asc")
     @Builder.Default
     private List<OrderItemEntity> items = new ArrayList<>();
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
