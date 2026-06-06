@@ -1,4 +1,4 @@
-package com.aionn.ordering.infrastructure.adapter;
+package com.aionn.ordering.infrastructure.persistence.adapter.cart;
 
 import com.aionn.ordering.application.port.out.CartRepository;
 import com.aionn.ordering.domain.model.Cart;

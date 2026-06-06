@@ -1,4 +1,4 @@
-package com.aionn.ordering.infrastructure.adapter;
+package com.aionn.ordering.infrastructure.persistence.adapter.returns;
 
 import com.aionn.ordering.application.port.out.OrderReturnRepository;
 import com.aionn.ordering.domain.model.OrderReturn;
