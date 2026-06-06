@@ -1,4 +1,4 @@
-package com.aionn.payment.infrastructure.adapter;
+package com.aionn.payment.infrastructure.persistence.adapter.ledger;
 
 import com.aionn.payment.application.port.out.TransactionLedgerRepository;
 import com.aionn.payment.domain.model.TransactionLedger;

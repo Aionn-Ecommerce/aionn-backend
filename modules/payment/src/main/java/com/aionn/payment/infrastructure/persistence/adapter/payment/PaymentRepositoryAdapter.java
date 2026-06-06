@@ -1,4 +1,4 @@
-package com.aionn.payment.infrastructure.adapter;
+package com.aionn.payment.infrastructure.persistence.adapter.payment;
 
 import com.aionn.payment.application.port.out.PaymentRepository;
 import com.aionn.payment.domain.model.Payment;
