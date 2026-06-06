@@ -55,5 +55,8 @@ public class PaymentMethodEntity {
 
     @Column(name = "verified_at")
     private Instant verifiedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
