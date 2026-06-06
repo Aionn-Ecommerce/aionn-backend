@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -53,5 +52,8 @@ public class CartEntity {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<CartItemEntity> items = new ArrayList<>();
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
