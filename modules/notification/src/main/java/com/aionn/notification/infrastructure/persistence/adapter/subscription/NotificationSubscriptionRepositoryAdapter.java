@@ -1,4 +1,4 @@
-package com.aionn.notification.infrastructure.adapter;
+package com.aionn.notification.infrastructure.persistence.adapter.subscription;
 
 import com.aionn.notification.application.port.out.NotificationSubscriptionRepository;
 import com.aionn.notification.domain.model.NotificationSubscription;

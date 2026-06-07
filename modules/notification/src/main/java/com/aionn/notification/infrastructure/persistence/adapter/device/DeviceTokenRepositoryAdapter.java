@@ -1,4 +1,4 @@
-package com.aionn.notification.infrastructure.adapter;
+package com.aionn.notification.infrastructure.persistence.adapter.device;
 
 import com.aionn.notification.application.port.out.DeviceTokenRepository;
 import com.aionn.notification.domain.model.DeviceToken;
