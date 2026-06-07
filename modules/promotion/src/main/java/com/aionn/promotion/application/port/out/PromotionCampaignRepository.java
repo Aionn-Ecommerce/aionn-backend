@@ -12,10 +12,8 @@ public interface PromotionCampaignRepository {
 
     Optional<PromotionCampaign> findById(String campaignId);
 
-    /** UC9.1 sweep - SCHEDULED whose startDate <= now -> RUNNING. */
-    List<PromotionCampaign> findToActivate(Instant now, int limit);
+List<PromotionCampaign> findToActivate(Instant now, int limit);
 
-    /** UC9.1 sweep - RUNNING whose endDate <= now -> ENDED. */
-    List<PromotionCampaign> findToEnd(Instant now, int limit);
+List<PromotionCampaign> findToEnd(Instant now, int limit);
 }
 

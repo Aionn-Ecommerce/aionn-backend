@@ -127,8 +127,7 @@ public class VoucherService {
         return mapper.toResult(saved);
     }
 
-    
-    public int releaseExpiredReservations(Instant now, int batchSize) {
+public int releaseExpiredReservations(Instant now, int batchSize) {
         List<UserVoucher> expired = userVoucherRepository.findExpiredReservations(now, batchSize);
         int released = 0;
         for (UserVoucher uv : expired) {

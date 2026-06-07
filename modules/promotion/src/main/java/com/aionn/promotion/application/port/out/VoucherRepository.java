@@ -10,9 +10,6 @@ public interface VoucherRepository {
 
     Optional<Voucher> findByCode(String voucherCode);
 
-    /**
-     * Pessimistic lock used by reserve/apply/release to serialize counter updates.
-     */
-    Optional<Voucher> lockByCode(String voucherCode);
+Optional<Voucher> lockByCode(String voucherCode);
 }
 

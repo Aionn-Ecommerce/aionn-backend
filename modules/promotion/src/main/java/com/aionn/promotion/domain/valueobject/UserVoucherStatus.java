@@ -1,14 +1,5 @@
 package com.aionn.promotion.domain.valueobject;
 
-/**
- * Per-user voucher claim lifecycle.
- *
- * <pre>
- *   CLAIMED â†’ RESERVED â†’ APPLIED   (order paid)
- *   CLAIMED â†’ RESERVED â†’ RELEASED  (order cancelled / expired)
- *   CLAIMED â†’ EXPIRED              (validUntil passed without use)
- * </pre>
- */
 public enum UserVoucherStatus {
     CLAIMED,
     RESERVED,

@@ -5,10 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * UC9.8 - constraints attached to a campaign that vouchers issued under it
- * inherit. Applied during {@code reserve} to confirm an order qualifies.
- */
 public record PromotionCondition(
         BigDecimal minOrderValue,
         List<String> applicableCategoryIds,

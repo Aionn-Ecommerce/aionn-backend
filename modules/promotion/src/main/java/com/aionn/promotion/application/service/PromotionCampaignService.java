@@ -94,8 +94,7 @@ public class PromotionCampaignService {
         return mapper.toResult(saved);
     }
 
-    
-    public int processScheduledTransitions(Instant now, int batchSize) {
+public int processScheduledTransitions(Instant now, int batchSize) {
         int changed = 0;
         for (PromotionCampaign c : campaignRepository.findToActivate(now, batchSize)) {
             try {

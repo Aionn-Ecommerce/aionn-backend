@@ -10,11 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/**
- * Flips SCHEDULED â†’ RUNNING and RUNNING â†’ ENDED based on the campaign's
- * date window. Drives the flash-sale toggle: admins set startDate / endDate
- * and this sweeper turns it on / off automatically.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

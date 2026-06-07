@@ -1,15 +1,5 @@
 package com.aionn.promotion.domain.valueobject;
 
-/**
- * Campaign lifecycle.
- *
- * <pre>
- *   DRAFT â†’ SCHEDULED   (admin enables it; runs at startDate)
- *   SCHEDULED â†’ RUNNING (System / Scheduler at startDate)
- *   RUNNING   â†’ ENDED   (at endDate or manual)
- *   any (non-ENDED) â†’ CANCELLED
- * </pre>
- */
 public enum CampaignStatus {
     DRAFT,
     SCHEDULED,
