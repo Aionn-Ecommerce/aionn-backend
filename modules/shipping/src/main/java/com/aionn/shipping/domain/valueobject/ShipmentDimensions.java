@@ -2,7 +2,6 @@ package com.aionn.shipping.domain.valueobject;
 
 import java.math.BigDecimal;
 
-/** Length, width, height in cm; weight in grams. */
 public record ShipmentDimensions(
         int weightGram,
         BigDecimal lengthCm,

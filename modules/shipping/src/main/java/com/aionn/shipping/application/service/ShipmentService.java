@@ -96,8 +96,7 @@ public class ShipmentService {
         return mapper.toResult(saved);
     }
 
-    
-    public ShipmentResult applyCarrierWebhook(ShipmentCommands.CarrierWebhook webhook) {
+public ShipmentResult applyCarrierWebhook(ShipmentCommands.CarrierWebhook webhook) {
         Shipment shipment = shipmentRepository.findByTrackingCode(webhook.trackingCode())
                 .orElseThrow(() -> new ShippingException(ShippingErrorCode.SHIPMENT_NOT_FOUND));
         switch (webhook.type()) {
@@ -116,8 +115,7 @@ public class ShipmentService {
         return mapper.toResult(saved);
     }
 
-    
-    @Transactional(readOnly = true)
+@Transactional(readOnly = true)
     public ShippingQuoteResult quote(ShipmentCommands.QuoteShipping command) {
         String currency = command.currency() == null ? "VND" : command.currency();
         // Try configured rate by zone code (province) first.

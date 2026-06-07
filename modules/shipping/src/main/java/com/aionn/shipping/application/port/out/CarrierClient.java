@@ -6,10 +6,6 @@ import com.aionn.shipping.domain.valueobject.ShipmentDimensions;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * External carrier (GHN) API client. 2-impl pattern: assume-success default
- * + remote stub awaiting real GHN integration.
- */
 public interface CarrierClient {
 
     Quote quote(ShipmentAddress address, ShipmentDimensions dimensions, String currency);

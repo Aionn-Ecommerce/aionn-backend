@@ -1,18 +1,5 @@
 package com.aionn.shipping.domain.valueobject;
 
-/**
- * Shipment lifecycle.
- *
- * <pre>
- *   REQUESTED â†’ REGISTERED â†’ PICKED_UP â†’ IN_TRANSIT
- *                              â†“             â†“
- *                              CANCELLED     OUT_FOR_DELIVERY
- *                                              â†“        â†“
- *                                       DELIVERED   DELIVERY_FAILED
- *                                                       â†“
- *                                       (auto retry)  RETURNED
- * </pre>
- */
 public enum ShipmentStatus {
     REQUESTED,
     REGISTERED,

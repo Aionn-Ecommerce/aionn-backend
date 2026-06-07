@@ -8,12 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
-/**
- * Real GHN carrier adapter. Activated when
- * {@code shipping.carrier.provider=ghn}.
- * Stub that fails closed - replace each method with a real GHN HTTP call once
- * the team supplies API token + shop id.
- */
 @Component
 @ConditionalOnProperty(prefix = "shipping.carrier", name = "provider", havingValue = "ghn")
 public class GhnCarrierClient implements CarrierClient {

@@ -12,11 +12,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-/**
- * Default carrier adapter for dev/test. Quotes a flat fee, returns synthetic
- * tracking codes. Replace with the real GHN client by setting
- * {@code shipping.carrier.provider=ghn}.
- */
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "shipping.carrier", name = "provider", havingValue = "assume-success", matchIfMissing = true)
