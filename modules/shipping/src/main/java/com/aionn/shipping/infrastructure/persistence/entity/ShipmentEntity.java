@@ -136,5 +136,8 @@ public class ShipmentEntity {
 
     @Column(name = "returned_at")
     private Instant returnedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
