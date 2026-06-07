@@ -1,4 +1,4 @@
-package com.aionn.chat.infrastructure.adapter;
+package com.aionn.chat.infrastructure.persistence.adapter.message;
 
 import com.aionn.chat.application.port.out.MessageRepository;
 import com.aionn.chat.domain.model.Message;
@@ -48,4 +48,3 @@ public class MessageRepositoryAdapter implements MessageRepository {
         return jpa.countUnread(conversationId, userId, afterInstant);
     }
 }
-

@@ -1,4 +1,4 @@
-package com.aionn.chat.infrastructure.adapter;
+package com.aionn.chat.infrastructure.persistence.adapter.autoreply;
 
 import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
 import com.aionn.chat.domain.model.MerchantAutoReply;

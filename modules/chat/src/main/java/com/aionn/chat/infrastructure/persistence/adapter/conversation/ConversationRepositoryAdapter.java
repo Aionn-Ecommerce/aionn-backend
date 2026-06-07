@@ -1,4 +1,4 @@
-package com.aionn.chat.infrastructure.adapter;
+package com.aionn.chat.infrastructure.persistence.adapter.conversation;
 
 import com.aionn.chat.application.port.out.ConversationRepository;
 import com.aionn.chat.domain.model.Conversation;

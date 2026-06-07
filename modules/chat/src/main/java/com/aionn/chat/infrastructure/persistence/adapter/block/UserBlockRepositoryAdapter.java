@@ -1,4 +1,4 @@
-package com.aionn.chat.infrastructure.adapter;
+package com.aionn.chat.infrastructure.persistence.adapter.block;
 
 import com.aionn.chat.application.port.out.UserBlockRepository;
 import com.aionn.chat.domain.model.UserBlock;
