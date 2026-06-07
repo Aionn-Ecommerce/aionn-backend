@@ -1,4 +1,4 @@
-package com.aionn.promotion.infrastructure.adapter;
+package com.aionn.promotion.infrastructure.persistence.adapter.campaign;
 
 import com.aionn.promotion.application.port.out.PromotionCampaignRepository;
 import com.aionn.promotion.domain.model.PromotionCampaign;

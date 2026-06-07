@@ -1,4 +1,4 @@
-package com.aionn.promotion.infrastructure.adapter;
+package com.aionn.promotion.infrastructure.persistence.adapter.uservoucher;
 
 import com.aionn.promotion.application.port.out.UserVoucherRepository;
 import com.aionn.promotion.domain.model.UserVoucher;
