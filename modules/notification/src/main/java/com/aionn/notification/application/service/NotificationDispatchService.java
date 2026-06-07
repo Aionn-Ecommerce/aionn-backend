@@ -127,8 +127,7 @@ public class NotificationDispatchService {
                 .toList();
     }
 
-    
-    public int retryPending(int batchSize) {
+public int retryPending(int batchSize) {
         List<Notification> retryable = notificationRepository.findRetryable(batchSize);
         int succeeded = 0;
         for (Notification n : retryable) {

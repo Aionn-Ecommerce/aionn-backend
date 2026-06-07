@@ -60,8 +60,7 @@ public class NotificationSubscription extends AggregateRoot {
                 userId, category.name(), channel.name(), enabled, now));
     }
 
-    
-    public void replaceSettings(Map<NotificationCategory, Map<NotificationChannel, Boolean>> incoming) {
+public void replaceSettings(Map<NotificationCategory, Map<NotificationChannel, Boolean>> incoming) {
         for (var catEntry : incoming.entrySet()) {
             NotificationCategory cat = catEntry.getKey();
             for (var chEntry : catEntry.getValue().entrySet()) {
@@ -86,8 +85,7 @@ public class NotificationSubscription extends AggregateRoot {
         return out;
     }
 
-    
-    public Map<String, Boolean> rawSettings() {
+public Map<String, Boolean> rawSettings() {
         return new HashMap<>(settings);
     }
 

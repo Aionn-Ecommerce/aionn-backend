@@ -1,15 +1,5 @@
 package com.aionn.notification.domain.valueobject;
 
-/**
- * Notification lifecycle.
- *
- * <pre>
- *   PENDING â†’ SENT (delivery attempt succeeded)
- *           â†’ FAILED (max retries exhausted)
- *   SENT     â†’ READ (user opened it)
- *   any non-DELETED â†’ DELETED (user soft-removes from inbox)
- * </pre>
- */
 public enum NotificationStatus {
     PENDING,
     SENT,

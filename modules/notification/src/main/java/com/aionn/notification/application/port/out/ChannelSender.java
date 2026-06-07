@@ -2,11 +2,6 @@ package com.aionn.notification.application.port.out;
 
 import com.aionn.notification.domain.valueobject.NotificationChannel;
 
-/**
- * Per-channel dispatcher. The
- * {@link com.aionn.notification.application.service.NotificationDispatchService}
- * picks the right one by {@link NotificationChannel}.
- */
 public interface ChannelSender {
 
     NotificationChannel channel();

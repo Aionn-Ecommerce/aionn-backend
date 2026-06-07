@@ -12,13 +12,7 @@ public final class NotificationCommands {
     private NotificationCommands() {
     }
 
-    /**
-     * Send notification by event. The service resolves the proper template by
-     * (eventType, channel, locale) and renders content from the context map.
-     * If {@code channels} is empty, the service uses every channel allowed by
-     * the user's subscription for the event's category.
-     */
-    public record SendByEvent(
+public record SendByEvent(
             String userId,
             String eventType,
             NotificationCategory category,

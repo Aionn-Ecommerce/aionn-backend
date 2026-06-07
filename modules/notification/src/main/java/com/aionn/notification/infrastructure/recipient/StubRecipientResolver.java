@@ -10,14 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Default recipient resolver. For Email/SMS we synthesize an address from
- * the user id (good enough for local tests / dev). For PUSH we look up the
- * stored device token. In-app delivery does not need a recipient address.
- *
- * Replace with a real impl that queries Identity once we are ready to send
- * real emails/SMS.
- */
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "notification.recipient", name = "provider", havingValue = "stub", matchIfMissing = true)

@@ -8,10 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * UC8.3 retry sweep. Picks up PENDING notifications with retry_count &lt; 3
- * and re-attempts delivery.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

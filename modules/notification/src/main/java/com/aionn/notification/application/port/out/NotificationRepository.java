@@ -13,10 +13,8 @@ public interface NotificationRepository {
 
     List<Notification> findByUser(String userId, int limit);
 
-    /** UC8.3 retry sweep - PENDING with retryCount < max. */
-    List<Notification> findRetryable(int limit);
+List<Notification> findRetryable(int limit);
 
-    /** UC8.12 - aggregate by campaign and status. */
-    long countByCampaignAndStatus(String campaignId, String status);
+long countByCampaignAndStatus(String campaignId, String status);
 }
 

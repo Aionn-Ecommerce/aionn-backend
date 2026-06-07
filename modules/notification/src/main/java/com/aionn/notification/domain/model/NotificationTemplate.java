@@ -95,8 +95,7 @@ public class NotificationTemplate extends AggregateRoot {
         record(new NotificationEvents.TemplateUpdated(templateId, content, version, now));
     }
 
-    
-    public Rendered render(Map<String, String> context) {
+public Rendered render(Map<String, String> context) {
         for (String key : placeholders) {
             Guard.require(context.containsKey(key),
                     () -> new NotificationException(NotificationErrorCode.TEMPLATE_PLACEHOLDER_MISSING,
