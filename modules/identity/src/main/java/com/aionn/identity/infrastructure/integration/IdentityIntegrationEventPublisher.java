@@ -11,28 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
-/**
- * Adapter that publishes Identity integration events through the shared-kernel
- * outbox publisher.
- *
- * <p>
- * Application services interact with this through
- * {@link IdentityIntegrationEventPublisherPort} so the messaging mechanism can
- * change
- * (e.g. swap to a different transport, add tracing, batch publication) without
- * leaking
- * into business code.
- * </p>
- *
- * <p>
- * Used only for fire-and-forget notifications where the caller does not need to
- * know
- * the result and the user is not waiting for an OTP-style payload. Synchronous
- * flows
- * (OTP delivery, password reset token) keep using
- * {@link com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort}.
- * </p>
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

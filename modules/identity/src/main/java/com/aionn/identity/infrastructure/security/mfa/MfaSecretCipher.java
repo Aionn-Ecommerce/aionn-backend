@@ -22,18 +22,6 @@ public class MfaSecretCipher {
     private static final int AES_KEY_BITS = 256;
     private static final int PBKDF2_ITERATIONS = 120_000;
 
-    /**
-     * Static, application-wide salt. PBKDF2 still adds meaningful work compared to
-     * a single
-     * SHA-256 pass (slower brute force) and ensures the derived AES key is
-     * uniformly
-     * distributed even if the configured passphrase is short or low-entropy. Using
-     * a fixed
-     * salt is acceptable here because the same configured key must derive the same
-     * AES key
-     * across all instances; per-record salts would be required only if we accepted
-     * user-supplied passwords as the master secret.
-     */
     private static final byte[] KDF_SALT = "aionn-identity-mfa-secret-cipher".getBytes(StandardCharsets.UTF_8);
 
     private final SecretKeySpec secretKey;
