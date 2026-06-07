@@ -4,7 +4,7 @@ import com.aionn.sharedkernel.infrastructure.web.security.IpSecurityFilter;
 import com.aionn.sharedkernel.infrastructure.web.security.SecurityIpProperties;
 import com.aionn.identity.adapter.rest.exception.IdentityAccessDeniedHandler;
 import com.aionn.identity.adapter.rest.exception.IdentityAuthenticationEntryPoint;
-import com.aionn.identity.infrastructure.security.BearerAuthenticationFilter;
+import com.aionn.identity.infrastructure.security.web.BearerAuthenticationFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +28,9 @@ import java.util.List;
 @EnableConfigurationProperties(SecurityIpProperties.class)
 @EnableMethodSecurity
 public class ApiSecurityConfig {
+
+        public ApiSecurityConfig() {
+        }
 
         @Bean
         public SecurityFilterChain securityFilterChain(
@@ -93,7 +96,9 @@ public class ApiSecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource(SecurityIpProperties properties) {
                 CorsConfiguration cfg = new CorsConfiguration();
-                List<String> origins = properties.getCors().getAllowedOrigins();
+                List<String> origins = properties.getCors().getAllowedOrigins().stream()
+                                .filter(o -> o != null && !o.isBlank())
+                                .toList();
                 if (origins.isEmpty()) {
                         log.warn("No CORS allowed origins configured; defaulting to http://localhost:3000");
                         cfg.setAllowedOrigins(List.of("http://localhost:3000"));

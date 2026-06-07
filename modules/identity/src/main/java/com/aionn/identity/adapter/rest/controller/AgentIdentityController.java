@@ -7,7 +7,8 @@ import com.aionn.identity.adapter.rest.dto.agent.response.AgentIdentityResponse;
 import com.aionn.identity.adapter.rest.mapper.agent.AgentIdentityDtoMapper;
 import com.aionn.identity.application.port.in.agent.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
-import com.aionn.sharedkernel.adapter.web.support.IdempotentRequest;
+import com.aionn.sharedkernel.adapter.web.support.idempotency.IdempotentRequest;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

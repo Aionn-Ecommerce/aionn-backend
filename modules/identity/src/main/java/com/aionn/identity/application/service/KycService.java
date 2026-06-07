@@ -15,6 +15,7 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class KycService {
 
     private final KycPersistencePort kycPersistencePort;
@@ -75,12 +77,14 @@ public class KycService {
         return kycPersistencePort.save(kyc);
     }
 
+    @Transactional(readOnly = true)
     public List<KycProfile> listMy(String userId) {
         log.debug("Listing KYC profiles for user: {}", userId);
         validateUserExists(userId);
         return kycPersistencePort.findByUserIdOrderBySubmittedAtDesc(userId);
     }
 
+    @Transactional(readOnly = true)
     public KycProfile get(String userId, String kycId) {
         log.debug("Getting KYC: {}, user: {}", kycId, userId);
         validateUserExists(userId);

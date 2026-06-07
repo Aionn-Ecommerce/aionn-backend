@@ -10,5 +10,6 @@ public record AuthProperties(
         @DefaultValue("X-Client-Type") String clientTypeHeader,
         @DefaultValue("mobile") String mobileClientValue,
         @DefaultValue("5") int maxFailedLoginAttempts,
-        @DefaultValue("15") int lockoutMinutes) {
+        @DefaultValue("15") int lockoutMinutes,
+        @DefaultValue("15") int passwordResetTokenTtlMinutes) {
 }

@@ -11,6 +11,7 @@ import com.aionn.identity.domain.exception.IdentityException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -18,6 +19,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PreferenceService {
 
     private final UserPersistencePort userPersistencePort;
@@ -79,7 +81,7 @@ public class PreferenceService {
         return getOrCreate(userId);
     }
 
-        private UserPreferenceResult getOrCreate(String userId) {
+    private UserPreferenceResult getOrCreate(String userId) {
         userPersistencePort.findById(userId)
                 .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
 
@@ -96,4 +98,3 @@ public class PreferenceService {
         }
     }
 }
-

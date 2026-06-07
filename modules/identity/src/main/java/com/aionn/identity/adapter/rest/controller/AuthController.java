@@ -14,7 +14,7 @@ import com.aionn.identity.adapter.rest.support.session.CurrentAccessTokenJti;
 import com.aionn.identity.adapter.rest.support.session.CurrentSessionId;
 import com.aionn.identity.application.port.in.auth.*;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
-import com.aionn.sharedkernel.adapter.web.support.ClientIp;
+import com.aionn.sharedkernel.adapter.web.support.clientip.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

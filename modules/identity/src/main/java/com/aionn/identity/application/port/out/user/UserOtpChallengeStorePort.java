@@ -6,8 +6,6 @@ import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import com.aionn.identity.domain.valueobject.OtpChannel;
-
 public interface UserOtpChallengeStorePort {
 
     void save(UserOtpChallenge challenge);

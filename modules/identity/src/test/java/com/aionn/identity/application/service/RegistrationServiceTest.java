@@ -9,7 +9,8 @@ import com.aionn.identity.application.policy.RegistrationPolicy;
 import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
 import com.aionn.identity.application.port.out.registration.RegistrationLockManagerPort;
 import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
@@ -77,6 +78,8 @@ class RegistrationServiceTest {
         private RegistrationPolicy registrationPolicy;
         @Mock
         private RegistrationLockManagerPort registrationLockManager;
+        @Mock
+        private IdentityMetricsPort identityMetrics;
 
         private RegistrationService registrationService;
 
@@ -94,7 +97,8 @@ class RegistrationServiceTest {
                                 passwordHasher,
                                 registrationResultMapper,
                                 registrationPolicy,
-                                registrationLockManager);
+                                registrationLockManager,
+                                identityMetrics);
         }
 
         @Test

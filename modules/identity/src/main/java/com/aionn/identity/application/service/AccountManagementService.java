@@ -10,8 +10,9 @@ import com.aionn.identity.application.mapper.UserResultMapper;
 import com.aionn.identity.application.policy.AccountManagementPolicy;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.notification.IdentityNotificationDispatcherPort;
+import com.aionn.identity.application.port.out.integration.IdentityIntegrationEventPublisherPort;
 import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
 import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
@@ -27,16 +28,19 @@ import com.aionn.sharedkernel.util.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AccountManagementService {
 
     private final UserPersistencePort userPersistencePort;
     private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final IdentityIntegrationEventPublisherPort integrationEventPublisher;
     private final UserOtpChallengeStorePort userOtpChallengeStore;
     private final AccountDeletionPort accountDeletionPort;
     private final DataExportPort dataExportPort;
@@ -132,11 +136,7 @@ public class AccountManagementService {
         userOtpChallengeStore.delete(userId, UserOtpPurpose.CHANGE_EMAIL);
 
         revokeAllSessions(userId);
-        try {
-            notificationDispatcher.sendEmailChanged(userId, oldEmail, saved.getEmail());
-        } catch (RuntimeException ex) {
-            log.error("Failed to dispatch email-changed notification for user {}", userId, ex);
-        }
+        integrationEventPublisher.publishEmailChanged(userId, oldEmail, saved.getEmail());
         log.info("Email changed for user: {}", userId);
         return userResultMapper.toUserProfileView(saved);
     }
@@ -181,11 +181,7 @@ public class AccountManagementService {
         userOtpChallengeStore.delete(userId, UserOtpPurpose.CHANGE_PHONE);
 
         revokeAllSessions(userId);
-        try {
-            notificationDispatcher.sendPhoneChanged(userId, oldPhone, saved.getPhone());
-        } catch (RuntimeException ex) {
-            log.error("Failed to dispatch phone-changed notification for user {}", userId, ex);
-        }
+        integrationEventPublisher.publishPhoneChanged(userId, oldPhone, saved.getPhone());
         log.info("Phone changed for user: {}", userId);
         return userResultMapper.toUserProfileView(saved);
     }

@@ -14,6 +14,7 @@ import com.aionn.sharedkernel.domain.vo.OffsetPagination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Set;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AdminUserService {
 
     private final AdminUserPersistencePort adminUserPersistencePort;
@@ -65,6 +67,7 @@ public class AdminUserService {
         adminUserPersistencePort.save(user);
     }
 
+    @Transactional(readOnly = true)
     public UserListResult listUsers(UserStatus status, UserRole role, int page, int size) {
         OffsetPagination pagination = OffsetPagination.safe(page, size);
 
@@ -90,6 +93,7 @@ public class AdminUserService {
                 (int) userPage.totalElements());
     }
 
+    @Transactional(readOnly = true)
     public UserDetailResult getUserById(String userId) {
         return adminResultMapper.toUserDetailResult(getUser(userId));
     }

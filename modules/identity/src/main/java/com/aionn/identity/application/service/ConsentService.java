@@ -12,6 +12,7 @@ import com.aionn.sharedkernel.util.IpAddressValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,9 +20,10 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ConsentService {
 
-        public static final String DEFAULT_MARKETING_VERSION = "marketing-v1";
+    public static final String DEFAULT_MARKETING_VERSION = "marketing-v1";
 
     private final UserPersistencePort userPersistencePort;
     private final ConsentPersistencePort consentPersistencePort;
@@ -41,6 +43,7 @@ public class ConsentService {
         return appendDecision(userId, ConsentType.MARKETING, DEFAULT_MARKETING_VERSION, ipAddress, subscribed);
     }
 
+    @Transactional(readOnly = true)
     public List<ConsentResult> listMy(String userId) {
         log.debug("Listing consents for user: {}", userId);
         userPersistencePort.findById(userId)
@@ -80,4 +83,3 @@ public class ConsentService {
         return saved;
     }
 }
-

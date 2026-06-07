@@ -34,4 +34,9 @@ public class SpringAuthPolicy implements AuthPolicy {
     public int getLockoutMinutes() {
         return authProperties.lockoutMinutes();
     }
+
+    @Override
+    public int getPasswordResetTokenTtlMinutes() {
+        return authProperties.passwordResetTokenTtlMinutes();
+    }
 }

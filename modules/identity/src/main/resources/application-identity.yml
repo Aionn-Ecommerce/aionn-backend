@@ -28,15 +28,60 @@ identity:
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
       from-phone-number: ${TWILIO_FROM_PHONE_NUMBER:}
+  jwt:
+    issuer: ${IDENTITY_JWT_ISSUER:aionn-identity}
+    secret: ${IDENTITY_JWT_SECRET:}
+    access-token-expiry-minutes: ${IDENTITY_JWT_ACCESS_TOKEN_EXPIRY_MINUTES:15}
+    refresh-token-expiry-days: ${IDENTITY_JWT_REFRESH_TOKEN_EXPIRY_DAYS:30}
   auth:
     client-type-header: ${IDENTITY_AUTH_CLIENT_TYPE_HEADER:X-Client-Type}
     mobile-client-value: ${IDENTITY_AUTH_MOBILE_CLIENT_VALUE:mobile}
     max-failed-login-attempts: ${IDENTITY_AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
     lockout-minutes: ${IDENTITY_AUTH_LOCKOUT_MINUTES:15}
+    password-reset-token-ttl-minutes: ${IDENTITY_AUTH_PASSWORD_RESET_TOKEN_TTL_MINUTES:15}
     session:
       expires-days: ${IDENTITY_AUTH_SESSION_EXPIRES_DAYS:30}
+    cookie:
+      secure: ${IDENTITY_AUTH_COOKIE_SECURE:true}
+      same-site: ${IDENTITY_AUTH_COOKIE_SAME_SITE:Lax}
+      domain: ${IDENTITY_AUTH_COOKIE_DOMAIN:}
+      path: ${IDENTITY_AUTH_COOKIE_PATH:/}
+    social:
+      google:
+        provider: ${IDENTITY_AUTH_GOOGLE_PROVIDER:mock}
+        client-id: ${IDENTITY_AUTH_GOOGLE_CLIENT_ID:}
+        token-info-url: ${IDENTITY_AUTH_GOOGLE_TOKEN_INFO_URL:https://oauth2.googleapis.com/tokeninfo}
+      facebook:
+        provider: ${IDENTITY_AUTH_FACEBOOK_PROVIDER:mock}
+        app-id: ${IDENTITY_AUTH_FACEBOOK_APP_ID:}
+        app-secret: ${IDENTITY_AUTH_FACEBOOK_APP_SECRET:}
+        debug-token-url: ${IDENTITY_AUTH_FACEBOOK_DEBUG_TOKEN_URL:https://graph.facebook.com/debug_token}
   mfa:
     issuer: ${IDENTITY_MFA_ISSUER:Aionn}
-    encryption-key: ${IDENTITY_MFA_ENCRYPTION_KEY:dev-only-mfa-encryption-key-override-in-prod}
+    encryption-key: ${IDENTITY_MFA_ENCRYPTION_KEY:}
+    backup-code-count: ${IDENTITY_MFA_BACKUP_CODE_COUNT:8}
+  kyc:
+    provider: ${IDENTITY_KYC_PROVIDER:mock}
+    sumsub:
+      base-url: ${IDENTITY_KYC_SUMSUB_BASE_URL:https://api.sumsub.com}
+      app-token: ${IDENTITY_KYC_SUMSUB_APP_TOKEN:}
+      secret-key: ${IDENTITY_KYC_SUMSUB_SECRET_KEY:}
+      webhook-secret: ${IDENTITY_KYC_SUMSUB_WEBHOOK_SECRET:}
+      level-name: ${IDENTITY_KYC_SUMSUB_LEVEL_NAME:basic-kyc-level}
+  media:
+    provider: ${IDENTITY_MEDIA_PROVIDER:cloudinary}
+    cloudinary:
+      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+      api-key: ${CLOUDINARY_API_KEY:}
+      api-secret: ${CLOUDINARY_API_SECRET:}
+      avatar-folder: ${CLOUDINARY_AVATAR_FOLDER:aionn/avatars}
+      kyc-folder: ${CLOUDINARY_KYC_FOLDER:aionn/kyc}
+      signature-expiry-seconds: ${CLOUDINARY_SIGNATURE_EXPIRY_SECONDS:300}
+      upload-base-url: ${CLOUDINARY_UPLOAD_BASE_URL:https://api.cloudinary.com/v1_1}
   address:
     max-address-numbers: ${IDENTITY_ADDRESS_MAX_NUMBERS:5}
+  cache:
+    geography:
+      l1-ttl-seconds: ${IDENTITY_GEOGRAPHY_L1_TTL_SECONDS:1800}
+      l1-max-size: ${IDENTITY_GEOGRAPHY_L1_MAX_SIZE:5000}
+      l2-ttl-seconds: ${IDENTITY_GEOGRAPHY_L2_TTL_SECONDS:86400}
