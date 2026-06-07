@@ -12,16 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Default STOMP broadcaster. Pushes to user destinations:
- * <ul>
- * <li>{@code /user/{userId}/queue/messages} - new messages</li>
- * <li>{@code /user/{userId}/queue/conversation-events} -
- * read/typing/recall</li>
- * </ul>
- *
- * Activated when {@code chat.realtime.provider=stomp} (default).
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

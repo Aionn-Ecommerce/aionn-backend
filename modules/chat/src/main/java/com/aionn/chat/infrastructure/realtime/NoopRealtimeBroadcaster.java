@@ -9,10 +9,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * No-op broadcaster used by tests. Activated with
- * {@code chat.realtime.provider=noop}.
- */
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "chat.realtime", name = "provider", havingValue = "noop")

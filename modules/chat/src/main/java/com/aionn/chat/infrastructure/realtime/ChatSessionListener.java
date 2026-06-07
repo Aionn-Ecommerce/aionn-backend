@@ -11,11 +11,6 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.security.Principal;
 
-/**
- * Bridges Spring's STOMP lifecycle events into the {@link PresenceTracker}
- * so the send path can decide between live broadcast and offline push
- * notification.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

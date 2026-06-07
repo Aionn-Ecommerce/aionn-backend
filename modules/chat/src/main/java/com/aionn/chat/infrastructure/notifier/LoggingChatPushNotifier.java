@@ -5,11 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/**
- * Default notifier impl: only logs the offline push. Used in dev/test where
- * the Notification module's full delivery pipeline is overkill. Activated by
- * {@code chat.push-notifier.provider=logging} (default when unset).
- */
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "chat.push-notifier", name = "provider", havingValue = "logging", matchIfMissing = true)

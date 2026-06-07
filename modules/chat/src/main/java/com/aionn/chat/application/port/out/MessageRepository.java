@@ -12,16 +12,10 @@ public interface MessageRepository {
 
     Optional<Message> findById(String messageId);
 
-    /** Reverse-chronological pagination ("load older"). */
-    List<Message> findByConversationBefore(String conversationId, Instant before, int limit);
+List<Message> findByConversationBefore(String conversationId, Instant before, int limit);
 
-    /** Newest first. */
-    List<Message> findByConversationLatest(String conversationId, int limit);
+List<Message> findByConversationLatest(String conversationId, int limit);
 
-    /**
-     * Count messages from anyone *except* {@code userId} after
-     * {@code afterInstant}.
-     */
-    long countUnread(String conversationId, String userId, Instant afterInstant);
+long countUnread(String conversationId, String userId, Instant afterInstant);
 }
 

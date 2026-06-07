@@ -11,20 +11,6 @@ import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
 
-/**
- * STOMP destinations for low-latency client signals (typing, delivery
- * receipts, read receipts). Everything that mutates state still goes through
- * REST so we keep one consistent transactional path; STOMP is the side
- * channel.
- *
- * <p>
- * Destinations:
- * <ul>
- * <li>{@code /app/chat/conversations/{conversationId}/typing}</li>
- * <li>{@code /app/chat/messages/{messageId}/delivered}</li>
- * <li>{@code /app/chat/messages/{messageId}/read}</li>
- * </ul>
- */
 @Slf4j
 @Controller
 @RequiredArgsConstructor

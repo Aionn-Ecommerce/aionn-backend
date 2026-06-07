@@ -9,10 +9,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * In-memory presence tracker for tests / single-instance dev. Activated with
- * {@code chat.presence.provider=memory}.
- */
 @Component
 @ConditionalOnProperty(prefix = "chat.presence", name = "provider", havingValue = "memory")
 public class InMemoryPresenceTracker implements PresenceTracker {

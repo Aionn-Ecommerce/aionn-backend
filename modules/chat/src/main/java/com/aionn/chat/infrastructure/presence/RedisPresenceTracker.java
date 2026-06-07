@@ -11,11 +11,6 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Redis-backed presence tracker. Maintains a set per user with the active
- * session ids; expires entries after {@code chat.presence.ttl-seconds} so
- * a crashed client eventually drops off.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

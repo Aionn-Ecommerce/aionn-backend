@@ -3,12 +3,6 @@ package com.aionn.chat.domain.valueobject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Holds the body + structured metadata for the message variant. For
- * {@link MessageType#TEXT} only {@code body} is populated; for other types
- * the {@code metadata} map carries whatever the front-end needs to render
- * the rich card (product snapshot, image dimensions, order summary, etc.).
- */
 public record MessagePayload(
         String body,
         Map<String, Object> metadata) {

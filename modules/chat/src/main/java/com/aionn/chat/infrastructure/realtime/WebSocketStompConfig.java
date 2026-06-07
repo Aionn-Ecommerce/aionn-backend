@@ -21,18 +21,6 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Wires up the {@code /ws/chat} STOMP endpoint. The simple in-memory broker
- * is enough for single-instance development; switch to a relay for HA.
- *
- * <p>
- * Authentication: when the STOMP CONNECT frame contains an {@code
- * Authorization: Bearer <jwt>} header we tag the principal with the user id
- * encoded in the token, so STOMP destinations like {@code
- * /user/{userId}/queue/messages} resolve correctly. Token validation against
- * the active session is reused from the HTTP filter via
- * {@link StompPrincipalResolver}.
- */
 @Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
