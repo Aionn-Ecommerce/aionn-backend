@@ -1,4 +1,4 @@
-package com.aionn.shipping.infrastructure.adapter;
+package com.aionn.shipping.infrastructure.persistence.adapter.shipment;
 
 import com.aionn.shipping.application.port.out.ShipmentRepository;
 import com.aionn.shipping.domain.model.Shipment;

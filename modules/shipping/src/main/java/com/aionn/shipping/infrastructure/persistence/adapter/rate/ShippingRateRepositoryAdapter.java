@@ -1,4 +1,4 @@
-package com.aionn.shipping.infrastructure.adapter;
+package com.aionn.shipping.infrastructure.persistence.adapter.rate;
 
 import com.aionn.shipping.application.port.out.ShippingRateRepository;
 import com.aionn.shipping.domain.model.ShippingRate;
