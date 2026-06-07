@@ -59,5 +59,8 @@ public class NotificationProviderEntity {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}

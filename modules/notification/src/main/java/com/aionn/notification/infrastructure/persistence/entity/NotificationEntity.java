@@ -81,5 +81,8 @@ public class NotificationEntity {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
