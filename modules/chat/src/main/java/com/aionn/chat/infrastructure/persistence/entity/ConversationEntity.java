@@ -43,9 +43,6 @@ public class ConversationEntity {
     @Column(name = "merchant_id", length = 50, nullable = false)
     private String merchantId;
 
-    /**
-     * JSONB list of {userId, role, displayName, avatarUrl, joinedAt, lastReadAt}.
-     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "participants", columnDefinition = "jsonb", nullable = false)
     private List<Map<String, Object>> participants;
@@ -75,5 +72,8 @@ public class ConversationEntity {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
-}
 
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+}
