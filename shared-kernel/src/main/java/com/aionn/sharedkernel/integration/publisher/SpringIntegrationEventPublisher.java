@@ -8,28 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
-/**
- * Spring-based implementation of IntegrationEventPublisher.
- * 
- * <p>
- * Uses Spring's ApplicationEventPublisher for in-memory event distribution
- * within the modular monolith. Events are published synchronously within the
- * same transaction boundary.
- * </p>
- * 
- * <p>
- * This implementation is suitable for:
- * </p>
- * <ul>
- * <li>Modular monolith architecture</li>
- * <li>Development and testing environments</li>
- * <li>Low-latency event processing requirements</li>
- * </ul>
- * 
- * <p>
- * For production microservices, replace with Kafka/RabbitMQ implementation.
- * </p>
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

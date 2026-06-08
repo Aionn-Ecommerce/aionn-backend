@@ -5,17 +5,16 @@ import com.aionn.sharedkernel.integration.event.IntegrationEvent;
 import java.time.Instant;
 import java.util.UUID;
 
-public record StockReleasedIntegrationEvent(
+public record SafetyStockBreachedIntegrationEvent(
         String eventId,
-        String reservationId,
+        Instant occurredAt,
+        String merchantId,
         String skuId,
         String warehouseId,
-        String orderId,
-        int quantity,
-        String reason,
-        Instant occurredAt) implements IntegrationEvent {
+        int availableQty,
+        int safetyStockQty) implements IntegrationEvent {
 
-    public StockReleasedIntegrationEvent {
+    public SafetyStockBreachedIntegrationEvent {
         if (eventId == null) {
             eventId = UUID.randomUUID().toString();
         }

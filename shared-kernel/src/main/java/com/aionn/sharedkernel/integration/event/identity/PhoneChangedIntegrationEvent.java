@@ -5,9 +5,6 @@ import com.aionn.sharedkernel.integration.event.IntegrationEvent;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Published when a user's primary phone has been changed.
- */
 public record PhoneChangedIntegrationEvent(
         String eventId,
         String userId,

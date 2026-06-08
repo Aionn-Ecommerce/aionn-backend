@@ -1,18 +1,19 @@
-package com.aionn.sharedkernel.integration.event.identity;
+package com.aionn.sharedkernel.integration.event.payment;
 
 import com.aionn.sharedkernel.integration.event.IntegrationEvent;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record EmailChangedIntegrationEvent(
+public record PaymentFailedIntegrationEvent(
         String eventId,
-        String userId,
-        String oldEmail,
-        String newEmail,
+        String paymentId,
+        String orderId,
+        String errorCode,
+        String reason,
         Instant occurredAt) implements IntegrationEvent {
 
-    public EmailChangedIntegrationEvent {
+    public PaymentFailedIntegrationEvent {
         if (eventId == null) {
             eventId = UUID.randomUUID().toString();
         }

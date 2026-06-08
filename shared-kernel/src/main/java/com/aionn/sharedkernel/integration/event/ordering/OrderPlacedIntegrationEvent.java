@@ -7,19 +7,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Published when a new order has been successfully placed.
- * 
- * <p>
- * Consumers may use this event to:
- * </p>
- * <ul>
- * <li>Reserve inventory</li>
- * <li>Process payment</li>
- * <li>Send order confirmation notifications</li>
- * <li>Update analytics and reporting</li>
- * </ul>
- */
 public record OrderPlacedIntegrationEvent(
         String eventId,
         String orderId,

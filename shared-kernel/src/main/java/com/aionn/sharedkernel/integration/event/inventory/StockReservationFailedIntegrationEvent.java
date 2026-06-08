@@ -1,18 +1,20 @@
-package com.aionn.sharedkernel.integration.event.identity;
+package com.aionn.sharedkernel.integration.event.inventory;
 
 import com.aionn.sharedkernel.integration.event.IntegrationEvent;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record EmailChangedIntegrationEvent(
+public record StockReservationFailedIntegrationEvent(
         String eventId,
-        String userId,
-        String oldEmail,
-        String newEmail,
+        String skuId,
+        String warehouseId,
+        String orderId,
+        int quantity,
+        String reason,
         Instant occurredAt) implements IntegrationEvent {
 
-    public EmailChangedIntegrationEvent {
+    public StockReservationFailedIntegrationEvent {
         if (eventId == null) {
             eventId = UUID.randomUUID().toString();
         }

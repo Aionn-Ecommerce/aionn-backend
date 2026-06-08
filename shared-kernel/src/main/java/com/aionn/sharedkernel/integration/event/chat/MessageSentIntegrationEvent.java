@@ -5,18 +5,6 @@ import com.aionn.sharedkernel.integration.event.IntegrationEvent;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Published when a chat message has been sent.
- * 
- * <p>
- * Consumers may use this event to:
- * </p>
- * <ul>
- * <li>Send push notifications to offline recipients</li>
- * <li>Update conversation analytics</li>
- * <li>Trigger auto-reply if configured</li>
- * </ul>
- */
 public record MessageSentIntegrationEvent(
         String eventId,
         String conversationId,
