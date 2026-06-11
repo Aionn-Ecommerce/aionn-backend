@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/catalog/categories")
 @RequiredArgsConstructor
-@Tag(name = "Catalog - Category", description = "Catalog module: category tree management")
+@Tag(name = "Catalog - Category", description = "Category tree management")
 public class CategoryController {
 
     private final CategoryService categoryService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Create category", description = "UC3.6")
+    @Operation(summary = "Create category")
     public ResponseEntity<ApiResponse<CategoryResult>> create(@Valid @RequestBody CreateCategoryRequest request) {
         CategoryResult result = categoryService.create(
                 new CreateCategoryCommand(request.parentId(), request.name(), request.slug()));
@@ -36,7 +36,7 @@ public class CategoryController {
 
     @PutMapping("/{categoryId}")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Update category", description = "UC3.7")
+    @Operation(summary = "Update category")
     public ResponseEntity<ApiResponse<CategoryResult>> update(
             @PathVariable String categoryId,
             @Valid @RequestBody UpdateCategoryRequest request) {
@@ -47,7 +47,7 @@ public class CategoryController {
 
     @PostMapping("/{categoryId}/move")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Move category", description = "UC3.8")
+    @Operation(summary = "Move category", description = "Reparent the category in the tree")
     public ResponseEntity<ApiResponse<CategoryResult>> move(
             @PathVariable String categoryId,
             @Valid @RequestBody MoveCategoryRequest request) {
@@ -57,7 +57,7 @@ public class CategoryController {
 
     @DeleteMapping("/{categoryId}")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Delete category", description = "UC3.9")
+    @Operation(summary = "Delete category", description = "Soft delete only")
     public ResponseEntity<Void> delete(@PathVariable String categoryId) {
         categoryService.delete(categoryId);
         return ResponseEntity.noContent().build();
@@ -69,4 +69,3 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(categoryService.get(categoryId), "Category fetched"));
     }
 }
-

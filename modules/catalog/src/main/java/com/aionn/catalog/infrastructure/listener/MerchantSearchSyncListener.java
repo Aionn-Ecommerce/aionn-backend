@@ -7,6 +7,7 @@ import com.aionn.catalog.application.port.out.ProductSearchIndex;
 import com.aionn.catalog.domain.event.MerchantEvents;
 import com.aionn.catalog.domain.model.Product;
 import com.aionn.catalog.domain.valueobject.ProductStatus;
+import com.aionn.catalog.infrastructure.config.CatalogProperties;
 import com.aionn.sharedkernel.domain.vo.OffsetPagination;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,30 +15,18 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
-/**
- * Reacts to merchant lifecycle events to keep the search index in sync.
- *
- * <ul>
- * <li>Suspended -> hide every searchable product of the merchant.</li>
- * <li>Activated -> reindex every published product of the merchant.</li>
- * <li>Closed -> remove every product permanently.</li>
- * </ul>
- *
- * <p>
- * We page through products in chunks of 200 to avoid loading the whole
- * catalog of a large merchant into memory.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class MerchantSearchSyncListener {
 
-    private static final int PAGE_SIZE = 200;
-
     private final ProductRepository productRepository;
     private final ProductSearchIndex searchIndex;
     private final ProductResultMapper productResultMapper;
+    private final CatalogProperties catalogProperties;
 
     @EventListener
     public void onSuspended(MerchantEvents.MerchantSuspended event) {
@@ -63,26 +52,26 @@ public class MerchantSearchSyncListener {
         forEachPage(event.merchantId(), products -> {
             List<ProductSearchDocument> docs = products.stream()
                     .filter(p -> p.getStatus() == ProductStatus.PUBLISHED)
-                    .map(p -> productResultMapper.toSearchDocument(p, java.util.Map.of()))
+                    .map(p -> productResultMapper.toSearchDocument(p, Map.of()))
                     .toList();
             searchIndex.indexAll(docs);
         });
     }
 
-    private void forEachPage(String merchantId, java.util.function.Consumer<List<Product>> handler) {
+    private void forEachPage(String merchantId, Consumer<List<Product>> handler) {
+        int pageSize = catalogProperties.merchantSearchSync().pageSize();
         int page = 0;
         while (true) {
             List<Product> batch = productRepository.findByMerchant(merchantId,
-                    OffsetPagination.of(page, PAGE_SIZE));
+                    OffsetPagination.of(page, pageSize));
             if (batch.isEmpty()) {
                 return;
             }
             handler.accept(batch);
-            if (batch.size() < PAGE_SIZE) {
+            if (batch.size() < pageSize) {
                 return;
             }
             page++;
         }
     }
 }
-

@@ -1,28 +1,48 @@
 package com.aionn.catalog.application.service;
 
-import com.aionn.catalog.application.dto.product.command.ProductCommands;
+import com.aionn.catalog.application.dto.product.command.AssignBrandCommand;
+import com.aionn.catalog.application.dto.product.command.AssignCategoriesCommand;
+import com.aionn.catalog.application.dto.product.command.AssignCollectionsCommand;
+import com.aionn.catalog.application.dto.product.command.BulkPriceUpdateCommand;
+import com.aionn.catalog.application.dto.product.command.ChangeVariantPriceCommand;
+import com.aionn.catalog.application.dto.product.command.CloneCommand;
+import com.aionn.catalog.application.dto.product.command.CreateProductCommand;
+import com.aionn.catalog.application.dto.product.command.DeactivateCommand;
+import com.aionn.catalog.application.dto.product.command.DefineAttributesCommand;
+import com.aionn.catalog.application.dto.product.command.DefineVariantCommand;
+import com.aionn.catalog.application.dto.product.command.EmergencyTakedownCommand;
+import com.aionn.catalog.application.dto.product.command.PublishCommand;
+import com.aionn.catalog.application.dto.product.command.RejectCommand;
+import com.aionn.catalog.application.dto.product.command.RemoveVariantCommand;
+import com.aionn.catalog.application.dto.product.command.RestoreCommand;
+import com.aionn.catalog.application.dto.product.command.UpdateAiMetadataCommand;
+import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
 import com.aionn.catalog.application.dto.product.result.ProductResult;
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
 import com.aionn.catalog.application.mapper.ProductResultMapper;
 import com.aionn.catalog.application.port.out.AttributeTemplateRepository;
 import com.aionn.catalog.application.port.out.BrandRepository;
 import com.aionn.catalog.application.port.out.CategoryRepository;
-import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.catalog.application.port.out.MerchantRepository;
 import com.aionn.catalog.application.port.out.ProductRepository;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
+import com.aionn.catalog.domain.CatalogLimits;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
 import com.aionn.catalog.domain.model.AttributeTemplate;
 import com.aionn.catalog.domain.model.Brand;
+import com.aionn.catalog.domain.model.Merchant;
 import com.aionn.catalog.domain.model.Product;
 import com.aionn.catalog.domain.model.ProductVariant;
 import com.aionn.catalog.domain.valueobject.BrandStatus;
-import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.catalog.domain.valueobject.ProductStatus;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -31,12 +51,12 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProductService {
 
-    private static final int MAX_BULK_SIZE = 5_000;
-
     private final ProductRepository productRepository;
+    private final MerchantRepository merchantRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
     private final AttributeTemplateRepository attributeTemplateRepository;
@@ -44,18 +64,19 @@ public class ProductService {
     private final ProductSearchIndex searchIndex;
     private final EventPublisher eventPublisher;
 
-    // ===== UC3.13 / UC3.22 =====
-    public ProductResult create(ProductCommands.CreateProduct command) {
-        Product product = Product.create(IdGenerator.ulid(), command.merchantId(), command.name());
+    public ProductResult create(CreateProductCommand command) {
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
+        Product product = Product.create(IdGenerator.ulid(), merchantId, command.name());
         Product saved = productRepository.save(product);
         publish(product);
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult clone(ProductCommands.Clone command) {
+    public ProductResult clone(CloneCommand command) {
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
         Product source = required(command.sourceId());
-        source.ensureOwnedBy(command.merchantId());
-        Product cloned = Product.create(IdGenerator.ulid(), command.merchantId(), source.getName() + " (Copy)");
+        source.ensureOwnedBy(merchantId);
+        Product cloned = Product.create(IdGenerator.ulid(), merchantId, source.getName() + " (Copy)");
         if (source.getBrandId() != null) {
             cloned.assignBrand(source.getBrandId());
         }
@@ -73,9 +94,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    // ===== UC3.14 / UC3.23 =====
-    public ProductResult defineVariant(ProductCommands.DefineVariant command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult defineVariant(DefineVariantCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         Money price = command.price() == null
                 ? null
                 : Money.of(command.price(), command.currency() == null ? "VND" : command.currency());
@@ -86,8 +106,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult removeVariant(ProductCommands.RemoveVariant command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult removeVariant(RemoveVariantCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.removeVariant(command.skuId());
         Product saved = productRepository.save(product);
         publish(product);
@@ -95,9 +115,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    // ===== UC3.15 / UC3.16 / UC3.17 / UC3.25 / UC3.26 / UC3.32 =====
-    public ProductResult updateMedia(ProductCommands.UpdateMedia command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult updateMedia(UpdateMediaCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.updateMedia(command.imageList());
         Product saved = productRepository.save(product);
         publish(product);
@@ -105,8 +124,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult assignBrand(ProductCommands.AssignBrand command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult assignBrand(AssignBrandCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         Brand brand = brandRepository.findById(command.brandId())
                 .orElseThrow(() -> new CatalogException(CatalogErrorCode.BRAND_NOT_FOUND));
         if (brand.getStatus() != BrandStatus.ACTIVE) {
@@ -119,8 +138,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult categorize(ProductCommands.AssignCategories command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult categorize(AssignCategoriesCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         for (String categoryId : command.categoryIds()) {
             categoryRepository.findById(categoryId)
                     .orElseThrow(() -> new CatalogException(CatalogErrorCode.CATEGORY_NOT_FOUND,
@@ -133,8 +152,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult updateAiMetadata(ProductCommands.UpdateAiMetadata command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult updateAiMetadata(UpdateAiMetadataCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.updateAiMetadata(command.tags(), command.aiDescription());
         Product saved = productRepository.save(product);
         publish(product);
@@ -142,8 +161,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult assignCollections(ProductCommands.AssignCollections command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult assignCollections(AssignCollectionsCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.assignToCollections(command.collectionIds());
         Product saved = productRepository.save(product);
         publish(product);
@@ -151,12 +170,9 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult defineAttributes(ProductCommands.DefineAttributes command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult defineAttributes(DefineAttributesCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         if (!product.categoryIds().isEmpty()) {
-            // Check that every supplied key is declared in the template
-            // attached to one of the assigned categories. If no template is
-            // attached, accept any key (lets merchants experiment).
             for (String categoryId : product.categoryIds()) {
                 attributeTemplateRepository.findByCategoryId(categoryId).ifPresent(template -> {
                     for (String key : command.attributes().keySet()) {
@@ -175,8 +191,7 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    // ===== UC3.18 / UC3.19 / UC3.20 / UC3.21 / UC3.28 =====
-    public ProductResult publish(ProductCommands.Publish command) {
+    public ProductResult publish(PublishCommand command) {
         Product product = required(command.productId());
         product.publish(command.adminId());
         Product saved = productRepository.save(product);
@@ -185,7 +200,7 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult reject(ProductCommands.Reject command) {
+    public ProductResult reject(RejectCommand command) {
         Product product = required(command.productId());
         product.reject(command.adminId(), command.reasonCode(), command.feedback());
         Product saved = productRepository.save(product);
@@ -194,8 +209,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult deactivate(ProductCommands.Deactivate command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult deactivate(DeactivateCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.deactivate(command.reason());
         Product saved = productRepository.save(product);
         publish(product);
@@ -203,8 +218,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult restore(ProductCommands.Restore command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult restore(RestoreCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.restore();
         Product saved = productRepository.save(product);
         publish(product);
@@ -212,7 +227,7 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public ProductResult emergencyTakedown(ProductCommands.EmergencyTakedown command) {
+    public ProductResult emergencyTakedown(EmergencyTakedownCommand command) {
         Product product = required(command.productId());
         product.emergencyTakedown(command.adminId(), command.reason());
         Product saved = productRepository.save(product);
@@ -221,9 +236,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    // ===== UC3.24 / UC3.27 / UC3.29 =====
-    public ProductResult changeVariantPrice(ProductCommands.ChangeVariantPrice command) {
-        Product product = ownedProduct(command.productId(), command.merchantId());
+    public ProductResult changeVariantPrice(ChangeVariantPriceCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
         product.changeVariantPrice(command.skuId(),
                 Money.of(command.newPrice(), command.currency() == null ? "VND" : command.currency()));
         Product saved = productRepository.save(product);
@@ -232,17 +246,23 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    
-    public void bulkPriceUpdate(ProductCommands.BulkPriceUpdate command) {
+    public void bulkPriceUpdate(BulkPriceUpdateCommand command) {
         if (command.skuIds() == null || command.skuIds().isEmpty()) {
             throw new CatalogException(CatalogErrorCode.INVALID_ARGUMENT, "skuIds must not be empty");
         }
-        if (command.skuIds().size() > MAX_BULK_SIZE) {
+        if (command.skuIds().size() > CatalogLimits.BULK_PRICE_UPDATE_MAX_SIZE) {
             throw new CatalogException(CatalogErrorCode.PRODUCT_BULK_TOO_LARGE,
-                    "Bulk size " + command.skuIds().size() + " exceeds max " + MAX_BULK_SIZE);
+                    "Bulk size " + command.skuIds().size() + " exceeds max "
+                            + CatalogLimits.BULK_PRICE_UPDATE_MAX_SIZE);
         }
 
-        List<Product> affected = productRepository.findByMerchantAndSkuIds(command.merchantId(), command.skuIds());
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
+        List<Product> affected = productRepository.findByMerchantAndSkuIds(merchantId, command.skuIds());
+        if (affected.isEmpty()) {
+            log.warn("Bulk price update by owner={} matched 0 products for {} skuIds (none owned by merchant {})",
+                    command.ownerId(), command.skuIds().size(), merchantId);
+            return;
+        }
         for (Product product : affected) {
             for (ProductVariant variant : product.variants()) {
                 if (!command.skuIds().contains(variant.skuId())) {
@@ -261,11 +281,12 @@ public class ProductService {
         }
     }
 
+    @Transactional(readOnly = true)
     public ProductResult get(String productId) {
         return productResultMapper.toResult(required(productId));
     }
 
-    private static BigDecimal applyChange(BigDecimal oldAmount, ProductCommands.BulkPriceUpdate command) {
+    private static BigDecimal applyChange(BigDecimal oldAmount, BulkPriceUpdateCommand command) {
         return switch (command.changeType()) {
             case SET -> command.value();
             case INCREASE_AMOUNT -> oldAmount.add(command.value());
@@ -302,7 +323,18 @@ public class ProductService {
         return productResultMapper.toSearchDocument(product, filterable);
     }
 
-    private Product ownedProduct(String productId, String merchantId) {
+    /**
+     * Resolves the caller's {@code merchantId} from their authenticated user id.
+     */
+    private String requireMerchantIdForOwner(String ownerId) {
+        Merchant merchant = merchantRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new CatalogException(CatalogErrorCode.MERCHANT_NOT_FOUND,
+                        "No merchant registered for the authenticated user"));
+        return merchant.getMerchantId();
+    }
+
+    private Product ownedProduct(String productId, String ownerId) {
+        String merchantId = requireMerchantIdForOwner(ownerId);
         Product product = required(productId);
         product.ensureOwnedBy(merchantId);
         if (product.getStatus() == ProductStatus.TAKEN_DOWN) {
@@ -321,4 +353,3 @@ public class ProductService {
         eventPublisher.publish(product.pullEvents());
     }
 }
-

@@ -6,30 +6,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.BulkRequest;
+import org.opensearch.client.opensearch.core.BulkResponse;
 import org.opensearch.client.opensearch.core.DeleteRequest;
 import org.opensearch.client.opensearch.core.IndexRequest;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
 
-/**
- * OpenSearch-backed search index. The actual cluster wiring (host, auth,
- * index name) is delegated to {@link OpenSearchConfig}. We do not declare
- * the {@code @Component} unless {@code catalog.search.provider=opensearch} so
- * dev environments can keep using the in-process variant without pulling
- * the network dependency.
- *
- * <p>
- * Implementation note: heavy lifting (mappings, retry, dead letter) is left
- * to the next milestone. The contract is in place so the application layer
- * does not change when we switch.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "catalog.search", name = "provider", havingValue = "opensearch")
 public class OpenSearchProductSearchIndex implements ProductSearchIndex {
 
     private static final String INDEX_NAME = "catalog-products";
@@ -62,7 +49,17 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
                         .id(doc.productId())
                         .document(doc)));
             }
-            client.bulk(bulk.build());
+            BulkResponse response = client.bulk(bulk.build());
+            // Per-item failures are reported on the response; without inspection
+            // they would silently disappear from the index.
+            if (response.errors()) {
+                response.items().forEach(item -> {
+                    if (item.error() != null) {
+                        log.error("OpenSearch bulk index failed for id={} status={} reason={}",
+                                item.id(), item.status(), item.error().reason());
+                    }
+                });
+            }
         } catch (IOException ex) {
             log.error("OpenSearch bulk index failed", ex);
             throw new IllegalStateException("OpenSearch bulk index failed", ex);
@@ -84,4 +81,3 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
         productIds.forEach(this::remove);
     }
 }
-

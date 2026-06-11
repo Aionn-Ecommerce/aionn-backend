@@ -9,7 +9,7 @@ import com.aionn.catalog.application.dto.merchant.result.MerchantResult;
 import com.aionn.catalog.application.mapper.MerchantResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.catalog.application.port.out.MerchantRepository;
-import com.aionn.catalog.application.port.out.OpenOrderQueryPort;
+import com.aionn.sharedkernel.integration.port.ordering.OrderQueryPort;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
 import com.aionn.catalog.domain.model.Merchant;
@@ -17,16 +17,18 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
     private final MerchantResultMapper merchantResultMapper;
     private final EventPublisher eventPublisher;
-    private final OpenOrderQueryPort openOrderQueryPort;
+    private final OrderQueryPort orderQueryPort;
 
     public MerchantResult register(RegisterMerchantCommand command) {
         if (merchantRepository.existsByOwnerId(command.ownerId())) {
@@ -64,7 +66,7 @@ public class MerchantService {
 
     public MerchantResult close(CloseMerchantCommand command) {
         Merchant merchant = ownedBy(command.merchantId(), command.ownerId());
-        if (openOrderQueryPort.hasOpenOrdersForMerchant(merchant.getMerchantId())) {
+        if (orderQueryPort.hasOpenOrdersForMerchant(merchant.getMerchantId())) {
             throw new CatalogException(CatalogErrorCode.MERCHANT_HAS_OPEN_ORDERS);
         }
         merchant.close(command.reason());
@@ -73,6 +75,7 @@ public class MerchantService {
         return merchantResultMapper.toResult(saved);
     }
 
+    @Transactional(readOnly = true)
     public MerchantResult get(String merchantId) {
         return merchantResultMapper.toResult(required(merchantId));
     }
@@ -90,4 +93,3 @@ public class MerchantService {
         return merchant;
     }
 }
-

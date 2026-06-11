@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/catalog/brands")
 @RequiredArgsConstructor
-@Tag(name = "Catalog - Brand", description = "Catalog module: brand management")
+@Tag(name = "Catalog - Brand", description = "Brand management")
 public class BrandController {
 
     private final BrandService brandService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Create brand", description = "UC3.10")
+    @Operation(summary = "Create brand")
     public ResponseEntity<ApiResponse<BrandResult>> create(@Valid @RequestBody CreateBrandRequest request) {
         BrandResult result = brandService.create(
                 new CreateBrandCommand(request.name(), request.logoUrl(), request.description()));
@@ -36,7 +36,7 @@ public class BrandController {
 
     @PutMapping("/{brandId}")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Update brand", description = "UC3.11")
+    @Operation(summary = "Update brand")
     public ResponseEntity<ApiResponse<BrandResult>> update(
             @PathVariable String brandId,
             @Valid @RequestBody UpdateBrandRequest request) {
@@ -47,7 +47,7 @@ public class BrandController {
 
     @PostMapping("/{brandId}/delete")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Delete brand", description = "UC3.12 - soft delete only")
+    @Operation(summary = "Delete brand", description = "Soft delete only")
     public ResponseEntity<Void> delete(
             @PathVariable String brandId,
             @Valid @RequestBody DeleteBrandRequest request) {
@@ -61,4 +61,3 @@ public class BrandController {
         return ResponseEntity.ok(ApiResponse.success(brandService.get(brandId), "Brand fetched"));
     }
 }
-

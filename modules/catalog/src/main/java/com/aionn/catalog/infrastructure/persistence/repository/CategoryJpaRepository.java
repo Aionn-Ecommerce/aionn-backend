@@ -8,6 +8,18 @@ import java.util.List;
 
 public interface CategoryJpaRepository extends JpaRepository<CategoryEntity, String> {
 
+    /**
+     * Mirrors the partial index {@code uq_categories_parent_name_active}:
+     * case-insensitive name conflict only matters among non-deleted
+     * categories. Also handles the root case where {@code parentId} is null.
+     */
+    @Query("""
+            SELECT (count(c) > 0) FROM CategoryEntity c
+              WHERE LOWER(c.name) = LOWER(:name)
+                AND c.deletedAt IS NULL
+                AND ((:parentId IS NULL AND c.parentId IS NULL)
+                     OR c.parentId = :parentId)
+            """)
     boolean existsByParentIdAndNameIgnoreCase(String parentId, String name);
 
     boolean existsBySlug(String slug);
@@ -30,4 +42,3 @@ public interface CategoryJpaRepository extends JpaRepository<CategoryEntity, Str
             """, nativeQuery = true)
     List<String> findDescendantIds(String categoryId);
 }
-

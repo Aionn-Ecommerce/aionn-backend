@@ -10,14 +10,20 @@ import java.util.List;
 
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {
 
-    List<OrderEntity> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+  List<OrderEntity> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    @Query("""
-            SELECT o FROM OrderEntity o
-              WHERE o.status = 'PENDING'
-                AND o.createdAt <= :cutoff
-            ORDER BY o.createdAt ASC
-            """)
-    List<OrderEntity> findPendingOlderThan(Instant cutoff, Pageable pageable);
+  @Query("""
+      SELECT o FROM OrderEntity o
+        WHERE o.status = 'PENDING'
+          AND o.createdAt <= :cutoff
+      ORDER BY o.createdAt ASC
+      """)
+  List<OrderEntity> findPendingOlderThan(Instant cutoff, Pageable pageable);
+
+  /**
+   * True if the merchant has at least one order whose status is not in the
+   * supplied terminal set. Backed by {@code idx_orders_merchant} so the
+   * lookup is O(log N) even with millions of historic rows.
+   */
+  boolean existsByMerchantIdAndStatusNotIn(String merchantId, java.util.Collection<String> terminalStatuses);
 }
-
