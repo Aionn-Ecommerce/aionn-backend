@@ -23,7 +23,6 @@ class AuthClientTypeArgumentResolverTest {
     @Mock
     private AuthProperties authProperties;
 
-    @SuppressWarnings("unused")
     static class Sample {
         public void handle(@AuthClientType String clientType, String otherParam) {
         }

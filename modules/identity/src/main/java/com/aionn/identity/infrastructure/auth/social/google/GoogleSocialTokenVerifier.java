@@ -1,9 +1,9 @@
-package com.aionn.identity.infrastructure.auth.social;
+package com.aionn.identity.infrastructure.auth.social.google;
 
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 
-public interface FacebookSocialTokenVerifier {
+public interface GoogleSocialTokenVerifier {
 
     String verifyAndExtractUserId(String providerToken);
 

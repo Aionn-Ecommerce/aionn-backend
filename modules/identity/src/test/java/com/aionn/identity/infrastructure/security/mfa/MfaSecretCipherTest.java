@@ -1,8 +1,6 @@
 package com.aionn.identity.infrastructure.security.mfa;
 
 import com.aionn.identity.infrastructure.config.properties.MfaProperties;
-import com.aionn.identity.infrastructure.security.mfa.MfaSecretCipher;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -56,6 +57,8 @@ class MfaServiceTest {
         private MfaPolicy mfaPolicy;
         @Mock
         private IdentityMetricsPort identityMetrics;
+        @Captor
+        private ArgumentCaptor<List<String>> backupCodesCaptor;
 
         private MfaService mfaService;
 
@@ -138,9 +141,8 @@ class MfaServiceTest {
                 assertEquals(8, result.backupCodes().size());
                 verify(mfaPersistencePort).updateMfaStatus(USER_ID, true);
                 verify(mfaPersistencePort).deleteBackupCodes(USER_ID);
-                ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-                verify(mfaPersistencePort).saveBackupCodes(eq(USER_ID), captor.capture());
-                assertEquals(8, captor.getValue().size());
+                verify(mfaPersistencePort).saveBackupCodes(eq(USER_ID), backupCodesCaptor.capture());
+                assertEquals(8, backupCodesCaptor.getValue().size());
                 verify(securityAuditPort).saveAuditLog(USER_ID,
                                 SecurityAuditEventType.MFA_ENABLED, "1.1.1.1");
         }

@@ -1,11 +1,9 @@
-package com.aionn.identity.infrastructure.auth.social;
+package com.aionn.identity.infrastructure.auth.social.facebook;
 
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.infrastructure.auth.social.FacebookSocialTokenVerifier;
 import com.aionn.identity.infrastructure.config.properties.SocialAuthProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -15,7 +13,6 @@ import java.time.Duration;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "identity.auth.social.facebook", name = "provider", havingValue = "remote")
 public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVerifier {
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
@@ -26,11 +23,6 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
 
     public RemoteFacebookSocialTokenVerifier(SocialAuthProperties socialAuthProperties) {
         this.socialAuthProperties = socialAuthProperties;
-        // Single client + explicit timeouts: see RemoteGoogleSocialTokenVerifier for
-        // the
-        // rationale (avoid per-call allocation and prevent upstream stalls from
-        // blocking
-        // request worker threads indefinitely).
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) CONNECT_TIMEOUT.toMillis());
         factory.setReadTimeout((int) READ_TIMEOUT.toMillis());

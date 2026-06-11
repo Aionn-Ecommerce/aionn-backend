@@ -9,7 +9,7 @@ import java.time.Duration;
 
 @ConfigurationProperties(prefix = "identity.kyc")
 public record KycProperties(
-        @DefaultValue("SUMSUB") KycProvider provider,
+        @DefaultValue("LOCAL") KycProvider provider,
         Sumsub sumsub,
         Local local) {
 
