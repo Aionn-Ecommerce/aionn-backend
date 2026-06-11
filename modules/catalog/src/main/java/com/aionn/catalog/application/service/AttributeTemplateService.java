@@ -13,12 +13,14 @@ import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AttributeTemplateService {
 
@@ -45,6 +47,7 @@ public class AttributeTemplateService {
         return toResult(saved);
     }
 
+    @Transactional(readOnly = true)
     public AttributeTemplateResult get(String templateId) {
         return toResult(attributeTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CatalogException(CatalogErrorCode.ATTRIBUTE_TEMPLATE_NOT_FOUND)));
@@ -61,4 +64,3 @@ public class AttributeTemplateService {
                 template.getUpdatedAt());
     }
 }
-

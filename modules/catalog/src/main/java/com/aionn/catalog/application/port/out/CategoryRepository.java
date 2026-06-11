@@ -15,11 +15,9 @@ public interface CategoryRepository {
 
     boolean existsBySlug(String slug);
 
-    /** Used to detect cycles when moving a category. */
     List<String> findDescendantIds(String categoryId);
 
     boolean hasProducts(String categoryId);
 
     List<Category> findChildren(String parentId);
 }
-

@@ -17,8 +17,8 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "categories", indexes = {
-        @Index(name = "idx_categories_parent", columnList = "parent_id"),
-        @Index(name = "idx_categories_slug", columnList = "slug")
+        @Index(name = "idx_categories_parent", columnList = "parent_id")
+// slug uniqueness is enforced via uq_categories_slug in the migration
 })
 @Getter
 @Setter
@@ -57,4 +57,3 @@ public class CategoryEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 }
-

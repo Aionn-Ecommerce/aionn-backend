@@ -14,7 +14,5 @@ public interface ProductRepository {
 
     List<Product> findByMerchant(String merchantId, OffsetPagination pagination);
 
-    /** Used by bulk price update to load only requested SKUs by merchant. */
     List<Product> findByMerchantAndSkuIds(String merchantId, List<String> skuIds);
 }
-

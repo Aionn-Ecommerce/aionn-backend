@@ -24,14 +24,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/catalog/attribute-templates")
 @RequiredArgsConstructor
-@Tag(name = "Catalog - AttributeTemplate", description = "Catalog module: category attribute templates")
+@Tag(name = "Catalog - AttributeTemplate", description = "Per-category attribute templates")
 public class AttributeTemplateController {
 
     private final AttributeTemplateService attributeTemplateService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Create attribute template", description = "UC3.30")
+    @Operation(summary = "Create attribute template")
     public ResponseEntity<ApiResponse<AttributeTemplateResult>> create(
             @Valid @RequestBody CreateAttributeTemplateRequest request) {
         AttributeTemplateResult result = attributeTemplateService.create(
@@ -41,7 +41,7 @@ public class AttributeTemplateController {
 
     @PutMapping("/{templateId}/filterable")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Configure filterable", description = "UC3.31 / UC3.33 - mark a key as filterable for the AI agent")
+    @Operation(summary = "Configure filterable", description = "Mark a key as filterable for the AI agent")
     public ResponseEntity<ApiResponse<AttributeTemplateResult>> configureFilterable(
             @PathVariable String templateId,
             @Valid @RequestBody ConfigureFilterableRequest request) {
@@ -57,4 +57,3 @@ public class AttributeTemplateController {
                 attributeTemplateService.get(templateId), "Attribute template fetched"));
     }
 }
-

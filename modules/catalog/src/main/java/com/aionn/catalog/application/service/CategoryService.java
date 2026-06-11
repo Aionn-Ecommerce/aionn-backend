@@ -15,9 +15,11 @@ import com.aionn.sharedkernel.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CategoryService {
 
@@ -88,6 +90,7 @@ public class CategoryService {
         eventPublisher.publish(category.pullEvents());
     }
 
+    @Transactional(readOnly = true)
     public CategoryResult get(String categoryId) {
         return categoryResultMapper.toResult(required(categoryId));
     }
@@ -97,4 +100,3 @@ public class CategoryService {
                 .orElseThrow(() -> new CatalogException(CatalogErrorCode.CATEGORY_NOT_FOUND));
     }
 }
-
