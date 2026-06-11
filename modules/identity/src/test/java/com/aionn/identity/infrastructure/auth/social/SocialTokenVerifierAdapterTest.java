@@ -1,10 +1,8 @@
 package com.aionn.identity.infrastructure.auth.social;
 
 import com.aionn.identity.domain.valueobject.AuthProvider;
-import com.aionn.identity.infrastructure.auth.social.FacebookSocialTokenVerifier;
-
-import com.aionn.identity.infrastructure.auth.social.GoogleSocialTokenVerifier;
-
+import com.aionn.identity.infrastructure.auth.social.facebook.FacebookSocialTokenVerifier;
+import com.aionn.identity.infrastructure.auth.social.google.GoogleSocialTokenVerifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,7 +1,6 @@
 package com.aionn.identity.infrastructure.security.otp;
 
 import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort.UserOtpChallenge;
 import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;

@@ -18,7 +18,6 @@ class CurrentSessionIdArgumentResolverTest {
 
     private final CurrentSessionIdArgumentResolver resolver = new CurrentSessionIdArgumentResolver();
 
-    @SuppressWarnings("unused")
     static class Sample {
         public void handle(@CurrentSessionId String sessionId, String otherParam) {
         }

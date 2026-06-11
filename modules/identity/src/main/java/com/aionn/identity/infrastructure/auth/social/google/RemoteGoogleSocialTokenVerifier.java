@@ -1,11 +1,9 @@
-package com.aionn.identity.infrastructure.auth.social;
+package com.aionn.identity.infrastructure.auth.social.google;
 
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
-import com.aionn.identity.infrastructure.auth.social.GoogleSocialTokenVerifier;
 import com.aionn.identity.infrastructure.config.properties.SocialAuthProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -17,7 +15,6 @@ import java.util.Set;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "identity.auth.social.google", name = "provider", havingValue = "remote")
 public class RemoteGoogleSocialTokenVerifier implements GoogleSocialTokenVerifier {
 
     private static final Set<String> VALID_ISSUERS = Set.of("accounts.google.com", "https://accounts.google.com");
@@ -29,10 +26,6 @@ public class RemoteGoogleSocialTokenVerifier implements GoogleSocialTokenVerifie
 
     public RemoteGoogleSocialTokenVerifier(SocialAuthProperties socialAuthProperties) {
         this.socialAuthProperties = socialAuthProperties;
-        // Build the client once. Without explicit timeouts a slow tokeninfo response
-        // can
-        // pin a tomcat worker for the JVM default (often unlimited), letting a degraded
-        // upstream cascade into a full thread-pool exhaustion on our side.
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) CONNECT_TIMEOUT.toMillis());
         factory.setReadTimeout((int) READ_TIMEOUT.toMillis());

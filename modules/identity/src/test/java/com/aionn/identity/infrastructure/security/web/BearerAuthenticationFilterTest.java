@@ -3,8 +3,6 @@ package com.aionn.identity.infrastructure.security.web;
 import com.aionn.identity.application.port.out.auth.AccessTokenClaims;
 import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.TokenBlacklistPort;
-import com.aionn.identity.infrastructure.security.web.SecurityRequestAttributeKeys;
-
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
