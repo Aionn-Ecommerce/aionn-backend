@@ -17,10 +17,26 @@ public interface CarrierClient {
 
     void cancel(String trackingCode, String reason);
 
+    /**
+     * Fetch the latest order detail from the carrier (used by the polling
+     * worker when no webhook is configured).
+     */
+    OrderDetail fetchOrderDetail(String trackingCode);
+
     record Quote(BigDecimal fee, String currency, String zoneCode, String detail) {
     }
 
     record Registration(String trackingCode, String carrierOrderId, Instant expectedDate) {
     }
-}
 
+    record OrderDetail(
+            String status,
+            String currentLocation,
+            String shipperName,
+            String shipperPhone,
+            String signatureUrl,
+            String reason,
+            String warehouseId,
+            Instant expectedDeliveryDate) {
+    }
+}

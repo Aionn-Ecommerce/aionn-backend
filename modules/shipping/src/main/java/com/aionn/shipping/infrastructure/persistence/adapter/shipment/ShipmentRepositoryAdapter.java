@@ -6,14 +6,18 @@ import com.aionn.shipping.infrastructure.persistence.entity.ShipmentEntity;
 import com.aionn.shipping.infrastructure.persistence.mapper.ShipmentDomainMapper;
 import com.aionn.shipping.infrastructure.persistence.repository.ShipmentJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
 public class ShipmentRepositoryAdapter implements ShipmentRepository {
+
+    private static final Set<String> TERMINAL = Set.of("DELIVERED", "RETURNED", "CANCELLED");
 
     private final ShipmentJpaRepository jpa;
     private final ShipmentDomainMapper mapper;
@@ -38,5 +42,11 @@ public class ShipmentRepositoryAdapter implements ShipmentRepository {
     public List<Shipment> findByOrderId(String orderId) {
         return jpa.findByOrderId(orderId).stream().map(mapper::toDomain).toList();
     }
-}
 
+    @Override
+    public List<Shipment> findActiveTracking(int batchSize) {
+        return jpa.findByTrackingCodeIsNotNullAndStatusNotIn(TERMINAL,
+                PageRequest.of(0, Math.max(1, batchSize)))
+                .stream().map(mapper::toDomain).toList();
+    }
+}

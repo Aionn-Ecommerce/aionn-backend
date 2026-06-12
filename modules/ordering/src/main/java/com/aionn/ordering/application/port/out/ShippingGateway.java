@@ -12,8 +12,12 @@ public interface ShippingGateway {
 
     ShippingQuote quote(String orderId, String merchantId, ShippingAddress address, String currency);
 
-    String createShipment(String orderId, String merchantId, ShippingAddress address);
+    Registration createAndRegister(String orderId, String merchantId, String userId,
+            ShippingAddress address, BigDecimal codAmount, BigDecimal shippingFee, String currency);
 
     record ShippingQuote(BigDecimal fee, String currency) {
+    }
+
+    record Registration(String shipmentId, String trackingCode, String carrierOrderId, String labelUrl) {
     }
 }

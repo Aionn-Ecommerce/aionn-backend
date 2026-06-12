@@ -19,6 +19,8 @@ import java.time.Instant;
 @Entity
 @Table(name = "shipments", indexes = {
         @Index(name = "idx_shipments_order", columnList = "order_id"),
+        @Index(name = "idx_shipments_merchant", columnList = "merchant_id"),
+        @Index(name = "idx_shipments_user", columnList = "user_id"),
         @Index(name = "idx_shipments_tracking", columnList = "tracking_code", unique = true),
         @Index(name = "idx_shipments_status", columnList = "status")
 })
@@ -35,6 +37,12 @@ public class ShipmentEntity {
 
     @Column(name = "order_id", length = 50, nullable = false)
     private String orderId;
+
+    @Column(name = "merchant_id", length = 50, nullable = false)
+    private String merchantId;
+
+    @Column(name = "user_id", length = 50, nullable = false)
+    private String userId;
 
     @Column(name = "tracking_code", length = 100)
     private String trackingCode;

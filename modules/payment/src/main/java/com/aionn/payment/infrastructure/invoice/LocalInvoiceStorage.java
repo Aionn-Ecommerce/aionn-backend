@@ -3,17 +3,10 @@ package com.aionn.payment.infrastructure.invoice;
 import com.aionn.payment.application.port.out.InvoiceStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/**
- * Default invoice storage. Returns a deterministic local URL pointing at an
- * application endpoint that should serve the invoice PDF (PDF generation is
- * out of scope for this iteration).
- */
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "payment.invoice", name = "provider", havingValue = "local", matchIfMissing = true)
 public class LocalInvoiceStorage implements InvoiceStorage {
 
     @Value("${payment.invoice.base-url:https://invoices.test/}")
@@ -33,4 +26,3 @@ public class LocalInvoiceStorage implements InvoiceStorage {
         return url + "invoices/" + paymentId + ".pdf";
     }
 }
-

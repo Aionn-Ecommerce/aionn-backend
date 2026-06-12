@@ -18,6 +18,8 @@ public class Shipment extends AggregateRoot {
 
     private final String shipmentId;
     private final String orderId;
+    private final String merchantId;
+    private final String userId;
     private final ShipmentAddress address;
     private final ShipmentDimensions dimensions;
     private BigDecimal codAmount;
@@ -46,6 +48,8 @@ public class Shipment extends AggregateRoot {
     public Shipment(
             String shipmentId,
             String orderId,
+            String merchantId,
+            String userId,
             ShipmentAddress address,
             ShipmentDimensions dimensions,
             BigDecimal codAmount,
@@ -72,6 +76,8 @@ public class Shipment extends AggregateRoot {
             Instant returnedAt) {
         this.shipmentId = shipmentId;
         this.orderId = orderId;
+        this.merchantId = merchantId;
+        this.userId = userId;
         this.address = address;
         this.dimensions = dimensions;
         this.codAmount = codAmount;
@@ -101,19 +107,45 @@ public class Shipment extends AggregateRoot {
     public static Shipment request(
             String shipmentId,
             String orderId,
+            String merchantId,
+            String userId,
             ShipmentAddress address,
             ShipmentDimensions dimensions,
             BigDecimal codAmount,
             BigDecimal shippingFee,
             String currency) {
+        Guard.require(orderId != null && !orderId.isBlank(),
+                () -> new ShippingException(ShippingErrorCode.INVALID_ARGUMENT, "orderId is required"));
+        Guard.require(merchantId != null && !merchantId.isBlank(),
+                () -> new ShippingException(ShippingErrorCode.INVALID_ARGUMENT, "merchantId is required"));
+        Guard.require(userId != null && !userId.isBlank(),
+                () -> new ShippingException(ShippingErrorCode.INVALID_ARGUMENT, "userId is required"));
+        Guard.require(address != null,
+                () -> new ShippingException(ShippingErrorCode.INVALID_ARGUMENT, "address is required"));
+        Guard.require(dimensions != null,
+                () -> new ShippingException(ShippingErrorCode.INVALID_ARGUMENT, "dimensions are required"));
+
         Instant now = Instant.now();
-        Shipment s = new Shipment(shipmentId, orderId, address, dimensions, codAmount, shippingFee, currency,
+        Shipment s = new Shipment(shipmentId, orderId, merchantId, userId, address, dimensions,
+                codAmount, shippingFee, currency,
                 null, null, null, null, null, null, null, 0, null, null, null, null,
                 ShipmentStatus.REQUESTED, now, now, null, null, null, null);
         s.record(new ShipmentEvents.ShipmentRequested(shipmentId, orderId,
                 dimensions.weightGram(), dimensionsString(dimensions),
                 address.districtId(), address.wardCode(), now));
         return s;
+    }
+
+    public void ensureOwnedByMerchant(String merchantId) {
+        Guard.require(this.merchantId.equals(merchantId),
+                () -> new ShippingException(ShippingErrorCode.SHIPMENT_FORBIDDEN));
+    }
+
+    public void ensureViewableBy(String userId, String merchantId) {
+        boolean isBuyer = userId != null && userId.equals(this.userId);
+        boolean isSeller = merchantId != null && merchantId.equals(this.merchantId);
+        Guard.require(isBuyer || isSeller,
+                () -> new ShippingException(ShippingErrorCode.SHIPMENT_FORBIDDEN));
     }
 
     public void registerWithCarrier(String trackingCode, String carrierOrderId, Instant expectedDate) {
@@ -137,6 +169,9 @@ public class Shipment extends AggregateRoot {
     }
 
     public void markPickedUp(String warehouseId) {
+        if (status == ShipmentStatus.PICKED_UP) {
+            return;
+        }
         ensureTransition(ShipmentStatus.PICKED_UP);
         Instant now = Instant.now();
         this.status = ShipmentStatus.PICKED_UP;
@@ -146,19 +181,25 @@ public class Shipment extends AggregateRoot {
     }
 
     public void updateInTransitStatus(String currentLocation, String statusDesc) {
-        Guard.require(status == ShipmentStatus.PICKED_UP || status == ShipmentStatus.IN_TRANSIT,
-                () -> new ShippingException(ShippingErrorCode.SHIPMENT_INVALID_STATE,
-                        "Status updates only valid while in transit"));
-        this.currentLocation = currentLocation;
-        if (status == ShipmentStatus.PICKED_UP) {
-            this.status = ShipmentStatus.IN_TRANSIT;
+        if (status == ShipmentStatus.IN_TRANSIT) {
+            this.currentLocation = currentLocation;
+            touch();
+            record(new ShipmentEvents.ShipmentStatusUpdated(shipmentId, status.name(), currentLocation,
+                    statusDesc, updatedAt));
+            return;
         }
+        ensureTransition(ShipmentStatus.IN_TRANSIT);
+        this.currentLocation = currentLocation;
+        this.status = ShipmentStatus.IN_TRANSIT;
         touch();
         record(new ShipmentEvents.ShipmentStatusUpdated(shipmentId, status.name(), currentLocation, statusDesc,
                 updatedAt));
     }
 
     public void markOutForDelivery(String shipperName, String shipperPhone) {
+        if (status == ShipmentStatus.OUT_FOR_DELIVERY) {
+            return;
+        }
         ensureTransition(ShipmentStatus.OUT_FOR_DELIVERY);
         this.shipperName = shipperName;
         this.shipperPhone = shipperPhone;
@@ -168,6 +209,9 @@ public class Shipment extends AggregateRoot {
     }
 
     public void markDelivered(String signatureUrl) {
+        if (status == ShipmentStatus.DELIVERED) {
+            return;
+        }
         ensureTransition(ShipmentStatus.DELIVERED);
         Instant now = Instant.now();
         this.signatureUrl = signatureUrl;
@@ -178,6 +222,9 @@ public class Shipment extends AggregateRoot {
     }
 
     public void recordDeliveryFailure(String reason) {
+        if (status == ShipmentStatus.DELIVERY_FAILED) {
+            return;
+        }
         ensureTransition(ShipmentStatus.DELIVERY_FAILED);
         this.attemptCount++;
         this.lastFailureReason = reason;
@@ -197,6 +244,9 @@ public class Shipment extends AggregateRoot {
     }
 
     public void markReturned(String returnReason) {
+        if (status == ShipmentStatus.RETURNED) {
+            return;
+        }
         ensureTransition(ShipmentStatus.RETURNED);
         Instant now = Instant.now();
         this.status = ShipmentStatus.RETURNED;
@@ -206,6 +256,9 @@ public class Shipment extends AggregateRoot {
     }
 
     public void cancel(String reason) {
+        if (status == ShipmentStatus.CANCELLED) {
+            return;
+        }
         Guard.require(!status.isPickedUp(),
                 () -> new ShippingException(ShippingErrorCode.SHIPMENT_ALREADY_PICKED_UP));
         ensureTransition(ShipmentStatus.CANCELLED);

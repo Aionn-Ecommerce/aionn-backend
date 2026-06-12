@@ -5,6 +5,7 @@ import com.aionn.payment.application.port.out.PaymentProviderRouter;
 import com.aionn.payment.domain.exception.PaymentErrorCode;
 import com.aionn.payment.domain.exception.PaymentException;
 import com.aionn.payment.domain.valueobject.PaymentGatewayKind;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,29 +13,23 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Aggregates every {@link PaymentProviderClient} bean in the context and
- * indexes them by their {@link PaymentGatewayKind}. If the requested kind is
- * not wired (e.g. {@code STRIPE} when stripe.enabled=false) the router throws
- * a domain exception so the caller can surface a clean error.
- */
 @Component
 @RequiredArgsConstructor
 public class DefaultPaymentProviderRouter implements PaymentProviderRouter {
 
     private final List<PaymentProviderClient> clients;
 
-    private Map<PaymentGatewayKind, PaymentProviderClient> index;
+    private final Map<PaymentGatewayKind, PaymentProviderClient> index = new EnumMap<>(PaymentGatewayKind.class);
+
+    @PostConstruct
+    void buildIndex() {
+        for (PaymentProviderClient c : clients) {
+            index.put(c.kind(), c);
+        }
+    }
 
     @Override
     public PaymentProviderClient route(PaymentGatewayKind kind) {
-        if (index == null) {
-            Map<PaymentGatewayKind, PaymentProviderClient> map = new EnumMap<>(PaymentGatewayKind.class);
-            for (PaymentProviderClient c : clients) {
-                map.put(c.kind(), c);
-            }
-            index = map;
-        }
         PaymentProviderClient client = index.get(kind);
         if (client == null) {
             throw new PaymentException(PaymentErrorCode.PAYMENT_GATEWAY_ERROR,
@@ -43,4 +38,3 @@ public class DefaultPaymentProviderRouter implements PaymentProviderRouter {
         return client;
     }
 }
-

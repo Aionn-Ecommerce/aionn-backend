@@ -1,6 +1,7 @@
 package com.aionn.payment.infrastructure.integration;
 
-import com.aionn.payment.application.dto.payment.command.PaymentCommands;
+import com.aionn.payment.application.dto.payment.command.InitiatePaymentCommand;
+import com.aionn.payment.application.dto.payment.command.RefundPaymentCommand;
 import com.aionn.payment.application.dto.payment.result.PaymentResult;
 import com.aionn.payment.application.service.PaymentService;
 import com.aionn.payment.domain.valueobject.PaymentGatewayKind;
@@ -22,7 +23,7 @@ public class PaymentInitiateAdapter implements PaymentInitiatePort {
         PaymentGatewayKind kind = gatewayKind == null
                 ? PaymentGatewayKind.STRIPE
                 : PaymentGatewayKind.valueOf(gatewayKind.toUpperCase());
-        PaymentResult result = paymentService.initiate(new PaymentCommands.InitiatePayment(
+        PaymentResult result = paymentService.initiate(new InitiatePaymentCommand(
                 orderId, userId, paymentMethodId, amount, currency, kind, idempotencyKey));
         boolean captured = "PAID".equalsIgnoreCase(result.status());
         return new InitResult(result.paymentId(), result.redirectUrl(), captured);
@@ -30,6 +31,6 @@ public class PaymentInitiateAdapter implements PaymentInitiatePort {
 
     @Override
     public void refund(String paymentId, BigDecimal amount, String currency, String reason) {
-        paymentService.refund(new PaymentCommands.RefundPayment(paymentId, amount, currency, reason));
+        paymentService.refund(new RefundPaymentCommand(paymentId, amount, currency, reason));
     }
 }

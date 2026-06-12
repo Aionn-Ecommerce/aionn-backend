@@ -11,20 +11,37 @@ public enum ShipmentStatus {
     RETURNED,
     CANCELLED;
 
+    /**
+     * Allow forward progression so the polling worker can jump straight to the
+     * latest carrier-reported state without driving every intermediate step.
+     */
     public boolean canTransitionTo(ShipmentStatus next) {
-        return switch (this) {
-            case REQUESTED -> next == REGISTERED || next == CANCELLED;
-            case REGISTERED -> next == PICKED_UP || next == CANCELLED;
-            case PICKED_UP -> next == IN_TRANSIT || next == OUT_FOR_DELIVERY;
-            case IN_TRANSIT -> next == OUT_FOR_DELIVERY || next == IN_TRANSIT;
-            case OUT_FOR_DELIVERY -> next == DELIVERED || next == DELIVERY_FAILED;
-            case DELIVERY_FAILED -> next == OUT_FOR_DELIVERY || next == RETURNED;
-            case DELIVERED, RETURNED, CANCELLED -> false;
+        if (this == next) {
+            return false;
+        }
+        if (this == DELIVERED || this == RETURNED || this == CANCELLED) {
+            return false;
+        }
+        return switch (next) {
+            case REQUESTED -> false;
+            case REGISTERED -> this == REQUESTED;
+            case PICKED_UP -> this == REQUESTED || this == REGISTERED;
+            case IN_TRANSIT -> this == REGISTERED || this == PICKED_UP;
+            case OUT_FOR_DELIVERY -> this != OUT_FOR_DELIVERY;
+            case DELIVERY_FAILED -> this == OUT_FOR_DELIVERY || this == IN_TRANSIT
+                    || this == PICKED_UP;
+            case DELIVERED -> this == OUT_FOR_DELIVERY || this == IN_TRANSIT
+                    || this == PICKED_UP || this == DELIVERY_FAILED;
+            case RETURNED -> true;
+            case CANCELLED -> this == REQUESTED || this == REGISTERED;
         };
     }
 
     public boolean isPickedUp() {
         return this != REQUESTED && this != REGISTERED && this != CANCELLED;
     }
-}
 
+    public boolean isTerminal() {
+        return this == DELIVERED || this == RETURNED || this == CANCELLED;
+    }
+}

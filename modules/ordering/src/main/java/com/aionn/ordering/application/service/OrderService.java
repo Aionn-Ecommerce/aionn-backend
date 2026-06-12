@@ -178,7 +178,24 @@ public class OrderService {
         order.confirmPreparation();
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        triggerShipmentRegistration(saved);
         return mapper.toResult(saved);
+    }
+
+    /**
+     * Best-effort: register the shipment with the carrier once the merchant
+     * confirms preparation. Failure (e.g. carrier outage) is logged but must
+     * not block the order flow - the polling worker will retry next cycle.
+     */
+    private void triggerShipmentRegistration(Order order) {
+        try {
+            BigDecimal fee = order.getShippingFee() == null ? null : order.getShippingFee().amount();
+            shippingGateway.createAndRegister(order.getOrderId(), order.getMerchantId(),
+                    order.getUserId(), order.getShippingAddress(), null, fee, order.getCurrency());
+        } catch (Exception ex) {
+            log.warn("Auto-shipment registration failed for order {}: {}",
+                    order.getOrderId(), ex.getMessage());
+        }
     }
 
     public OrderResult cancel(CancelOrderCommand command) {

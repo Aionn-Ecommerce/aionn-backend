@@ -4,8 +4,8 @@ package com.aionn.payment.domain.valueobject;
  * Lifecycle of a stored payment method.
  *
  * <pre>
- *   LINKED â†’ VERIFIED â†’ REMOVED
- *   LINKED â†’ REMOVED
+ *   LINKED -> VERIFIED -> REMOVED
+ *   LINKED -> REMOVED
  * </pre>
  */
 public enum PaymentMethodStatus {
@@ -21,4 +21,3 @@ public enum PaymentMethodStatus {
         };
     }
 }
-

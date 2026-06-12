@@ -1,10 +1,8 @@
--- =====================================================================
--- SHIPPING MODULE - INIT SCHEMA
--- =====================================================================
-
 CREATE TABLE shipments (
     shipment_id            VARCHAR(50) PRIMARY KEY,
     order_id               VARCHAR(50) NOT NULL,
+    merchant_id            VARCHAR(50) NOT NULL,
+    user_id                VARCHAR(50) NOT NULL,
     tracking_code          VARCHAR(100),
     carrier_order_id       VARCHAR(100),
     label_url              TEXT,
@@ -32,6 +30,7 @@ CREATE TABLE shipments (
     issue_resolution       TEXT,
     expected_delivery_date TIMESTAMPTZ,
     status                 VARCHAR(30) NOT NULL DEFAULT 'REQUESTED',
+    version                BIGINT      NOT NULL DEFAULT 0,
     created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     picked_at              TIMESTAMPTZ,
@@ -39,16 +38,21 @@ CREATE TABLE shipments (
     cancelled_at           TIMESTAMPTZ,
     returned_at            TIMESTAMPTZ
 );
-CREATE INDEX idx_shipments_order    ON shipments(order_id);
+CREATE INDEX idx_shipments_order           ON shipments(order_id);
+CREATE INDEX idx_shipments_merchant        ON shipments(merchant_id);
+CREATE INDEX idx_shipments_user            ON shipments(user_id);
 CREATE UNIQUE INDEX idx_shipments_tracking ON shipments(tracking_code) WHERE tracking_code IS NOT NULL;
-CREATE INDEX idx_shipments_status   ON shipments(status);
+CREATE INDEX idx_shipments_status          ON shipments(status);
+CREATE INDEX idx_shipments_active_tracking ON shipments(status, tracking_code)
+    WHERE status NOT IN ('DELIVERED','CANCELLED','RETURNED') AND tracking_code IS NOT NULL;
 
 CREATE TABLE shipping_rates (
     rate_id    VARCHAR(50) PRIMARY KEY,
     zone_code  VARCHAR(50) NOT NULL UNIQUE,
     base_fee   NUMERIC(18,2) NOT NULL,
-    currency   VARCHAR(3)  NOT NULL,
+    currency   VARCHAR(3)    NOT NULL,
     condition  TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    version    BIGINT        NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );

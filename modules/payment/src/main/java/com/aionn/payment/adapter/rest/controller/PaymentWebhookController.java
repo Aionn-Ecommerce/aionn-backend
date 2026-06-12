@@ -1,6 +1,7 @@
 package com.aionn.payment.adapter.rest.controller;
 
-import com.aionn.payment.application.dto.payment.command.PaymentCommands;
+import com.aionn.payment.application.dto.payment.command.ConfirmPaymentCommand;
+import com.aionn.payment.application.dto.payment.command.FailPaymentCommand;
 import com.aionn.payment.application.port.out.PaymentProviderClient;
 import com.aionn.payment.application.port.out.PaymentProviderRouter;
 import com.aionn.payment.application.service.PaymentService;
@@ -47,13 +48,12 @@ public class PaymentWebhookController {
             return ResponseEntity.badRequest().build();
         }
         if (event.success()) {
-            paymentService.confirm(new PaymentCommands.ConfirmPayment(event.paymentId(), event.transactionNo()));
+            paymentService.confirm(new ConfirmPaymentCommand(event.paymentId(), event.transactionNo()));
         } else {
-            paymentService.fail(new PaymentCommands.FailPayment(event.paymentId(),
+            paymentService.fail(new FailPaymentCommand(event.paymentId(),
                     event.errorCode() == null ? "GATEWAY_ERROR" : event.errorCode(),
                     event.errorReason()));
         }
         return ResponseEntity.ok().build();
     }
 }
-

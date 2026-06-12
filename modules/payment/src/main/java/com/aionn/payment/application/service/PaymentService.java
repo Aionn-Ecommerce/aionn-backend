@@ -1,23 +1,27 @@
 package com.aionn.payment.application.service;
 
-import com.aionn.payment.application.dto.payment.command.PaymentCommands;
+import com.aionn.payment.application.dto.payment.command.ConfirmPaymentCommand;
+import com.aionn.payment.application.dto.payment.command.FailPaymentCommand;
+import com.aionn.payment.application.dto.payment.command.InitiatePaymentCommand;
+import com.aionn.payment.application.dto.payment.command.RefundPaymentCommand;
 import com.aionn.payment.application.dto.payment.result.PaymentResult;
 import com.aionn.payment.application.mapper.PaymentResultMapper;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.payment.application.port.out.InvoiceStorage;
 import com.aionn.payment.application.port.out.PaymentMethodRepository;
 import com.aionn.payment.application.port.out.PaymentProviderClient;
 import com.aionn.payment.application.port.out.PaymentProviderRouter;
 import com.aionn.payment.application.port.out.PaymentRepository;
 import com.aionn.payment.application.port.out.TransactionLedgerRepository;
+import com.aionn.payment.application.port.out.integration.PaymentIntegrationEventPublisherPort;
 import com.aionn.payment.domain.exception.PaymentErrorCode;
 import com.aionn.payment.domain.exception.PaymentException;
 import com.aionn.payment.domain.model.Payment;
 import com.aionn.payment.domain.model.PaymentMethod;
 import com.aionn.payment.domain.model.TransactionLedger;
 import com.aionn.payment.domain.valueobject.LedgerEntryType;
-import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.payment.domain.valueobject.PaymentMethodStatus;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,9 +41,9 @@ public class PaymentService {
     private final InvoiceStorage invoiceStorage;
     private final PaymentResultMapper mapper;
     private final EventPublisher eventPublisher;
+    private final PaymentIntegrationEventPublisherPort integrationEventPublisher;
 
-    public PaymentResult initiate(PaymentCommands.InitiatePayment command) {
-        // Idempotency: if a payment with this key already exists, return it.
+    public PaymentResult initiate(InitiatePaymentCommand command) {
         var existing = paymentRepository.findByIdempotencyKey(command.idempotencyKey());
         if (existing.isPresent()) {
             return mapper.toResult(existing.get());
@@ -61,7 +65,6 @@ public class PaymentService {
         Payment saved = paymentRepository.save(payment);
         eventPublisher.publish(payment.pullEvents());
 
-        // Authorize via provider
         PaymentProviderClient client = providerRouter.route(command.gateway());
         PaymentProviderClient.Authorization auth = client.authorize(
                 new PaymentProviderClient.AuthorizationRequest(
@@ -70,49 +73,52 @@ public class PaymentService {
                         command.amount(), command.currency(), command.idempotencyKey(), null));
 
         if (auth.captured()) {
-            return confirm(new PaymentCommands.ConfirmPayment(saved.getPaymentId(), auth.transactionNo()));
+            return confirm(new ConfirmPaymentCommand(saved.getPaymentId(), auth.transactionNo()));
         } else if (auth.declineCode() != null) {
-            return fail(new PaymentCommands.FailPayment(saved.getPaymentId(),
+            return fail(new FailPaymentCommand(saved.getPaymentId(),
                     auth.declineCode(), auth.declineReason()));
         }
-        // Async path (e.g. VNPay redirect): return as INITIATED
-        return mapper.toResult(saved);
+        // Async path: return INITIATED and propagate the redirect URL for client
+        // hand-off.
+        return mapper.toResult(saved).withRedirectUrl(auth.authUrl());
     }
 
-    public PaymentResult confirm(PaymentCommands.ConfirmPayment command) {
+    public PaymentResult confirm(ConfirmPaymentCommand command) {
         Payment payment = required(command.paymentId());
         if (payment.getStatus().name().equals("PAID")) {
-            // idempotent re-confirm
             return mapper.toResult(payment);
         }
         payment.markPaid(command.transactionNo());
         Payment saved = paymentRepository.save(payment);
         eventPublisher.publish(payment.pullEvents());
 
-        // Ledger entry
         TransactionLedger entry = TransactionLedger.record(IdGenerator.ulid(),
                 saved.getPaymentId(), saved.getAmount(), LedgerEntryType.CREDIT,
                 saved.getGateway().name(), command.transactionNo());
         ledgerRepository.save(entry);
         eventPublisher.publish(entry.pullEvents());
 
-        // Generate invoice
         String invoiceUrl = invoiceStorage.storeInvoiceUrl(saved.getPaymentId(), saved.getOrderId());
         saved.attachInvoice(invoiceUrl);
         Payment withInvoice = paymentRepository.save(saved);
         eventPublisher.publish(saved.pullEvents());
+
+        integrationEventPublisher.publishPaymentCaptured(withInvoice.getPaymentId(), withInvoice.getOrderId(),
+                command.transactionNo(), withInvoice.getAmount().amount(), withInvoice.getAmount().currency());
         return mapper.toResult(withInvoice);
     }
 
-    public PaymentResult fail(PaymentCommands.FailPayment command) {
+    public PaymentResult fail(FailPaymentCommand command) {
         Payment payment = required(command.paymentId());
         payment.markFailed(command.errorCode(), command.reason());
         Payment saved = paymentRepository.save(payment);
         eventPublisher.publish(payment.pullEvents());
+        integrationEventPublisher.publishPaymentFailed(saved.getPaymentId(), saved.getOrderId(),
+                command.errorCode(), command.reason());
         return mapper.toResult(saved);
     }
 
-    public PaymentResult refund(PaymentCommands.RefundPayment command) {
+    public PaymentResult refund(RefundPaymentCommand command) {
         Payment payment = required(command.paymentId());
         Money refund = Money.of(command.amount(), command.currency());
 
@@ -138,6 +144,8 @@ public class PaymentService {
         ledgerRepository.save(entry);
         eventPublisher.publish(entry.pullEvents());
 
+        integrationEventPublisher.publishPaymentRefunded(saved.getPaymentId(), saved.getOrderId(),
+                refundId, command.amount(), command.currency(), command.reason());
         return mapper.toResult(saved);
     }
 
@@ -151,4 +159,3 @@ public class PaymentService {
                 .orElseThrow(() -> new PaymentException(PaymentErrorCode.PAYMENT_NOT_FOUND));
     }
 }
-

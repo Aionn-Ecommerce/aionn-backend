@@ -2,7 +2,8 @@ package com.aionn.shipping.adapter.rest.controller;
 
 import com.aionn.shipping.adapter.rest.dto.rate.ConfigureRateRequest;
 import com.aionn.shipping.adapter.rest.dto.rate.UpdateRateRequest;
-import com.aionn.shipping.application.dto.rate.command.RateCommands;
+import com.aionn.shipping.application.dto.rate.command.ConfigureRateCommand;
+import com.aionn.shipping.application.dto.rate.command.UpdateRateCommand;
 import com.aionn.shipping.application.dto.rate.result.ShippingRateResult;
 import com.aionn.shipping.application.service.ShippingRateService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -30,10 +31,10 @@ public class ShippingRateController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Configure rate", description = "UC7.14")
+    @Operation(summary = "Configure rate")
     public ResponseEntity<ApiResponse<ShippingRateResult>> configure(
             @Valid @RequestBody ConfigureRateRequest request) {
-        ShippingRateResult result = rateService.configure(new RateCommands.ConfigureRate(
+        ShippingRateResult result = rateService.configure(new ConfigureRateCommand(
                 request.zoneCode(), request.baseFee(), request.currency(), request.condition()));
         return ApiResponse.createdResponse("Shipping rate configured", result);
     }
@@ -44,15 +45,15 @@ public class ShippingRateController {
     public ResponseEntity<ApiResponse<ShippingRateResult>> update(
             @PathVariable String rateId,
             @Valid @RequestBody UpdateRateRequest request) {
-        ShippingRateResult result = rateService.update(new RateCommands.UpdateRate(
+        ShippingRateResult result = rateService.update(new UpdateRateCommand(
                 rateId, request.baseFee(), request.condition()));
         return ResponseEntity.ok(ApiResponse.success(result, "Shipping rate updated"));
     }
 
     @GetMapping("/{rateId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get rate")
     public ResponseEntity<ApiResponse<ShippingRateResult>> get(@PathVariable String rateId) {
         return ResponseEntity.ok(ApiResponse.success(rateService.get(rateId), "Rate fetched"));
     }
 }
-
