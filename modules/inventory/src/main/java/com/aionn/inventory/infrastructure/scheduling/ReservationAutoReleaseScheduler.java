@@ -12,11 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * UC4.20 - sweep expired RESERVED reservations and release them. Each
- * release runs in its own transaction via {@link ReservationAutoReleaseWorker}
- * so a single failure does not roll back the entire batch.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

@@ -110,8 +110,6 @@ public class OrderEntity {
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
-    // LAZY: callers needing items must run inside @Transactional or use
-    // @EntityGraph(attributePaths = "items") on the JPA query.
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("id.skuId asc")
     @Builder.Default

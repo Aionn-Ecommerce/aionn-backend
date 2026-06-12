@@ -323,9 +323,7 @@ public class ProductService {
         return productResultMapper.toSearchDocument(product, filterable);
     }
 
-    /**
-     * Resolves the caller's {@code merchantId} from their authenticated user id.
-     */
+    /** Resolves the caller's merchantId from their authenticated user id. */
     private String requireMerchantIdForOwner(String ownerId) {
         Merchant merchant = merchantRepository.findByOwnerId(ownerId)
                 .orElseThrow(() -> new CatalogException(CatalogErrorCode.MERCHANT_NOT_FOUND,

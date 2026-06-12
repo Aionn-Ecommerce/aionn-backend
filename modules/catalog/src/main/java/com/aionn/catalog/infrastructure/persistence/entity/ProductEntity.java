@@ -88,9 +88,6 @@ public class ProductEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    // LAZY: callers that need variants must run inside a @Transactional
-    // context or use @EntityGraph(attributePaths = "variants") on the
-    // query to avoid LazyInitializationException.
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("skuId asc")
     @Builder.Default

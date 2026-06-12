@@ -6,7 +6,13 @@ import com.aionn.inventory.adapter.rest.dto.inventory.EmergencyLockRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.InitializeStockRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.ManualAdjustmentRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.TrackBatchAndExpiryRequest;
-import com.aionn.inventory.application.dto.inventory.command.InventoryCommands;
+import com.aionn.inventory.application.dto.inventory.command.AuditInventoryCommand;
+import com.aionn.inventory.application.dto.inventory.command.ConfigureSafetyStockCommand;
+import com.aionn.inventory.application.dto.inventory.command.EmergencyLockCommand;
+import com.aionn.inventory.application.dto.inventory.command.EmergencyUnlockCommand;
+import com.aionn.inventory.application.dto.inventory.command.InitializeStockCommand;
+import com.aionn.inventory.application.dto.inventory.command.ManualAdjustmentCommand;
+import com.aionn.inventory.application.dto.inventory.command.TrackBatchAndExpiryCommand;
 import com.aionn.inventory.application.dto.inventory.result.InventoryItemResult;
 import com.aionn.inventory.application.service.InventoryItemService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -39,7 +45,7 @@ public class InventoryItemController {
         public ResponseEntity<ApiResponse<InventoryItemResult>> initialize(
                         Authentication authentication,
                         @Valid @RequestBody InitializeStockRequest request) {
-                InventoryItemResult result = service.initialize(new InventoryCommands.InitializeStock(
+                InventoryItemResult result = service.initialize(new InitializeStockCommand(
                                 authentication.getName(), request.skuId(), request.warehouseId(),
                                 request.initialQty()));
                 return ApiResponse.createdResponse("Inventory initialized", result);
@@ -53,7 +59,7 @@ public class InventoryItemController {
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody ConfigureSafetyStockRequest request) {
-                InventoryItemResult result = service.configureSafetyStock(new InventoryCommands.ConfigureSafetyStock(
+                InventoryItemResult result = service.configureSafetyStock(new ConfigureSafetyStockCommand(
                                 authentication.getName(), skuId, warehouseId, request.safetyStockQty()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Safety stock configured"));
         }
@@ -66,7 +72,7 @@ public class InventoryItemController {
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody TrackBatchAndExpiryRequest request) {
-                InventoryItemResult result = service.trackBatchAndExpiry(new InventoryCommands.TrackBatchAndExpiry(
+                InventoryItemResult result = service.trackBatchAndExpiry(new TrackBatchAndExpiryCommand(
                                 authentication.getName(), skuId, warehouseId, request.batchNo(), request.expiryDate()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Batch and expiry tracked"));
         }
@@ -79,7 +85,7 @@ public class InventoryItemController {
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody ManualAdjustmentRequest request) {
-                InventoryItemResult result = service.manualAdjustment(new InventoryCommands.ManualAdjustment(
+                InventoryItemResult result = service.manualAdjustment(new ManualAdjustmentCommand(
                                 authentication.getName(), skuId, warehouseId, request.qty(), request.type(),
                                 request.reason()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Adjustment recorded"));
@@ -93,7 +99,7 @@ public class InventoryItemController {
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody EmergencyLockRequest request) {
-                InventoryItemResult result = service.emergencyLock(new InventoryCommands.EmergencyLock(
+                InventoryItemResult result = service.emergencyLock(new EmergencyLockCommand(
                                 authentication.getName(), skuId, warehouseId, request.reason()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Inventory item locked"));
         }
@@ -105,7 +111,7 @@ public class InventoryItemController {
                         Authentication authentication,
                         @PathVariable String skuId,
                         @PathVariable String warehouseId) {
-                InventoryItemResult result = service.emergencyUnlock(new InventoryCommands.EmergencyUnlock(
+                InventoryItemResult result = service.emergencyUnlock(new EmergencyUnlockCommand(
                                 authentication.getName(), skuId, warehouseId));
                 return ResponseEntity.ok(ApiResponse.success(result, "Inventory item unlocked"));
         }
@@ -118,7 +124,7 @@ public class InventoryItemController {
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody AuditInventoryRequest request) {
-                InventoryItemResult result = service.auditInventory(new InventoryCommands.AuditInventory(
+                InventoryItemResult result = service.auditInventory(new AuditInventoryCommand(
                                 authentication.getName(), skuId, warehouseId, request.actualQty()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Audit recorded"));
         }

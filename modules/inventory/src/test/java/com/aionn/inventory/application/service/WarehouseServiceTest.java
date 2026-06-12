@@ -1,6 +1,7 @@
 package com.aionn.inventory.application.service;
 
-import com.aionn.inventory.application.dto.warehouse.command.WarehouseCommands;
+import com.aionn.inventory.application.dto.warehouse.command.ChangeStatusCommand;
+import com.aionn.inventory.application.dto.warehouse.command.CreateWarehouseCommand;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
 import com.aionn.inventory.application.port.out.WarehouseRepository;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
@@ -26,13 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * Regression tests for the merchant-id resolution wiring on owner-side
- * warehouse operations (audit B1). The pre-fix bug let any authenticated
- * caller act on any merchant's warehouses by passing
- * {@code authentication.getName()}
- * (= userId) into the {@code merchantId} slot of every command.
- */
 @ExtendWith(MockitoExtension.class)
 class WarehouseServiceTest {
 
@@ -54,7 +48,7 @@ class WarehouseServiceTest {
         when(merchantQueryPort.findMerchantIdByOwnerId("user-1")).thenReturn(Optional.empty());
 
         InventoryException ex = assertThrows(InventoryException.class,
-                () -> warehouseService.create(new WarehouseCommands.CreateWarehouse("user-1", "addr", 1)));
+                () -> warehouseService.create(new CreateWarehouseCommand("user-1", "addr", 1)));
 
         assertEquals(InventoryErrorCode.WAREHOUSE_FORBIDDEN.getCode(), ex.getErrorCode());
         verifyNoInteractions(warehouseRepository, eventPublisher);
@@ -66,7 +60,7 @@ class WarehouseServiceTest {
         when(merchantQueryPort.findMerchantIdByOwnerId("user-1")).thenReturn(Optional.of("M_1"));
         when(warehouseRepository.save(any(Warehouse.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        warehouseService.create(new WarehouseCommands.CreateWarehouse("user-1", "addr", 1));
+        warehouseService.create(new CreateWarehouseCommand("user-1", "addr", 1));
 
         ArgumentCaptor<Warehouse> captor = ArgumentCaptor.forClass(Warehouse.class);
         verify(warehouseRepository).save(captor.capture());
@@ -81,7 +75,7 @@ class WarehouseServiceTest {
         when(warehouseRepository.findById("W_1")).thenReturn(Optional.of(victim));
 
         InventoryException ex = assertThrows(InventoryException.class,
-                () -> warehouseService.changeStatus(new WarehouseCommands.ChangeStatus("W_1", "attacker", "ACTIVE")));
+                () -> warehouseService.changeStatus(new ChangeStatusCommand("W_1", "attacker", "ACTIVE")));
 
         assertEquals(InventoryErrorCode.WAREHOUSE_FORBIDDEN.getCode(), ex.getErrorCode());
         verify(warehouseRepository, never()).save(any());

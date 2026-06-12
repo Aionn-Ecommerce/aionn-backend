@@ -50,8 +50,6 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
                         .document(doc)));
             }
             BulkResponse response = client.bulk(bulk.build());
-            // Per-item failures are reported on the response; without inspection
-            // they would silently disappear from the index.
             if (response.errors()) {
                 response.items().forEach(item -> {
                     if (item.error() != null) {

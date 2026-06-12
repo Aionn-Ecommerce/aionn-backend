@@ -10,8 +10,6 @@ CREATE TABLE merchants (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 -- One merchant per owner (matches MerchantService.register precondition).
--- This unique index also serves all WHERE owner_id = ? lookups, so no
--- separate non-unique index is needed.
 CREATE UNIQUE INDEX uq_merchants_owner ON merchants(owner_id);
 CREATE INDEX idx_merchants_status ON merchants(status);
 
@@ -78,11 +76,7 @@ CREATE TABLE products (
 CREATE INDEX idx_products_merchant ON products(merchant_id);
 CREATE INDEX idx_products_brand    ON products(brand_id);
 CREATE INDEX idx_products_status   ON products(status);
--- jsonb_path_ops keeps these GIN indexes small and fast for the @>
--- containment checks used by ProductJpaRepository.existsByCategoryId
--- and any future filter on collection_ids / tags. Queries must use the
--- containment form (e.g. category_ids @> jsonb_build_array(:id)) – the
--- ?, ?? and ?| operators are NOT supported by jsonb_path_ops.
+-- jsonb_path_ops: queries must use the @> containment form (not ?, ?? or ?|).
 CREATE INDEX idx_products_category_ids_gin ON products USING GIN (category_ids   jsonb_path_ops);
 CREATE INDEX idx_products_collections_gin  ON products USING GIN (collection_ids jsonb_path_ops);
 CREATE INDEX idx_products_tags_gin         ON products USING GIN (tags           jsonb_path_ops);

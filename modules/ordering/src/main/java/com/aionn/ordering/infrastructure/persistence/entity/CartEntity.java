@@ -22,8 +22,6 @@ import java.util.List;
 
 @Entity
 @Table(name = "carts", indexes = {
-        // Matches the migration-created uq_carts_user. Keep the names in
-        // sync so ddl-auto=validate stays happy.
         @Index(name = "uq_carts_user", columnList = "user_id", unique = true)
 })
 @Getter

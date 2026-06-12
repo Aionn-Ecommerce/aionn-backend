@@ -4,7 +4,11 @@ import com.aionn.inventory.adapter.rest.dto.warehouse.AdjustPriorityRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.AdminReasonRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.ChangeWarehouseStatusRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.CreateWarehouseRequest;
-import com.aionn.inventory.application.dto.warehouse.command.WarehouseCommands;
+import com.aionn.inventory.application.dto.warehouse.command.AdjustPriorityCommand;
+import com.aionn.inventory.application.dto.warehouse.command.ChangeStatusCommand;
+import com.aionn.inventory.application.dto.warehouse.command.CreateWarehouseCommand;
+import com.aionn.inventory.application.dto.warehouse.command.LiftSuspensionCommand;
+import com.aionn.inventory.application.dto.warehouse.command.SuspendWarehouseCommand;
 import com.aionn.inventory.application.dto.warehouse.result.WarehouseResult;
 import com.aionn.inventory.application.service.WarehouseService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -39,7 +43,7 @@ public class WarehouseController {
     public ResponseEntity<ApiResponse<WarehouseResult>> create(
             Authentication authentication,
             @Valid @RequestBody CreateWarehouseRequest request) {
-        WarehouseResult result = warehouseService.create(new WarehouseCommands.CreateWarehouse(
+        WarehouseResult result = warehouseService.create(new CreateWarehouseCommand(
                 authentication.getName(), request.address(), request.priorityLevel()));
         return ApiResponse.createdResponse("Warehouse created", result);
     }
@@ -51,7 +55,7 @@ public class WarehouseController {
             Authentication authentication,
             @PathVariable String warehouseId,
             @Valid @RequestBody ChangeWarehouseStatusRequest request) {
-        WarehouseResult result = warehouseService.changeStatus(new WarehouseCommands.ChangeStatus(
+        WarehouseResult result = warehouseService.changeStatus(new ChangeStatusCommand(
                 warehouseId, authentication.getName(), request.status()));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse status updated"));
     }
@@ -63,7 +67,7 @@ public class WarehouseController {
             Authentication authentication,
             @PathVariable String warehouseId,
             @Valid @RequestBody AdjustPriorityRequest request) {
-        WarehouseResult result = warehouseService.adjustPriority(new WarehouseCommands.AdjustPriority(
+        WarehouseResult result = warehouseService.adjustPriority(new AdjustPriorityCommand(
                 warehouseId, authentication.getName(), request.priorityLevel()));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse priority updated"));
     }
@@ -75,7 +79,7 @@ public class WarehouseController {
             Authentication authentication,
             @PathVariable String warehouseId,
             @Valid @RequestBody AdminReasonRequest request) {
-        WarehouseResult result = warehouseService.suspend(new WarehouseCommands.SuspendWarehouse(
+        WarehouseResult result = warehouseService.suspend(new SuspendWarehouseCommand(
                 warehouseId, authentication.getName(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse suspended"));
     }
@@ -86,7 +90,7 @@ public class WarehouseController {
     public ResponseEntity<ApiResponse<WarehouseResult>> liftSuspension(
             Authentication authentication,
             @PathVariable String warehouseId) {
-        WarehouseResult result = warehouseService.liftSuspension(new WarehouseCommands.LiftSuspension(
+        WarehouseResult result = warehouseService.liftSuspension(new LiftSuspensionCommand(
                 warehouseId, authentication.getName()));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse suspension lifted"));
     }

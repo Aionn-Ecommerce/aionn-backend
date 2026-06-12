@@ -12,16 +12,7 @@ public interface InventoryItemRepository {
 
     Optional<InventoryItem> findByKey(InventoryItemKey key);
 
-    /**
-     * Pessimistic find used by reserve/commit/release paths to serialize
-     * concurrent qty mutations on the same row.
-     */
     Optional<InventoryItem> lockByKey(InventoryItemKey key);
 
-    /**
-     * Items belonging to the warehouses provided, ordered to suit fulfillment
-     * selection.
-     */
     List<InventoryItem> findBySkuAcrossWarehouses(String skuId, List<String> warehouseIds);
 }
-
