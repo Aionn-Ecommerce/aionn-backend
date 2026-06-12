@@ -63,16 +63,15 @@ public class PromotionCampaign extends AggregateRoot {
                 () -> new PromotionException(PromotionErrorCode.INVALID_ARGUMENT,
                         "startDate must be before endDate"));
         Instant now = Instant.now();
-        // Auto-activate if startDate has already passed - e.g. flash sale
-        // created right before the slot opens.
-        CampaignStatus initial = now.isBefore(startDate) ? CampaignStatus.SCHEDULED : CampaignStatus.RUNNING;
+        Guard.require(!startDate.isBefore(now.minusSeconds(60)),
+                () -> new PromotionException(PromotionErrorCode.INVALID_ARGUMENT,
+                        "startDate must not be in the past"));
+        // New campaigns are SCHEDULED; the periodic worker (or an explicit
+        // activate call) flips them to RUNNING when startDate is reached.
         PromotionCampaign c = new PromotionCampaign(campaignId, name, type, budget, budget,
-                startDate, endDate, createdBy, initial, PromotionCondition.empty(), now, now);
+                startDate, endDate, createdBy, CampaignStatus.SCHEDULED, PromotionCondition.empty(), now, now);
         c.record(new PromotionEvents.PromotionCampaignCreated(campaignId, name,
                 budget.amount(), budget.currency(), startDate, endDate, createdBy, now));
-        if (initial == CampaignStatus.RUNNING) {
-            c.record(new PromotionEvents.PromotionCampaignActivated(campaignId, now));
-        }
         return c;
     }
 

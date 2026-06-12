@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -94,7 +93,7 @@ public class PromotionCampaignService {
         return mapper.toResult(saved);
     }
 
-public int processScheduledTransitions(Instant now, int batchSize) {
+    public int processScheduledTransitions(Instant now, int batchSize) {
         int changed = 0;
         for (PromotionCampaign c : campaignRepository.findToActivate(now, batchSize)) {
             try {
@@ -129,4 +128,3 @@ public int processScheduledTransitions(Instant now, int batchSize) {
                 .orElseThrow(() -> new PromotionException(PromotionErrorCode.CAMPAIGN_NOT_FOUND));
     }
 }
-

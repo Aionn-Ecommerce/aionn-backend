@@ -10,6 +10,5 @@ public interface VoucherRepository {
 
     Optional<Voucher> findByCode(String voucherCode);
 
-Optional<Voucher> lockByCode(String voucherCode);
+    Optional<Voucher> lockByCode(String voucherCode);
 }
-

@@ -127,7 +127,10 @@ public class VoucherService {
         return mapper.toResult(saved);
     }
 
-public int releaseExpiredReservations(Instant now, int batchSize) {
+    public int releaseExpiredReservations(Instant now, int batchSize) {
+        // Kept for backwards compatibility; the auto-release scheduler now drives
+        // expiry directly through VoucherAutoReleaseWorker so each release runs
+        // in its own transaction and a single failure doesn't poison the batch.
         List<UserVoucher> expired = userVoucherRepository.findExpiredReservations(now, batchSize);
         int released = 0;
         for (UserVoucher uv : expired) {
@@ -160,4 +163,3 @@ public int releaseExpiredReservations(Instant now, int batchSize) {
         return userVoucherRepository.findByUser(userId, limit).stream().map(mapper::toResult).toList();
     }
 }
-

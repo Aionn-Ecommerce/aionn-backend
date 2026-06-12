@@ -10,11 +10,9 @@ import java.time.Instant;
 import java.util.List;
 
 public record ReserveVoucherRequest(
-        @NotBlank String userId,
-        @NotBlank String orderId,
-        @NotNull @DecimalMin("0.0") BigDecimal orderValue,
-        @Size(min = 3, max = 3) String currency,
-        List<String> orderCategoryIds,
-        Instant expiresAt) {
+                @NotBlank String orderId,
+                @NotNull @DecimalMin("0.0") BigDecimal orderValue,
+                @Size(min = 3, max = 3) String currency,
+                List<String> orderCategoryIds,
+                Instant expiresAt) {
 }
-

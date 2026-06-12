@@ -34,7 +34,7 @@ public class VoucherController {
 
         @PostMapping("/{voucherCode}/claim")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Claim voucher", description = "UC9.3")
+        @Operation(summary = "Claim voucher")
         public ResponseEntity<ApiResponse<UserVoucherResult>> claim(
                         Authentication authentication,
                         @PathVariable String voucherCode) {
@@ -45,39 +45,44 @@ public class VoucherController {
 
         @PostMapping("/{voucherCode}/reserve")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Reserve voucher", description = "UC9.4 + UC9.5")
+        @Operation(summary = "Reserve voucher for an order")
         public ResponseEntity<ApiResponse<UserVoucherResult>> reserve(
+                        Authentication authentication,
                         @PathVariable String voucherCode,
                         @Valid @RequestBody ReserveVoucherRequest request) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 voucherService.reserve(new VoucherCommands.ReserveVoucher(
-                                                request.userId(), voucherCode, request.orderId(), request.orderValue(),
+                                                authentication.getName(), voucherCode, request.orderId(),
+                                                request.orderValue(),
                                                 request.currency(), request.orderCategoryIds(), request.expiresAt())),
                                 "Voucher reserved"));
         }
 
         @PostMapping("/{voucherCode}/apply")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Apply voucher", description = "UC9.6")
+        @Operation(summary = "Apply voucher to a paid order")
         public ResponseEntity<ApiResponse<UserVoucherResult>> apply(
+                        Authentication authentication,
                         @PathVariable String voucherCode,
                         @Valid @RequestBody ApplyVoucherRequest request) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 voucherService.apply(new VoucherCommands.ApplyVoucher(
-                                                request.userId(), voucherCode, request.orderId(),
+                                                authentication.getName(), voucherCode, request.orderId(),
                                                 request.appliedAmount(), request.currency())),
                                 "Voucher applied"));
         }
 
         @PostMapping("/{voucherCode}/release")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Release voucher", description = "UC9.7")
+        @Operation(summary = "Release voucher reservation")
         public ResponseEntity<ApiResponse<UserVoucherResult>> release(
+                        Authentication authentication,
                         @PathVariable String voucherCode,
                         @Valid @RequestBody ReleaseVoucherRequest request) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 voucherService.release(new VoucherCommands.ReleaseVoucher(
-                                                request.userId(), voucherCode, request.orderId(), request.reason())),
+                                                authentication.getName(), voucherCode, request.orderId(),
+                                                request.reason())),
                                 "Voucher released"));
         }
 
