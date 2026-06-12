@@ -22,10 +22,10 @@ public enum ChatErrorCode {
     BLOCK_SELF("CHT_203", "Cannot block yourself"),
 
     AUTO_REPLY_NOT_FOUND("CHT_301", "Auto-reply config not found"),
+    AUTO_REPLY_FORBIDDEN("CHT_302", "Caller does not own the requested merchant auto-reply config"),
 
     INVALID_ARGUMENT("CHT_900", "Invalid argument");
 
     private final String code;
     private final String defaultMessage;
 }
-

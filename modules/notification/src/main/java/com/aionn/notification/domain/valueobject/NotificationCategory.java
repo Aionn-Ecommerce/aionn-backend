@@ -5,10 +5,10 @@ public enum NotificationCategory {
     TRANSACTION,
     SHIPPING,
     PROMOTION,
+    CHAT,
     SYSTEM;
 
     public boolean isMandatory() {
         return this == SECURITY || this == TRANSACTION;
     }
 }
-

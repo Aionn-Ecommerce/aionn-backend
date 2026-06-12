@@ -14,7 +14,7 @@ import java.util.Set;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "chat.presence", name = "provider", havingValue = "redis", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "chat.presence", name = "provider", havingValue = "redis")
 public class RedisPresenceTracker implements PresenceTracker {
 
     private static final String KEY_PREFIX = "chat:presence:";
@@ -59,4 +59,3 @@ public class RedisPresenceTracker implements PresenceTracker {
         return KEY_PREFIX + userId;
     }
 }
-

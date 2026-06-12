@@ -8,67 +8,55 @@ import com.aionn.chat.domain.model.Conversation;
 import com.aionn.chat.domain.model.MerchantAutoReply;
 import com.aionn.chat.domain.model.Message;
 import com.aionn.chat.domain.model.UserBlock;
-import org.springframework.stereotype.Component;
+import com.aionn.chat.domain.valueobject.MessagePayload;
+import com.aionn.chat.domain.valueobject.Participant;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class ChatResultMapper {
+import java.time.ZoneId;
+import java.util.Map;
 
-    public ConversationResult toResult(Conversation c, long unreadCount) {
-        return new ConversationResult(
-                c.getConversationId(),
-                c.getBuyerId(),
-                c.getMerchantId(),
-                c.participants().stream()
-                        .map(p -> new ConversationResult.ParticipantResult(
-                                p.userId(), p.role().name(), p.displayName(), p.avatarUrl(),
-                                p.joinedAt(), p.lastReadAt()))
-                        .toList(),
-                c.getLastMessageId(),
-                c.getLastMessagePreview(),
-                c.getLastMessageType() == null ? null : c.getLastMessageType().name(),
-                c.getLastMessageSenderId(),
-                c.getLastMessageAt(),
-                c.isArchived(),
-                unreadCount,
-                c.getCreatedAt(),
-                c.getUpdatedAt());
-    }
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ChatResultMapper {
 
-    public MessageResult toResult(Message m) {
-        return new MessageResult(
-                m.getMessageId(),
-                m.getConversationId(),
-                m.getSenderId(),
-                m.getSenderRole().name(),
-                m.getType().name(),
-                m.getPayload().body(),
-                m.getPayload().metadata(),
-                m.getStatus().name(),
-                java.util.Set.copyOf(m.getDeliveredTo()),
-                java.util.Set.copyOf(m.getReadBy()),
-                m.isRecalled(),
-                m.getSentAt(),
-                m.getUpdatedAt());
-    }
+        @Mapping(target = "body", source = "payload.body")
+        @Mapping(target = "metadata", source = "payload.metadata")
+        MessageResult toResult(Message m);
 
-    public BlockResult toResult(UserBlock b) {
-        return new BlockResult(
-                b.getBlockId(), b.getBlockerId(), b.getBlockedId(), b.getReason(),
-                b.isActive(), b.getCreatedAt(), b.getUpdatedAt());
-    }
+        @Mapping(target = "unreadCount", source = "unreadCount")
+        @Mapping(target = "conversationId", source = "c.conversationId")
+        @Mapping(target = "buyerId", source = "c.buyerId")
+        @Mapping(target = "merchantId", source = "c.merchantId")
+        @Mapping(target = "participants", source = "c.participants")
+        @Mapping(target = "lastMessageId", source = "c.lastMessageId")
+        @Mapping(target = "lastMessagePreview", source = "c.lastMessagePreview")
+        @Mapping(target = "lastMessageType", source = "c.lastMessageType")
+        @Mapping(target = "lastMessageSenderId", source = "c.lastMessageSenderId")
+        @Mapping(target = "lastMessageAt", source = "c.lastMessageAt")
+        @Mapping(target = "archived", source = "c.archived")
+        @Mapping(target = "createdAt", source = "c.createdAt")
+        @Mapping(target = "updatedAt", source = "c.updatedAt")
+        ConversationResult toResult(Conversation c, long unreadCount);
 
-    public AutoReplyResult toResult(MerchantAutoReply a) {
-        return new AutoReplyResult(
-                a.getMerchantId(),
-                a.isEnabled(),
-                a.getGreeting(),
-                a.getAwayMessage(),
-                a.getWorkingHourStart(),
-                a.getWorkingHourEnd(),
-                a.getWorkingDays(),
-                a.getTimezone() == null ? null : a.getTimezone().getId(),
-                a.getCreatedAt(),
-                a.getUpdatedAt());
-    }
+        ConversationResult.ParticipantResult toParticipantResult(Participant p);
+
+        @Mapping(target = "active", source = "active")
+        BlockResult toResult(UserBlock b);
+
+        @Mapping(target = "timezone", source = "timezone", qualifiedByName = "zoneIdToString")
+        AutoReplyResult toResult(MerchantAutoReply a);
+
+        @Named("zoneIdToString")
+        static String zoneIdToString(ZoneId zoneId) {
+                return zoneId == null ? null : zoneId.getId();
+        }
+
+        default Map<String, Object> copyMetadata(MessagePayload payload) {
+                if (payload == null || payload.metadata() == null) {
+                        return Map.of();
+                }
+                return Map.copyOf(payload.metadata());
+        }
 }
-
