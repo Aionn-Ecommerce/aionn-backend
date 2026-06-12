@@ -41,7 +41,7 @@ public class InventoryItemController {
 
         @PostMapping
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Initialize stock", description = "UC4.6")
+        @Operation(summary = "Initialize stock")
         public ResponseEntity<ApiResponse<InventoryItemResult>> initialize(
                         Authentication authentication,
                         @Valid @RequestBody InitializeStockRequest request) {
@@ -53,7 +53,7 @@ public class InventoryItemController {
 
         @PutMapping("/{skuId}/{warehouseId}/safety-stock")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Configure safety stock", description = "UC4.19")
+        @Operation(summary = "Configure safety stock")
         public ResponseEntity<ApiResponse<InventoryItemResult>> configureSafetyStock(
                         Authentication authentication,
                         @PathVariable String skuId,
@@ -66,7 +66,7 @@ public class InventoryItemController {
 
         @PutMapping("/{skuId}/{warehouseId}/batch-expiry")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Track batch and expiry", description = "UC4.11")
+        @Operation(summary = "Track batch and expiry")
         public ResponseEntity<ApiResponse<InventoryItemResult>> trackBatchAndExpiry(
                         Authentication authentication,
                         @PathVariable String skuId,
@@ -79,7 +79,7 @@ public class InventoryItemController {
 
         @PostMapping("/{skuId}/{warehouseId}/manual-adjustment")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Manual adjustment", description = "UC4.17")
+        @Operation(summary = "Manual adjustment")
         public ResponseEntity<ApiResponse<InventoryItemResult>> manualAdjustment(
                         Authentication authentication,
                         @PathVariable String skuId,
@@ -93,7 +93,7 @@ public class InventoryItemController {
 
         @PostMapping("/{skuId}/{warehouseId}/lock")
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
-        @Operation(summary = "Emergency lock", description = "UC4.5")
+        @Operation(summary = "Emergency lock")
         public ResponseEntity<ApiResponse<InventoryItemResult>> emergencyLock(
                         Authentication authentication,
                         @PathVariable String skuId,
@@ -118,7 +118,7 @@ public class InventoryItemController {
 
         @PostMapping("/{skuId}/{warehouseId}/audit")
         @PreAuthorize("isAuthenticated()")
-        @Operation(summary = "Record audit", description = "UC4.12 - reconcile system count with physical count")
+        @Operation(summary = "Record audit", description = "Reconcile system count with physical count")
         public ResponseEntity<ApiResponse<InventoryItemResult>> auditInventory(
                         Authentication authentication,
                         @PathVariable String skuId,

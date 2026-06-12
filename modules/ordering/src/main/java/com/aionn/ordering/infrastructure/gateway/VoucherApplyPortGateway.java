@@ -1,0 +1,21 @@
+package com.aionn.ordering.infrastructure.gateway;
+
+import com.aionn.ordering.application.port.out.VoucherGateway;
+import com.aionn.sharedkernel.integration.port.promotion.VoucherApplyPort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+
+@Component
+@RequiredArgsConstructor
+public class VoucherApplyPortGateway implements VoucherGateway {
+
+    private final VoucherApplyPort voucherApplyPort;
+
+    @Override
+    public Discount apply(String userId, String voucherCode, BigDecimal lineSubtotal, String currency) {
+        VoucherApplyPort.Discount result = voucherApplyPort.apply(userId, voucherCode, lineSubtotal, currency);
+        return new Discount(result.amount(), result.currency(), result.applied(), result.reason());
+    }
+}

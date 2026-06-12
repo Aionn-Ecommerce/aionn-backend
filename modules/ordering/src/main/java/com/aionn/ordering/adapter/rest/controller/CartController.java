@@ -3,7 +3,11 @@ package com.aionn.ordering.adapter.rest.controller;
 import com.aionn.ordering.adapter.rest.dto.cart.AddCartItemRequest;
 import com.aionn.ordering.adapter.rest.dto.cart.ApplyVoucherRequest;
 import com.aionn.ordering.adapter.rest.dto.cart.UpdateCartItemRequest;
-import com.aionn.ordering.application.dto.cart.command.CartCommands;
+import com.aionn.ordering.application.dto.cart.command.AddItemCommand;
+import com.aionn.ordering.application.dto.cart.command.ApplyVoucherCommand;
+import com.aionn.ordering.application.dto.cart.command.ClearCartCommand;
+import com.aionn.ordering.application.dto.cart.command.RemoveItemCommand;
+import com.aionn.ordering.application.dto.cart.command.UpdateItemQtyCommand;
 import com.aionn.ordering.application.dto.cart.result.CartResult;
 import com.aionn.ordering.application.service.CartService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -41,54 +45,53 @@ public class CartController {
 
     @PostMapping("/items")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Add item", description = "UC5.1")
+    @Operation(summary = "Add item")
     public ResponseEntity<ApiResponse<CartResult>> addItem(
             Authentication authentication,
             @Valid @RequestBody AddCartItemRequest request) {
-        CartResult result = cartService.addItem(new CartCommands.AddItem(
+        CartResult result = cartService.addItem(new AddItemCommand(
                 authentication.getName(), request.skuId(), request.qty()));
         return ResponseEntity.ok(ApiResponse.success(result, "Item added"));
     }
 
     @PutMapping("/items/{skuId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Update item qty", description = "UC5.2")
+    @Operation(summary = "Update item qty")
     public ResponseEntity<ApiResponse<CartResult>> updateItem(
             Authentication authentication,
             @PathVariable String skuId,
             @Valid @RequestBody UpdateCartItemRequest request) {
-        CartResult result = cartService.updateItemQty(new CartCommands.UpdateItemQty(
+        CartResult result = cartService.updateItemQty(new UpdateItemQtyCommand(
                 authentication.getName(), skuId, request.newQty()));
         return ResponseEntity.ok(ApiResponse.success(result, "Item updated"));
     }
 
     @DeleteMapping("/items/{skuId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Remove item", description = "UC5.3")
+    @Operation(summary = "Remove item")
     public ResponseEntity<ApiResponse<CartResult>> removeItem(
             Authentication authentication,
             @PathVariable String skuId) {
-        CartResult result = cartService.removeItem(new CartCommands.RemoveItem(authentication.getName(), skuId));
+        CartResult result = cartService.removeItem(new RemoveItemCommand(authentication.getName(), skuId));
         return ResponseEntity.ok(ApiResponse.success(result, "Item removed"));
     }
 
     @DeleteMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Clear cart", description = "UC5.4")
+    @Operation(summary = "Clear cart")
     public ResponseEntity<ApiResponse<CartResult>> clearCart(Authentication authentication) {
-        CartResult result = cartService.clearCart(new CartCommands.ClearCart(authentication.getName(), "user-cleared"));
+        CartResult result = cartService.clearCart(new ClearCartCommand(authentication.getName(), "user-cleared"));
         return ResponseEntity.ok(ApiResponse.success(result, "Cart cleared"));
     }
 
     @PostMapping("/voucher")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Apply voucher", description = "UC5.5")
+    @Operation(summary = "Apply voucher")
     public ResponseEntity<ApiResponse<CartResult>> applyVoucher(
             Authentication authentication,
             @Valid @RequestBody ApplyVoucherRequest request) {
-        CartResult result = cartService.applyVoucher(new CartCommands.ApplyVoucher(
+        CartResult result = cartService.applyVoucher(new ApplyVoucherCommand(
                 authentication.getName(), request.voucherCode()));
         return ResponseEntity.ok(ApiResponse.success(result, "Voucher applied"));
     }
 }
-

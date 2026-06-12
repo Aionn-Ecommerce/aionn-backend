@@ -12,10 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * UC5.10 - cancels orders that have been pending payment longer than the
- * timeout.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

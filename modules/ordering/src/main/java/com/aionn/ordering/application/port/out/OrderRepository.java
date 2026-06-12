@@ -14,6 +14,6 @@ public interface OrderRepository {
 
     List<Order> findByUser(String userId, int limit);
 
-    /** UC5.10 sweep: order ids still PENDING past the deadline. */
+    /** Sweep: order ids still PENDING past the deadline (used by auto-cancel). */
     List<String> findPendingOrderIdsOlderThan(Instant cutoff, int limit);
 }

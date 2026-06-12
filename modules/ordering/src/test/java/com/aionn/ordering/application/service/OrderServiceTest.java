@@ -1,6 +1,6 @@
 package com.aionn.ordering.application.service;
 
-import com.aionn.ordering.application.dto.order.command.OrderCommands;
+import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
 import com.aionn.ordering.application.port.out.CartRepository;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
@@ -9,6 +9,7 @@ import com.aionn.ordering.application.port.out.PaymentGateway;
 import com.aionn.ordering.application.port.out.ShippingGateway;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
 import com.aionn.ordering.application.port.out.VoucherGateway;
+import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Order;
@@ -67,6 +68,8 @@ class OrderServiceTest {
     @Mock
     MerchantQueryPort merchantQueryPort;
     @Mock
+    OrderingIntegrationEventPublisherPort integrationEventPublisher;
+    @Mock
     OrderingProperties properties;
 
     @InjectMocks
@@ -78,7 +81,7 @@ class OrderServiceTest {
         when(merchantQueryPort.findMerchantIdByOwnerId("user-1")).thenReturn(Optional.empty());
 
         OrderingException ex = assertThrows(OrderingException.class,
-                () -> orderService.confirmPreparation(new OrderCommands.ConfirmPreparation("O_1", "user-1")));
+                () -> orderService.confirmPreparation(new ConfirmPreparationCommand("O_1", "user-1")));
 
         assertEquals(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT.getCode(), ex.getErrorCode());
         verify(orderRepository, never()).findById(any());
@@ -92,7 +95,7 @@ class OrderServiceTest {
         when(orderRepository.findById("O_1")).thenReturn(Optional.of(victim));
 
         OrderingException ex = assertThrows(OrderingException.class,
-                () -> orderService.confirmPreparation(new OrderCommands.ConfirmPreparation("O_1", "attacker")));
+                () -> orderService.confirmPreparation(new ConfirmPreparationCommand("O_1", "attacker")));
 
         assertEquals(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT.getCode(), ex.getErrorCode());
         verify(orderRepository, never()).save(any());
@@ -140,7 +143,6 @@ class OrderServiceTest {
         Order order = new Order(orderId, null, userId, merchantId, "prop", "pm",
                 "VND", List.of(item), null, Money.zero("VND"), Money.of(new BigDecimal("99000"), "VND"),
                 OrderStatus.APPROVED, "PAY_1", null, Instant.now(), Instant.now(), null, null);
-        // Drain any pending domain events so verify(eventPublisher) is clean.
         order.pullEvents();
         return order;
     }

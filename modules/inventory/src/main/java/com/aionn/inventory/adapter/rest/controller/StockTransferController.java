@@ -33,7 +33,7 @@ public class StockTransferController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Initiate transfer", description = "UC4.9")
+    @Operation(summary = "Initiate transfer")
     public ResponseEntity<ApiResponse<StockTransferResult>> initiate(
             Authentication authentication,
             @Valid @RequestBody InitiateTransferRequest request) {
@@ -45,7 +45,7 @@ public class StockTransferController {
 
     @PostMapping("/{transferId}/complete")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Complete transfer", description = "UC4.10")
+    @Operation(summary = "Complete transfer")
     public ResponseEntity<ApiResponse<StockTransferResult>> complete(
             Authentication authentication,
             @PathVariable String transferId,

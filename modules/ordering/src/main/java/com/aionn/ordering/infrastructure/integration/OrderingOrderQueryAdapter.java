@@ -10,16 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * In-process adapter for the cross-context {@link OrderQueryPort}. Other
- * modules (e.g. catalog when closing a merchant) ask whether a merchant has
- * any non-terminal orders, and we answer by hitting the existing
- * {@code orders} table directly through Spring Data JPA.
- *
- * <p>
- * Lives in the ordering module so the JPA repository stays internal — the
- * caller only sees the shared-kernel port.
- */
 @Component
 @RequiredArgsConstructor
 public class OrderingOrderQueryAdapter implements OrderQueryPort {

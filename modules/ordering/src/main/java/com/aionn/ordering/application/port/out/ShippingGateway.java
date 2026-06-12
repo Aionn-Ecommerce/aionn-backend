@@ -5,9 +5,8 @@ import com.aionn.ordering.domain.valueobject.ShippingAddress;
 import java.math.BigDecimal;
 
 /**
- * Outbound port for shipping. Used to quote shipping fees on shipping-info
- * change and to dispatch a shipment when an order moves to PREPARING. Same
- * 2-impl pattern as the other external integrations.
+ * Outbound port for shipping quote / dispatch when the order is placed or
+ * shipping info is changed.
  */
 public interface ShippingGateway {
 
@@ -18,4 +17,3 @@ public interface ShippingGateway {
     record ShippingQuote(BigDecimal fee, String currency) {
     }
 }
-
