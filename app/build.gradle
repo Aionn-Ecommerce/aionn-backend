@@ -45,3 +45,9 @@ dependencies {
     testImplementation(testFixtures(project(':shared-kernel')))
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+
+bootRun {
+    // Run from the repo root so dotenv-java picks up the shared `.env`.
+    workingDir = rootProject.projectDir
+}

@@ -1,0 +1,10 @@
+# UCP module configuration. Reads keypair + signing config from environment.
+ucp:
+  profile:
+    name: ${UCP_PROFILE_NAME:aionn-ucp}
+    version: ${UCP_PROFILE_VERSION:1.0}
+  signature:
+    enforce: ${UCP_SIGNATURE_ENFORCE:false}
+    key-id: ${UCP_KEY_ID:aionn-ucp-1}
+    private-key-pem: ${UCP_PRIVATE_KEY_PEM:}
+    public-key-pem: ${UCP_PUBLIC_KEY_PEM:}
