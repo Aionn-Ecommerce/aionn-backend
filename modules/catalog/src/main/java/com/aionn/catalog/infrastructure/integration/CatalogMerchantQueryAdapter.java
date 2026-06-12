@@ -23,4 +23,13 @@ public class CatalogMerchantQueryAdapter implements MerchantQueryPort {
         }
         return merchantRepository.findByOwnerId(ownerId).map(Merchant::getMerchantId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> findOwnerIdByMerchantId(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) {
+            return Optional.empty();
+        }
+        return merchantRepository.findById(merchantId).map(Merchant::getOwnerId);
+    }
 }
