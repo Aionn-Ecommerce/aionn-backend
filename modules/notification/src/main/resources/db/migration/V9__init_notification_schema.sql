@@ -139,3 +139,28 @@ VALUES
  NULL,
  'Aionn: ma OTP dang ky cua ban la {{otpCode}}. Hieu luc 5 phut. Khong chia se voi ai.',
  '["otpCode"]'::jsonb, 1, TRUE);
+
+
+-- ---------------------------------------------------------------------
+-- Chat -> notification fan-out templates. Triggered by
+-- MessageSentIntegrationEvent for offline recipients only.
+-- ---------------------------------------------------------------------
+INSERT INTO notification_templates (template_id, event_type, channel, category, locale, subject, content, placeholders, version, is_active)
+VALUES
+('chat_msg_in_app_vi',
+ 'chat.message-received', 'IN_APP', 'CHAT', 'vi-VN',
+ '{{senderName}} vừa gửi tin nhắn',
+ '{{messagePreview}}',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE),
+
+('chat_msg_email_vi',
+ 'chat.message-received', 'EMAIL', 'CHAT', 'vi-VN',
+ 'Tin nhắn mới từ {{senderName}}',
+ '{{senderName}} đã gửi cho bạn một tin nhắn:\n\n{{messagePreview}}\n\nMở Aionn để trả lời.',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE),
+
+('chat_msg_push_vi',
+ 'chat.message-received', 'PUSH', 'CHAT', 'vi-VN',
+ '{{senderName}}',
+ '{{messagePreview}}',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE);

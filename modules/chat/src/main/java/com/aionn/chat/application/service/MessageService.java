@@ -3,14 +3,13 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.message.command.MessageCommands;
 import com.aionn.chat.application.dto.message.result.MessageResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.ChatPushNotifier;
 import com.aionn.chat.application.port.out.ConversationRepository;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
 import com.aionn.chat.application.port.out.MessageRepository;
 import com.aionn.chat.application.port.out.PresenceTracker;
 import com.aionn.chat.application.port.out.RealtimeBroadcaster;
 import com.aionn.chat.application.port.out.UserBlockRepository;
+import com.aionn.chat.application.port.out.integration.ChatIntegrationEventPublisherPort;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.Conversation;
@@ -20,6 +19,7 @@ import com.aionn.chat.domain.valueobject.MessagePayload;
 import com.aionn.chat.domain.valueobject.MessageType;
 import com.aionn.chat.domain.valueobject.Participant;
 import com.aionn.chat.domain.valueobject.ParticipantRole;
+import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +37,8 @@ import java.util.Set;
 @Transactional
 public class MessageService {
 
+    private static final String DEFAULT_AWAY_MESSAGE = "Hiện tại shop đang ngoài giờ làm việc, sẽ phản hồi bạn sớm nhất.";
+
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final UserBlockRepository userBlockRepository;
@@ -45,7 +47,7 @@ public class MessageService {
     private final EventPublisher eventPublisher;
     private final RealtimeBroadcaster broadcaster;
     private final PresenceTracker presenceTracker;
-    private final ChatPushNotifier pushNotifier;
+    private final ChatIntegrationEventPublisherPort integrationEventPublisher;
 
     public MessageResult send(MessageCommands.SendMessage command) {
         Conversation conversation = conversationRepository.findById(command.conversationId())
@@ -75,13 +77,19 @@ public class MessageService {
         MessageResult result = mapper.toResult(savedMessage);
         broadcaster.broadcastMessage(result, recipients);
 
-        // Offline push fan-out + auto-reply (only if buyer is the sender)
+        // Fan-out fallback notification for offline recipients only - online
+        // ones already received the STOMP frame above.
         Set<String> onlineRecipients = presenceTracker.filterOnline(new HashSet<>(recipients));
+        String senderDisplayName = sender.displayName() == null ? sender.userId() : sender.displayName();
         for (String recipientId : recipients) {
             if (!onlineRecipients.contains(recipientId)) {
-                pushNotifier.notifyOffline(recipientId, conversation.getConversationId(),
-                        sender.displayName() == null ? sender.userId() : sender.displayName(),
-                        message.previewBody());
+                integrationEventPublisher.publishMessageSent(
+                        conversation.getConversationId(),
+                        savedMessage.getMessageId(),
+                        command.senderId(),
+                        recipientId,
+                        senderDisplayName,
+                        savedMessage.previewBody());
             }
         }
         triggerAutoReplyIfApplicable(savedConversation, sender, savedMessage);
@@ -90,6 +98,7 @@ public class MessageService {
 
     public MessageResult markDelivered(MessageCommands.DeliverMessage command) {
         Message m = required(command.messageId());
+        ensureCallerIsParticipant(m, command.userId());
         m.markDeliveredTo(command.userId());
         Message saved = messageRepository.save(m);
         eventPublisher.publish(m.pullEvents());
@@ -98,6 +107,7 @@ public class MessageService {
 
     public MessageResult markRead(MessageCommands.ReadMessage command) {
         Message m = required(command.messageId());
+        ensureCallerIsParticipant(m, command.userId());
         m.markReadBy(command.userId());
         Message saved = messageRepository.save(m);
         eventPublisher.publish(m.pullEvents());
@@ -106,6 +116,7 @@ public class MessageService {
 
     public MessageResult recall(MessageCommands.RecallMessage command) {
         Message m = required(command.messageId());
+        ensureCallerIsParticipant(m, command.userId());
         m.recall(command.userId());
         Message saved = messageRepository.save(m);
         eventPublisher.publish(m.pullEvents());
@@ -154,6 +165,12 @@ public class MessageService {
                 .orElseThrow(() -> new ChatException(ChatErrorCode.MESSAGE_NOT_FOUND));
     }
 
+    private void ensureCallerIsParticipant(Message message, String userId) {
+        Conversation conversation = conversationRepository.findById(message.getConversationId())
+                .orElseThrow(() -> new ChatException(ChatErrorCode.CONVERSATION_NOT_FOUND));
+        conversation.requireParticipant(userId);
+    }
+
     private void triggerAutoReplyIfApplicable(Conversation conversation, Participant sender, Message original) {
         if (sender.role() != ParticipantRole.BUYER)
             return;
@@ -166,7 +183,7 @@ public class MessageService {
         if (autoReply.isWithinWorkingHours(Instant.now()))
             return;
         String replyBody = autoReply.getAwayMessage() == null
-                ? "Hiá»‡n táº¡i shop Ä‘ang ngoÃ i giá» lÃ m viá»‡c, sáº½ pháº£n há»“i báº¡n sá»›m nháº¥t."
+                ? DEFAULT_AWAY_MESSAGE
                 : autoReply.getAwayMessage();
         Participant merchantParticipant = conversation.requireParticipant(conversation.getMerchantId());
         Message reply = Message.send(IdGenerator.ulid(), conversation.getConversationId(),
@@ -183,4 +200,3 @@ public class MessageService {
                 conversation.recipientsExcept(conversation.getMerchantId()));
     }
 }
-

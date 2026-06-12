@@ -12,6 +12,7 @@ public final class AutoReplyCommands {
     }
 
     public record UpdateAutoReply(
+            String ownerId,
             String merchantId,
             boolean enabled,
             String greeting,

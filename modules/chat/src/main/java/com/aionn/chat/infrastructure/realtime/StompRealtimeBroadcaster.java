@@ -15,7 +15,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "chat.realtime", name = "provider", havingValue = "stomp", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "chat.realtime", name = "provider", havingValue = "stomp")
 public class StompRealtimeBroadcaster implements RealtimeBroadcaster {
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -56,4 +56,3 @@ public class StompRealtimeBroadcaster implements RealtimeBroadcaster {
         messagingTemplate.convertAndSend("/topic/conversations/" + conversationId, payload);
     }
 }
-

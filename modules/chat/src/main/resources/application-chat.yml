@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: chat
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+chat:
+  attachment:
+    max-size-mb: ${CHAT_ATTACHMENT_MAX_SIZE_MB:10}
+
+  websocket:
+    allowed-origins: ${CHAT_WS_ALLOWED_ORIGINS:http://localhost:3000}
+    client-heartbeat-ms: ${CHAT_WS_CLIENT_HEARTBEAT_MS:10000}
+    server-heartbeat-ms: ${CHAT_WS_SERVER_HEARTBEAT_MS:10000}
+  realtime:
+    provider: ${CHAT_REALTIME_PROVIDER:stomp}
+
+  presence:
+    provider: ${CHAT_PRESENCE_PROVIDER:redis}

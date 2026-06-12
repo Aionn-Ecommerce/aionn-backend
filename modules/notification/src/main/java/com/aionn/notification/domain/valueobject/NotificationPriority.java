@@ -14,9 +14,8 @@ public enum NotificationPriority {
         return switch (category) {
             case SECURITY -> CRITICAL;
             case TRANSACTION, SHIPPING -> HIGH;
-            case SYSTEM -> NORMAL;
+            case CHAT, SYSTEM -> NORMAL;
             case PROMOTION -> LOW;
         };
     }
 }
-
