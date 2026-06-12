@@ -9,11 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-/**
- * In-process bridge so other modules can resolve a caller's merchantId via
- * the shared-kernel port instead of importing catalog's internal repository.
- * Mirrors the {@code OrderingOrderQueryAdapter} pattern.
- */
 @Component
 @RequiredArgsConstructor
 public class CatalogMerchantQueryAdapter implements MerchantQueryPort {

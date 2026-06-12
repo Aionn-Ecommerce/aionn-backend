@@ -15,14 +15,8 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface InventoryResultMapper {
 
-    /** Status enum auto-converts to its {@code name()} string. */
     WarehouseResult toResult(Warehouse warehouse);
 
-    /**
-     * The composite {@code key} value object is flattened into the DTO and the
-     * computed {@code reservedQty()} is wired in via expression because it has
-     * no JavaBean getter.
-     */
     @Mapping(target = "skuId", source = "key.skuId")
     @Mapping(target = "warehouseId", source = "key.warehouseId")
     @Mapping(target = "reservedQty", expression = "java(item.reservedQty())")

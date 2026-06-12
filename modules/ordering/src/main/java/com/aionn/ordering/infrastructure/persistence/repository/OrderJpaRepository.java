@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {
 
-  /** Eagerly fetch items so the domain mapper can run after the tx closes. */
   @Override
   @EntityGraph(attributePaths = "items")
   Optional<OrderEntity> findById(String orderId);
@@ -21,9 +21,8 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {
   List<OrderEntity> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
   /**
-   * Returns just the order ids of pending orders past the cutoff.
-   * The auto-cancel sweep re-loads each one inside a per-row tx via the
-   * worker, so we deliberately do NOT pull items here.
+   * Auto-cancel sweep returns ids only; the worker re-loads each one in its own
+   * tx.
    */
   @Query("""
       SELECT o.orderId FROM OrderEntity o
@@ -33,10 +32,5 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {
       """)
   List<String> findPendingOrderIdsOlderThan(Instant cutoff, Pageable pageable);
 
-  /**
-   * True if the merchant has at least one order whose status is not in the
-   * supplied terminal set. Backed by {@code idx_orders_merchant} so the
-   * lookup is O(log N) even with millions of historic rows.
-   */
-  boolean existsByMerchantIdAndStatusNotIn(String merchantId, java.util.Collection<String> terminalStatuses);
+  boolean existsByMerchantIdAndStatusNotIn(String merchantId, Collection<String> terminalStatuses);
 }

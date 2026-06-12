@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/** In-process bridge to the Inventory module. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,7 +35,6 @@ public class InventoryStockReservationGateway implements StockReservationGateway
             }
             return created;
         } catch (RuntimeException ex) {
-            // Compensate already-created reservations on failure.
             for (Reservation r : created) {
                 try {
                     reservationService.release(new ReleaseReservationCommand(

@@ -11,20 +11,17 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "ordering")
 public record OrderingProperties(
-        @NotNull @Valid @DefaultValue Reservation reservation,
-        @NotNull @Valid @DefaultValue AutoCancel autoCancel) {
+                @NotNull @Valid @DefaultValue Reservation reservation,
+                @NotNull @Valid @DefaultValue AutoCancel autoCancel) {
 
-    public record Reservation(
-            // 24h default keeps reservations alive long enough for a
-            // realistic merchant prep + carrier handoff window. Tune via
-            // ORDERING_RESERVATION_TTL_SECONDS in prod.
-            @Min(60) @Max(7 * 24 * 3600) @DefaultValue("86400") int ttlSeconds) {
-    }
+        public record Reservation(
+                        @Min(60) @Max(7 * 24 * 3600) @DefaultValue("86400") int ttlSeconds) {
+        }
 
-    public record AutoCancel(
-            @DefaultValue("true") boolean enabled,
-            @Min(1) @Max(1440) @DefaultValue("15") int timeoutMinutes,
-            @Min(1000) @Max(3_600_000) @DefaultValue("60000") long delayMs,
-            @Min(1) @Max(1000) @DefaultValue("100") int batchSize) {
-    }
+        public record AutoCancel(
+                        @DefaultValue("true") boolean enabled,
+                        @Min(1) @Max(1440) @DefaultValue("15") int timeoutMinutes,
+                        @Min(1000) @Max(3_600_000) @DefaultValue("60000") long delayMs,
+                        @Min(1) @Max(1000) @DefaultValue("100") int batchSize) {
+        }
 }

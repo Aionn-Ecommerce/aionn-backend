@@ -12,10 +12,5 @@ public interface StockReservationRepository {
 
     Optional<StockReservation> findById(String reservationId);
 
-    /**
-     * Find every RESERVED row whose {@code expiresAt} is at or before
-     * {@code now}. Used by the periodic auto-release sweep (UC4.20).
-     */
     List<StockReservation> findExpired(Instant now, int limit);
 }
-

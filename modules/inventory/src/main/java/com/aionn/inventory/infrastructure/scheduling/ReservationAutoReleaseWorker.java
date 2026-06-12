@@ -13,7 +13,6 @@ public class ReservationAutoReleaseWorker {
 
     private final StockReservationService reservationService;
 
-    /** REQUIRES_NEW so a single failure does not poison the batch (audit B6). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void releaseOne(String reservationId) {
         reservationService.release(new ReleaseReservationCommand(reservationId, "expired"));

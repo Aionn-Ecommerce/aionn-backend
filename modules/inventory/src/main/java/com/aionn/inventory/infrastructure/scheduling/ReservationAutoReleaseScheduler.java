@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 
-/** UC4.20 - sweep expired RESERVED reservations and release them. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

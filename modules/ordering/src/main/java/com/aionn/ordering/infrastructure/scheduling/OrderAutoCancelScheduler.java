@@ -14,9 +14,7 @@ import java.util.List;
 
 /**
  * UC5.10 - cancels orders that have been pending payment longer than the
- * configured timeout. Each cancel runs in its own transaction via
- * {@link OrderAutoCancelWorker} so a single failure does not roll back the
- * entire batch.
+ * timeout.
  */
 @Slf4j
 @Component

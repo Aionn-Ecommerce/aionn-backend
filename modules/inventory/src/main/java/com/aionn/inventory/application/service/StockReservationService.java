@@ -92,7 +92,7 @@ public class StockReservationService {
                 eventPublisher.publish(reservation.pullEvents());
                 eventPublisher.publish(item.pullEvents());
                 eventPublisher.publish(outbound.pullEvents());
-                outboundOrderNotifier.notifyOutbound(reservation.getOrderId(),
+                outboundOrderNotifier.notifyOutbound(reservation.getOrderId(), reservation.getReservationId(),
                                 reservation.getSkuId(), reservation.getWarehouseId(), reservation.getQty());
                 return mapper.toResult(saved);
         }

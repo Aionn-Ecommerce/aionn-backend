@@ -56,7 +56,6 @@ public class OrderService {
             throw new OrderingException(OrderingErrorCode.CART_EMPTY);
         }
 
-        // 1. Resolve current SKU prices/availability from Catalog (UC5.7)
         List<String> skuIds = cart.snapshot().stream().map(Map.Entry::getKey).toList();
         Map<String, CatalogPricingGateway.SkuPricing> pricing = catalogPricingGateway.resolve(skuIds);
 
@@ -68,8 +67,6 @@ public class OrderService {
             }
         }
 
-        // Single-merchant check + currency parity. Multi-merchant carts trigger
-        // UC5.12 split which is owned by a separate orchestrator path.
         CatalogPricingGateway.SkuPricing first = pricing.values().iterator().next();
         String merchantId = first.merchantId();
         String pricingCurrency = first.currency();
@@ -92,7 +89,6 @@ public class OrderService {
         }
         String currency = pricingCurrency;
 
-        // 2. Reserve all lines via Inventory.
         List<StockReservationGateway.ReservationLine> reservationLines = cart.snapshot().stream()
                 .map(line -> {
                     CatalogPricingGateway.SkuPricing p = pricing.get(line.getKey());
@@ -109,7 +105,6 @@ public class OrderService {
                     "Reservation failed for SKU " + ex.getSkuId() + ": " + ex.getMessage());
         }
 
-        // 3. Build order line items
         List<OrderItem> items = new ArrayList<>(reservations.size());
         Money lineSubtotal = Money.zero(currency);
         for (StockReservationGateway.Reservation r : reservations) {
@@ -118,7 +113,6 @@ public class OrderService {
             lineSubtotal = lineSubtotal.add(unit.multiply(r.qty()));
         }
 
-        // 4. Apply voucher discount if present
         if (cart.getVoucherCode() != null) {
             VoucherGateway.Discount discount = voucherGateway.apply(
                     command.userId(), cart.getVoucherCode(), lineSubtotal.amount(), currency);
@@ -136,7 +130,6 @@ public class OrderService {
                 : Money.of(command.shippingFee(), currency);
         Money totalAmount = lineSubtotal.add(shippingFee);
 
-        // 5. Authorize payment
         PaymentGateway.PaymentAuthorization auth;
         try {
             auth = paymentGateway.authorize(IdGenerator.ulid(), command.userId(),
@@ -152,8 +145,6 @@ public class OrderService {
                     "Payment declined: " + auth.declineReason());
         }
 
-        // 6. Persist Order, transition to APPROVED immediately (synchronous saga happy
-        // path).
         String orderId = IdGenerator.ulid();
         String proposalId = "prop-" + System.nanoTime();
         Order order = Order.place(orderId, command.userId(), merchantId, proposalId,
@@ -163,7 +154,6 @@ public class OrderService {
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
 
-        // 7. Clear the cart
         Cart freshCart = cartService.loadOwned(command.userId());
         freshCart.clear("order-placed");
         cartRepository.save(freshCart);
@@ -257,7 +247,6 @@ public class OrderService {
         if (order.getUserId().equals(requesterUserId)) {
             return mapper.toResult(order);
         }
-        // Allow access if the requester owns the merchant on the order.
         String requesterMerchantId = merchantQueryPort.findMerchantIdByOwnerId(requesterUserId).orElse(null);
         if (requesterMerchantId != null && requesterMerchantId.equals(order.getMerchantId())) {
             return mapper.toResult(order);

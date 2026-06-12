@@ -13,10 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Per-row {@link Propagation#REQUIRES_NEW} worker so a single order's
- * auto-cancel failure does not poison the whole batch transaction (audit B6).
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,6 +22,7 @@ public class OrderAutoCancelWorker {
     private final StockReservationGateway stockReservationGateway;
     private final EventPublisher eventPublisher;
 
+    /** REQUIRES_NEW so a single failure does not poison the batch (audit B6). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelOneExpired(String orderId) {
         Order order = orderRepository.findById(orderId)
@@ -35,8 +32,6 @@ public class OrderAutoCancelWorker {
             try {
                 stockReservationGateway.release(item.reservationId(), "auto-cancel");
             } catch (RuntimeException ex) {
-                // Reservation may already be auto-released by inventory's own
-                // sweep; treat as idempotent so the order still reaches CANCELLED.
                 log.warn("Auto-cancel: reservation {} release failed: {}", item.reservationId(), ex.getMessage());
             }
         }

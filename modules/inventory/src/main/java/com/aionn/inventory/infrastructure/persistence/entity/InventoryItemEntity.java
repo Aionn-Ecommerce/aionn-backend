@@ -22,7 +22,6 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "inventory_items", indexes = {
-        @Index(name = "idx_inventory_sku", columnList = "sku_id"),
         @Index(name = "idx_inventory_warehouse", columnList = "warehouse_id")
 })
 @Getter
@@ -79,4 +78,3 @@ public class InventoryItemEntity {
         private String warehouseId;
     }
 }
-
