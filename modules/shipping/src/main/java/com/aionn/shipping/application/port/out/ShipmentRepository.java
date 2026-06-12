@@ -14,5 +14,10 @@ public interface ShipmentRepository {
     Optional<Shipment> findByTrackingCode(String trackingCode);
 
     List<Shipment> findByOrderId(String orderId);
-}
 
+    /**
+     * Shipments that still need carrier polling (have a tracking code and are
+     * not yet in a terminal state).
+     */
+    List<Shipment> findActiveTracking(int batchSize);
+}
