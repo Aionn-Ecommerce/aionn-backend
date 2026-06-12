@@ -40,7 +40,7 @@ public class WarehouseController {
             Authentication authentication,
             @Valid @RequestBody CreateWarehouseRequest request) {
         WarehouseResult result = warehouseService.create(new WarehouseCommands.CreateWarehouse(
-                request.merchantId(), request.address(), request.priorityLevel()));
+                authentication.getName(), request.address(), request.priorityLevel()));
         return ApiResponse.createdResponse("Warehouse created", result);
     }
 
@@ -101,8 +101,7 @@ public class WarehouseController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List my warehouses", description = "Returns warehouses owned by the caller, ordered by priority")
     public ResponseEntity<ApiResponse<List<WarehouseResult>>> listMine(Authentication authentication) {
-        List<WarehouseResult> results = warehouseService.listByMerchant(authentication.getName());
+        List<WarehouseResult> results = warehouseService.listByOwner(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(results, "Warehouses fetched"));
     }
 }
-

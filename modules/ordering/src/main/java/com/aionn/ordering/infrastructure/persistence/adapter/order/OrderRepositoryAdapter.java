@@ -40,10 +40,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
-    public List<Order> findPendingOlderThan(Instant cutoff, int limit) {
-        return jpa.findPendingOlderThan(cutoff, PageRequest.of(0, Math.max(1, limit))).stream()
-                .map(mapper::toDomain)
-                .toList();
+    public List<String> findPendingOrderIdsOlderThan(Instant cutoff, int limit) {
+        return jpa.findPendingOrderIdsOlderThan(cutoff, PageRequest.of(0, Math.max(1, limit)));
     }
 }
-

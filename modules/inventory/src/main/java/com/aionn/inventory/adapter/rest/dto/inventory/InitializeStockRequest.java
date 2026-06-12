@@ -4,9 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 public record InitializeStockRequest(
-        @NotBlank String merchantId,
-        @NotBlank String skuId,
-        @NotBlank String warehouseId,
-        @Min(0) int initialQty) {
+                @NotBlank String skuId,
+                @NotBlank String warehouseId,
+                @Min(0) int initialQty) {
 }
-

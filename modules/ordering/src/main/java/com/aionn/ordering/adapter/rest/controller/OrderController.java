@@ -56,10 +56,11 @@ public class OrderController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant confirms preparation", description = "UC5.8")
     public ResponseEntity<ApiResponse<OrderResult>> confirmPreparation(
+            Authentication authentication,
             @PathVariable String orderId,
-            @Valid @RequestBody ConfirmPreparationRequest request) {
+            @Valid @RequestBody(required = false) ConfirmPreparationRequest request) {
         OrderResult result = orderService.confirmPreparation(
-                new OrderCommands.ConfirmPreparation(orderId, request.merchantId()));
+                new OrderCommands.ConfirmPreparation(orderId, authentication.getName()));
         return ResponseEntity.ok(ApiResponse.success(result, "Preparation confirmed"));
     }
 
@@ -79,10 +80,11 @@ public class OrderController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant reject", description = "UC5.13")
     public ResponseEntity<ApiResponse<OrderResult>> reject(
+            Authentication authentication,
             @PathVariable String orderId,
             @Valid @RequestBody RejectOrderRequest request) {
         OrderResult result = orderService.rejectByMerchant(new OrderCommands.RejectOrder(
-                orderId, request.merchantId(), request.reason()));
+                orderId, authentication.getName(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Order rejected"));
     }
 
@@ -99,7 +101,7 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/ship")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
     @Operation(summary = "Mark shipped", description = "Triggered by Shipping context once carrier collects")
     public ResponseEntity<ApiResponse<OrderResult>> ship(
             @PathVariable String orderId,
@@ -109,7 +111,7 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/complete")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
     @Operation(summary = "Complete order", description = "UC5.11 - shipment delivered")
     public ResponseEntity<ApiResponse<OrderResult>> complete(@PathVariable String orderId) {
         OrderResult result = orderService.complete(new OrderCommands.ConfirmDelivered(orderId));
@@ -119,8 +121,11 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get order")
-    public ResponseEntity<ApiResponse<OrderResult>> get(@PathVariable String orderId) {
-        return ResponseEntity.ok(ApiResponse.success(orderService.get(orderId), "Order fetched"));
+    public ResponseEntity<ApiResponse<OrderResult>> get(
+            Authentication authentication,
+            @PathVariable String orderId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                orderService.getForRequester(orderId, authentication.getName()), "Order fetched"));
     }
 
     @GetMapping

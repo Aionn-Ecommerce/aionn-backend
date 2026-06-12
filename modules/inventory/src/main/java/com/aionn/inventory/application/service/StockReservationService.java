@@ -23,15 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class StockReservationService {
-
-    private static final int DEFAULT_AUTO_RELEASE_BATCH = 100;
 
     private final InventoryItemRepository itemRepository;
     private final StockReservationRepository reservationRepository;
@@ -46,8 +43,6 @@ public class StockReservationService {
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
         if (item.isLocked() || item.getAvailableQty() < command.qty()) {
-            // Persist a FAILED reservation so the event is auditable, then
-            // notify Ordering so the cart proposal can be rejected.
             String reason = item.isLocked() ? "Inventory locked" : "Insufficient stock";
             StockReservation failed = StockReservation.failed(IdGenerator.ulid(),
                     command.skuId(), command.warehouseId(), command.qty(), reason);
@@ -120,26 +115,9 @@ public class StockReservationService {
         return mapper.toResult(saved);
     }
 
-    
-    public int autoReleaseExpired(Instant now, int batchSize) {
-        int limit = batchSize > 0 ? batchSize : DEFAULT_AUTO_RELEASE_BATCH;
-        List<StockReservation> expired = reservationRepository.findExpired(now, limit);
-        int released = 0;
-        for (StockReservation reservation : expired) {
-            try {
-                release(new ReservationCommands.ReleaseReservation(reservation.getReservationId(), "expired"));
-                released++;
-            } catch (InventoryException ex) {
-                log.warn("Skip expired reservation {}: {}", reservation.getReservationId(), ex.getMessage());
-            }
-        }
-        return released;
-    }
-
     @Transactional(readOnly = true)
     public ReservationResult get(String reservationId) {
         return mapper.toResult(reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND)));
     }
 }
-

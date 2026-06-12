@@ -8,62 +8,27 @@ import com.aionn.inventory.domain.model.InventoryItem;
 import com.aionn.inventory.domain.model.StockReservation;
 import com.aionn.inventory.domain.model.StockTransfer;
 import com.aionn.inventory.domain.model.Warehouse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class InventoryResultMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface InventoryResultMapper {
 
-    public WarehouseResult toResult(Warehouse warehouse) {
-        return new WarehouseResult(
-                warehouse.getWarehouseId(),
-                warehouse.getMerchantId(),
-                warehouse.getAddress(),
-                warehouse.getPriorityLevel(),
-                warehouse.getStatus().name(),
-                warehouse.getCreatedAt(),
-                warehouse.getUpdatedAt());
-    }
+    /** Status enum auto-converts to its {@code name()} string. */
+    WarehouseResult toResult(Warehouse warehouse);
 
-    public InventoryItemResult toResult(InventoryItem item) {
-        return new InventoryItemResult(
-                item.getKey().skuId(),
-                item.getKey().warehouseId(),
-                item.getPhysicalQty(),
-                item.getAvailableQty(),
-                item.reservedQty(),
-                item.getSafetyStockQty(),
-                item.isLocked(),
-                item.getBatchNo(),
-                item.getExpiryDate(),
-                item.getCreatedAt(),
-                item.getUpdatedAt());
-    }
+    /**
+     * The composite {@code key} value object is flattened into the DTO and the
+     * computed {@code reservedQty()} is wired in via expression because it has
+     * no JavaBean getter.
+     */
+    @Mapping(target = "skuId", source = "key.skuId")
+    @Mapping(target = "warehouseId", source = "key.warehouseId")
+    @Mapping(target = "reservedQty", expression = "java(item.reservedQty())")
+    InventoryItemResult toResult(InventoryItem item);
 
-    public StockTransferResult toResult(StockTransfer transfer) {
-        return new StockTransferResult(
-                transfer.getTransferId(),
-                transfer.getMerchantId(),
-                transfer.getFromWarehouseId(),
-                transfer.getToWarehouseId(),
-                transfer.getSkuId(),
-                transfer.getQty(),
-                transfer.getStatus().name(),
-                transfer.getInitiatedAt(),
-                transfer.getCompletedAt(),
-                transfer.getCancelledAt());
-    }
+    StockTransferResult toResult(StockTransfer transfer);
 
-    public ReservationResult toResult(StockReservation reservation) {
-        return new ReservationResult(
-                reservation.getReservationId(),
-                reservation.getSkuId(),
-                reservation.getWarehouseId(),
-                reservation.getOrderId(),
-                reservation.getQty(),
-                reservation.getStatus().name(),
-                reservation.getReservedAt(),
-                reservation.getExpiresAt(),
-                reservation.getDecidedAt());
-    }
+    ReservationResult toResult(StockReservation reservation);
 }
-

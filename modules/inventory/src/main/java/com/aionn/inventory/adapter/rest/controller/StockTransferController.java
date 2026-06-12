@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,9 +33,10 @@ public class StockTransferController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Initiate transfer", description = "UC4.9")
     public ResponseEntity<ApiResponse<StockTransferResult>> initiate(
+            Authentication authentication,
             @Valid @RequestBody InitiateTransferRequest request) {
         StockTransferResult result = transferService.initiate(new StockTransferCommands.InitiateTransfer(
-                request.merchantId(), request.fromWarehouseId(), request.toWarehouseId(),
+                authentication.getName(), request.fromWarehouseId(), request.toWarehouseId(),
                 request.skuId(), request.qty()));
         return ApiResponse.createdResponse("Transfer initiated", result);
     }
@@ -43,10 +45,11 @@ public class StockTransferController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Complete transfer", description = "UC4.10")
     public ResponseEntity<ApiResponse<StockTransferResult>> complete(
+            Authentication authentication,
             @PathVariable String transferId,
             @Valid @RequestBody CompleteTransferRequest request) {
         StockTransferResult result = transferService.complete(new StockTransferCommands.CompleteTransfer(
-                request.merchantId(), transferId, request.receivedQty()));
+                authentication.getName(), transferId, request.receivedQty()));
         return ResponseEntity.ok(ApiResponse.success(result, "Transfer completed"));
     }
 
@@ -54,10 +57,11 @@ public class StockTransferController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel transfer", description = "Cancel an in-flight transfer; refunds source")
     public ResponseEntity<ApiResponse<StockTransferResult>> cancel(
+            Authentication authentication,
             @PathVariable String transferId,
             @Valid @RequestBody CancelTransferRequest request) {
         StockTransferResult result = transferService.cancel(new StockTransferCommands.CancelTransfer(
-                request.merchantId(), transferId, request.reason()));
+                authentication.getName(), transferId, request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Transfer cancelled"));
     }
 
@@ -67,4 +71,3 @@ public class StockTransferController {
         return ResponseEntity.ok(ApiResponse.success(transferService.get(transferId), "Transfer fetched"));
     }
 }
-

@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,11 +46,12 @@ public class OrderReturnController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant approve return", description = "UC5.16")
     public ResponseEntity<ApiResponse<ReturnResult>> approve(
+            Authentication authentication,
             @PathVariable String returnId,
-            @RequestParam String merchantId,
             @Valid @RequestBody ApproveReturnRequest request) {
         ReturnResult result = returnService.approve(new ReturnCommands.ApproveReturn(
-                returnId, merchantId, request.refundAmount(), request.currency(), request.returnWarehouseId()));
+                returnId, authentication.getName(),
+                request.refundAmount(), request.currency(), request.returnWarehouseId()));
         return ResponseEntity.ok(ApiResponse.success(result, "Return approved"));
     }
 
@@ -59,11 +59,11 @@ public class OrderReturnController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant reject return", description = "UC5.17")
     public ResponseEntity<ApiResponse<ReturnResult>> reject(
+            Authentication authentication,
             @PathVariable String returnId,
-            @RequestParam String merchantId,
             @Valid @RequestBody RejectReturnRequest request) {
         ReturnResult result = returnService.reject(new ReturnCommands.RejectReturn(
-                returnId, merchantId, request.reason()));
+                returnId, authentication.getName(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Return rejected"));
     }
 
@@ -71,19 +71,21 @@ public class OrderReturnController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant confirms item received", description = "UC5.18")
     public ResponseEntity<ApiResponse<ReturnResult>> confirmReceived(
+            Authentication authentication,
             @PathVariable String returnId,
-            @RequestParam String merchantId,
             @Valid @RequestBody ConfirmItemReceivedRequest request) {
         ReturnResult result = returnService.confirmItemReceived(new ReturnCommands.ConfirmItemReceived(
-                returnId, merchantId, request.itemCondition()));
+                returnId, authentication.getName(), request.itemCondition()));
         return ResponseEntity.ok(ApiResponse.success(result, "Return item received"));
     }
 
     @GetMapping("/{returnId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get return")
-    public ResponseEntity<ApiResponse<ReturnResult>> get(@PathVariable String returnId) {
-        return ResponseEntity.ok(ApiResponse.success(returnService.get(returnId), "Return fetched"));
+    public ResponseEntity<ApiResponse<ReturnResult>> get(
+            Authentication authentication,
+            @PathVariable String returnId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                returnService.getForRequester(returnId, authentication.getName()), "Return fetched"));
     }
 }
-

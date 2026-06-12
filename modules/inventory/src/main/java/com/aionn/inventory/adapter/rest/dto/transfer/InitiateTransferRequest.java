@@ -4,10 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 public record InitiateTransferRequest(
-        @NotBlank String merchantId,
-        @NotBlank String fromWarehouseId,
-        @NotBlank String toWarehouseId,
-        @NotBlank String skuId,
-        @Positive int qty) {
+                @NotBlank String fromWarehouseId,
+                @NotBlank String toWarehouseId,
+                @NotBlank String skuId,
+                @Positive int qty) {
 }
-

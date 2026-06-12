@@ -19,13 +19,13 @@ public final class OrderCommands {
                         ShippingAddress shippingAddressSnapshot) implements Command {
         }
 
-        public record ConfirmPreparation(String orderId, String merchantId) implements Command {
+        public record ConfirmPreparation(String orderId, String ownerId) implements Command {
         }
 
         public record CancelOrder(String orderId, String userId, String reason) implements Command {
         }
 
-        public record RejectOrder(String orderId, String merchantId, String reason) implements Command {
+        public record RejectOrder(String orderId, String ownerId, String reason) implements Command {
         }
 
         public record ChangeShippingInfo(
