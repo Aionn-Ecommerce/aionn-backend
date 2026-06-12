@@ -40,6 +40,9 @@ application-dev.yml
 # instruction files
 /instruction/
 
+# Firebase service-account secrets - never commit.
+*-firebase-adminsdk-*.json
+
 # local helper scripts
 /commit-helper.ps1
 /run-commits.ps1
