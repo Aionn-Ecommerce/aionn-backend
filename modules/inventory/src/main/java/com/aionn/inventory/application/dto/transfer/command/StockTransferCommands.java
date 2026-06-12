@@ -8,7 +8,7 @@ public final class StockTransferCommands {
         }
 
         public record InitiateTransfer(
-                        String merchantId,
+                        String ownerId,
                         String fromWarehouseId,
                         String toWarehouseId,
                         String skuId,
@@ -16,13 +16,13 @@ public final class StockTransferCommands {
         }
 
         public record CompleteTransfer(
-                        String merchantId,
+                        String ownerId,
                         String transferId,
                         int receivedQty) implements Command {
         }
 
         public record CancelTransfer(
-                        String merchantId,
+                        String ownerId,
                         String transferId,
                         String reason) implements Command {
         }

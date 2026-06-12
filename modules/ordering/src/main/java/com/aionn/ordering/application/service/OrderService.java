@@ -16,8 +16,10 @@ import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Cart;
 import com.aionn.ordering.domain.model.Order;
 import com.aionn.ordering.domain.model.OrderItem;
+import com.aionn.ordering.infrastructure.config.OrderingProperties;
 import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.ordering.domain.valueobject.OrderStatus;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +36,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
-
-    private static final int RESERVATION_TTL_SECONDS = 15 * 60;
 
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
@@ -48,6 +47,8 @@ public class OrderService {
     private final CatalogPricingGateway catalogPricingGateway;
     private final VoucherGateway voucherGateway;
     private final CartService cartService;
+    private final MerchantQueryPort merchantQueryPort;
+    private final OrderingProperties properties;
 
     public OrderResult placeOrder(OrderCommands.PlaceOrder command) {
         Cart cart = cartService.loadOwned(command.userId());
@@ -67,18 +68,29 @@ public class OrderService {
             }
         }
 
-        // Single-merchant check: all items must belong to the same merchant for
-        // this iteration. Multi-merchant carts trigger UC5.12 split which is
-        // owned by a separate orchestrator path; here we throw if mixed.
-        String merchantId = pricing.values().iterator().next().merchantId();
+        // Single-merchant check + currency parity. Multi-merchant carts trigger
+        // UC5.12 split which is owned by a separate orchestrator path.
+        CatalogPricingGateway.SkuPricing first = pricing.values().iterator().next();
+        String merchantId = first.merchantId();
+        String pricingCurrency = first.currency();
         for (CatalogPricingGateway.SkuPricing p : pricing.values()) {
             if (!merchantId.equals(p.merchantId())) {
                 throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
                         "Cart contains SKUs from multiple merchants - split flow not implemented");
             }
+            if (!pricingCurrency.equals(p.currency())) {
+                throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
+                        "Cart contains SKUs with mixed currencies");
+            }
         }
 
-        String currency = command.currency() != null ? command.currency() : "VND";
+        String requestCurrency = command.currency();
+        if (requestCurrency != null && !requestCurrency.equals(pricingCurrency)) {
+            throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
+                    "Request currency " + requestCurrency
+                            + " does not match catalog pricing currency " + pricingCurrency);
+        }
+        String currency = pricingCurrency;
 
         // 2. Reserve all lines via Inventory.
         List<StockReservationGateway.ReservationLine> reservationLines = cart.snapshot().stream()
@@ -89,9 +101,9 @@ public class OrderService {
                             p.price(), currency);
                 }).toList();
         List<StockReservationGateway.Reservation> reservations;
+        int ttlSeconds = properties.reservation().ttlSeconds();
         try {
-            reservations = stockReservationGateway.reserveAll(IdGenerator.ulid(), reservationLines,
-                    RESERVATION_TTL_SECONDS);
+            reservations = stockReservationGateway.reserveAll(IdGenerator.ulid(), reservationLines, ttlSeconds);
         } catch (StockReservationGateway.ReservationException ex) {
             throw new OrderingException(OrderingErrorCode.ORDER_RESERVATION_FAILED,
                     "Reservation failed for SKU " + ex.getSkuId() + ": " + ex.getMessage());
@@ -115,7 +127,6 @@ public class OrderService {
                 throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
                         "Voucher invalid: " + discount.reason());
             }
-            // discount is informational here (reflected in totalAmount through subtraction)
             BigDecimal newSubtotal = lineSubtotal.amount().subtract(discount.amount()).max(BigDecimal.ZERO);
             lineSubtotal = Money.of(newSubtotal, currency);
         }
@@ -141,17 +152,14 @@ public class OrderService {
                     "Payment declined: " + auth.declineReason());
         }
 
-        // 6. Persist Order, transition to APPROVED immediately (synchronous saga
-        // happy path).
+        // 6. Persist Order, transition to APPROVED immediately (synchronous saga happy
+        // path).
         String orderId = IdGenerator.ulid();
         String proposalId = "prop-" + System.nanoTime();
         Order order = Order.place(orderId, command.userId(), merchantId, proposalId,
                 command.paymentMethodId(), currency, items, command.shippingAddressSnapshot(), shippingFee);
         order.approve(auth.paymentId());
 
-        // After commit, reservations are held; later integration with payment
-        // success event will trigger commit/release. For now we keep them
-        // RESERVED until merchant prepares + ships (or until auto-cancel).
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
 
@@ -165,7 +173,8 @@ public class OrderService {
     }
 
     public OrderResult confirmPreparation(OrderCommands.ConfirmPreparation command) {
-        Order order = ownedByMerchant(command.orderId(), command.merchantId());
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
+        Order order = ownedByMerchant(command.orderId(), merchantId);
         order.confirmPreparation();
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
@@ -191,8 +200,9 @@ public class OrderService {
     }
 
     public OrderResult rejectByMerchant(OrderCommands.RejectOrder command) {
-        Order order = ownedByMerchant(command.orderId(), command.merchantId());
-        order.rejectByMerchant(command.merchantId(), command.reason());
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
+        Order order = ownedByMerchant(command.orderId(), merchantId);
+        order.rejectByMerchant(merchantId, command.reason());
         for (OrderItem item : order.items()) {
             stockReservationGateway.release(item.reservationId(), "merchant-rejected");
         }
@@ -225,7 +235,6 @@ public class OrderService {
     public OrderResult markShipped(OrderCommands.ConfirmShipped command) {
         Order order = required(command.orderId());
         order.markShipped(command.shipmentId());
-        // Commit reservations now that the goods are out the door.
         for (OrderItem item : order.items()) {
             stockReservationGateway.commit(item.reservationId());
         }
@@ -242,29 +251,18 @@ public class OrderService {
         return mapper.toResult(saved);
     }
 
-    
-    public int autoCancelExpired(Instant cutoff, int batchSize) {
-        List<Order> expired = orderRepository.findPendingOlderThan(cutoff, batchSize);
-        int cancelled = 0;
-        for (Order order : expired) {
-            try {
-                order.autoCancel("PAYMENT_TIMEOUT");
-                for (OrderItem item : order.items()) {
-                    stockReservationGateway.release(item.reservationId(), "auto-cancel");
-                }
-                orderRepository.save(order);
-                eventPublisher.publish(order.pullEvents());
-                cancelled++;
-            } catch (OrderingException ex) {
-                log.warn("Skip auto-cancel for {}: {}", order.getOrderId(), ex.getMessage());
-            }
-        }
-        return cancelled;
-    }
-
     @Transactional(readOnly = true)
-    public OrderResult get(String orderId) {
-        return mapper.toResult(required(orderId));
+    public OrderResult getForRequester(String orderId, String requesterUserId) {
+        Order order = required(orderId);
+        if (order.getUserId().equals(requesterUserId)) {
+            return mapper.toResult(order);
+        }
+        // Allow access if the requester owns the merchant on the order.
+        String requesterMerchantId = merchantQueryPort.findMerchantIdByOwnerId(requesterUserId).orElse(null);
+        if (requesterMerchantId != null && requesterMerchantId.equals(order.getMerchantId())) {
+            return mapper.toResult(order);
+        }
+        throw new OrderingException(OrderingErrorCode.ORDER_FORBIDDEN);
     }
 
     @Transactional(readOnly = true)
@@ -293,6 +291,12 @@ public class OrderService {
         return order;
     }
 
+    private String requireMerchantIdForOwner(String ownerId) {
+        return merchantQueryPort.findMerchantIdByOwnerId(ownerId)
+                .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT,
+                        "No merchant registered for the authenticated user"));
+    }
+
     private void releaseReservations(List<StockReservationGateway.Reservation> reservations, String reason) {
         for (StockReservationGateway.Reservation r : reservations) {
             try {
@@ -304,9 +308,7 @@ public class OrderService {
         }
     }
 
-    
     public OrderStatus statusOf(String orderId) {
         return required(orderId).getStatus();
     }
 }
-

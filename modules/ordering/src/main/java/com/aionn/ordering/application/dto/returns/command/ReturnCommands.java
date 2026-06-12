@@ -18,7 +18,7 @@ public final class ReturnCommands {
 
         public record ApproveReturn(
                         String returnId,
-                        String merchantId,
+                        String ownerId,
                         BigDecimal refundAmount,
                         String currency,
                         String returnWarehouseId) implements Command {
@@ -26,13 +26,13 @@ public final class ReturnCommands {
 
         public record RejectReturn(
                         String returnId,
-                        String merchantId,
+                        String ownerId,
                         String reason) implements Command {
         }
 
         public record ConfirmItemReceived(
                         String returnId,
-                        String merchantId,
+                        String ownerId,
                         String itemCondition) implements Command {
         }
 }

@@ -12,6 +12,7 @@ import com.aionn.ordering.domain.model.Order;
 import com.aionn.ordering.domain.model.OrderReturn;
 import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.ordering.domain.valueobject.OrderStatus;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -33,6 +35,7 @@ public class OrderReturnService {
     private final OrderReturnRepository returnRepository;
     private final OrderingResultMapper mapper;
     private final EventPublisher eventPublisher;
+    private final MerchantQueryPort merchantQueryPort;
 
     public ReturnResult requestReturn(ReturnCommands.RequestReturn command) {
         Order order = orderRepository.findById(command.orderId())
@@ -44,8 +47,9 @@ public class OrderReturnService {
             throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
                     "Returns are only allowed on COMPLETED orders");
         }
-        Instant deadline = order.getCompletedAt().plus(RETURN_WINDOW);
-        if (Instant.now().isAfter(deadline)) {
+        Instant completedAt = Objects.requireNonNull(order.getCompletedAt(),
+                "completed order must have a completedAt timestamp");
+        if (Instant.now().isAfter(completedAt.plus(RETURN_WINDOW))) {
             throw new OrderingException(OrderingErrorCode.ORDER_RETURN_WINDOW_EXPIRED);
         }
         OrderReturn r = OrderReturn.request(IdGenerator.ulid(), order.getOrderId(),
@@ -56,7 +60,7 @@ public class OrderReturnService {
     }
 
     public ReturnResult approve(ReturnCommands.ApproveReturn command) {
-        OrderReturn r = ownedByMerchant(command.returnId(), command.merchantId());
+        OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         Money refundAmount = command.refundAmount() == null
                 ? null
                 : Money.of(command.refundAmount(), command.currency() == null ? "VND" : command.currency());
@@ -67,7 +71,7 @@ public class OrderReturnService {
     }
 
     public ReturnResult reject(ReturnCommands.RejectReturn command) {
-        OrderReturn r = ownedByMerchant(command.returnId(), command.merchantId());
+        OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         r.reject(command.reason());
         OrderReturn saved = returnRepository.save(r);
         eventPublisher.publish(r.pullEvents());
@@ -75,7 +79,7 @@ public class OrderReturnService {
     }
 
     public ReturnResult confirmItemReceived(ReturnCommands.ConfirmItemReceived command) {
-        OrderReturn r = ownedByMerchant(command.returnId(), command.merchantId());
+        OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         r.confirmReceived(command.itemCondition());
         OrderReturn saved = returnRepository.save(r);
         eventPublisher.publish(r.pullEvents());
@@ -83,12 +87,23 @@ public class OrderReturnService {
     }
 
     @Transactional(readOnly = true)
-    public ReturnResult get(String returnId) {
-        return mapper.toResult(returnRepository.findById(returnId)
-                .orElseThrow(() -> new OrderingException(OrderingErrorCode.RETURN_NOT_FOUND)));
+    public ReturnResult getForRequester(String returnId, String requesterUserId) {
+        OrderReturn r = returnRepository.findById(returnId)
+                .orElseThrow(() -> new OrderingException(OrderingErrorCode.RETURN_NOT_FOUND));
+        if (r.getUserId().equals(requesterUserId)) {
+            return mapper.toResult(r);
+        }
+        String requesterMerchantId = merchantQueryPort.findMerchantIdByOwnerId(requesterUserId).orElse(null);
+        if (requesterMerchantId != null && requesterMerchantId.equals(r.getMerchantId())) {
+            return mapper.toResult(r);
+        }
+        throw new OrderingException(OrderingErrorCode.ORDER_FORBIDDEN);
     }
 
-    private OrderReturn ownedByMerchant(String returnId, String merchantId) {
+    private OrderReturn ownedByOwner(String returnId, String ownerId) {
+        String merchantId = merchantQueryPort.findMerchantIdByOwnerId(ownerId)
+                .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT,
+                        "No merchant registered for the authenticated user"));
         OrderReturn r = returnRepository.findById(returnId)
                 .orElseThrow(() -> new OrderingException(OrderingErrorCode.RETURN_NOT_FOUND));
         if (!r.getMerchantId().equals(merchantId)) {
@@ -97,4 +112,3 @@ public class OrderReturnService {
         return r;
     }
 }
-

@@ -1,0 +1,46 @@
+package com.aionn.ordering.infrastructure.scheduling;
+
+import com.aionn.ordering.application.port.out.OrderRepository;
+import com.aionn.ordering.application.port.out.StockReservationGateway;
+import com.aionn.ordering.domain.exception.OrderingErrorCode;
+import com.aionn.ordering.domain.exception.OrderingException;
+import com.aionn.ordering.domain.model.Order;
+import com.aionn.ordering.domain.model.OrderItem;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Per-row {@link Propagation#REQUIRES_NEW} worker so a single order's
+ * auto-cancel failure does not poison the whole batch transaction (audit B6).
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OrderAutoCancelWorker {
+
+    private final OrderRepository orderRepository;
+    private final StockReservationGateway stockReservationGateway;
+    private final EventPublisher eventPublisher;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cancelOneExpired(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_FOUND));
+        order.autoCancel("PAYMENT_TIMEOUT");
+        for (OrderItem item : order.items()) {
+            try {
+                stockReservationGateway.release(item.reservationId(), "auto-cancel");
+            } catch (RuntimeException ex) {
+                // Reservation may already be auto-released by inventory's own
+                // sweep; treat as idempotent so the order still reaches CANCELLED.
+                log.warn("Auto-cancel: reservation {} release failed: {}", item.reservationId(), ex.getMessage());
+            }
+        }
+        orderRepository.save(order);
+        eventPublisher.publish(order.pullEvents());
+    }
+}

@@ -19,16 +19,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * System-internal endpoints. Cross-context callers (e.g. ordering's
+ * {@code InventoryStockReservationGateway}) should call the service in-process
+ * — these REST endpoints are gated behind {@code ROLE_SYSTEM_ADMIN} so a
+ * regular customer cannot manipulate other people's reservations.
+ */
 @RestController
 @RequestMapping("/api/v1/inventory/reservations")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
 @Tag(name = "Inventory - Reservation", description = "System-level stock reservation lifecycle")
 public class StockReservationController {
 
     private final StockReservationService reservationService;
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Reserve stock", description = "UC4.13 - lock available qty for a pending order")
     public ResponseEntity<ApiResponse<ReservationResult>> reserve(@Valid @RequestBody ReserveStockRequest request) {
         ReservationResult result = reservationService.reserve(new ReservationCommands.ReserveStock(
@@ -37,8 +43,7 @@ public class StockReservationController {
     }
 
     @PostMapping("/{reservationId}/commit")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Commit reservation", description = "UC4.15 - PaymentSucceeded â†’ outbound recorded")
+    @Operation(summary = "Commit reservation", description = "UC4.15 - PaymentSucceeded -> outbound recorded")
     public ResponseEntity<ApiResponse<ReservationResult>> commit(@PathVariable String reservationId) {
         ReservationResult result = reservationService.commit(
                 new ReservationCommands.CommitReservation(reservationId));
@@ -46,7 +51,6 @@ public class StockReservationController {
     }
 
     @PostMapping("/{reservationId}/release")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Release reservation", description = "UC4.16 - cancel/expire releases qty back to available")
     public ResponseEntity<ApiResponse<ReservationResult>> release(
             @PathVariable String reservationId,
@@ -62,4 +66,3 @@ public class StockReservationController {
         return ResponseEntity.ok(ApiResponse.success(reservationService.get(reservationId), "Reservation fetched"));
     }
 }
-

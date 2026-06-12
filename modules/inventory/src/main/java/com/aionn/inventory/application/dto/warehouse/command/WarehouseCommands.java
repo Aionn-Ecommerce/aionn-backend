@@ -7,13 +7,13 @@ public final class WarehouseCommands {
     private WarehouseCommands() {
     }
 
-    public record CreateWarehouse(String merchantId, String address, int priorityLevel) implements Command {
+    public record CreateWarehouse(String ownerId, String address, int priorityLevel) implements Command {
     }
 
-    public record ChangeStatus(String warehouseId, String merchantId, String status) implements Command {
+    public record ChangeStatus(String warehouseId, String ownerId, String status) implements Command {
     }
 
-    public record AdjustPriority(String warehouseId, String merchantId, int priorityLevel) implements Command {
+    public record AdjustPriority(String warehouseId, String ownerId, int priorityLevel) implements Command {
     }
 
     public record SuspendWarehouse(String warehouseId, String adminId, String reason) implements Command {

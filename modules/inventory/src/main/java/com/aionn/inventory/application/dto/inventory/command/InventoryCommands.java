@@ -11,21 +11,21 @@ public final class InventoryCommands {
         }
 
         public record InitializeStock(
-                        String merchantId,
+                        String ownerId,
                         String skuId,
                         String warehouseId,
                         int initialQty) implements Command {
         }
 
         public record ConfigureSafetyStock(
-                        String merchantId,
+                        String ownerId,
                         String skuId,
                         String warehouseId,
                         int safetyStockQty) implements Command {
         }
 
         public record TrackBatchAndExpiry(
-                        String merchantId,
+                        String ownerId,
                         String skuId,
                         String warehouseId,
                         String batchNo,
@@ -33,7 +33,7 @@ public final class InventoryCommands {
         }
 
         public record ManualAdjustment(
-                        String merchantId,
+                        String ownerId,
                         String skuId,
                         String warehouseId,
                         int qty,
@@ -55,7 +55,7 @@ public final class InventoryCommands {
         }
 
         public record AuditInventory(
-                        String merchantId,
+                        String ownerId,
                         String skuId,
                         String warehouseId,
                         int actualQty) implements Command {

@@ -1,35 +1,46 @@
 package com.aionn.inventory.infrastructure.scheduling;
 
-import com.aionn.inventory.application.service.StockReservationService;
+import com.aionn.inventory.application.port.out.StockReservationRepository;
+import com.aionn.inventory.domain.model.StockReservation;
+import com.aionn.inventory.infrastructure.config.InventoryProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
- * UC4.20 - sweep expired RESERVED reservations and release them. Runs at a
- * configurable fixed delay; can be turned off with
- * {@code inventory.reservation.auto-release.enabled=false}.
+ * UC4.20 - sweep expired RESERVED reservations and release them. Each
+ * release runs in its own transaction via {@link ReservationAutoReleaseWorker}
+ * so a single failure does not roll back the entire batch.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "inventory.reservation.auto-release", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "inventory.reservation.auto-release", name = "enabled", havingValue = "true")
 public class ReservationAutoReleaseScheduler {
 
-    private final StockReservationService reservationService;
-
-    @Value("${inventory.reservation.auto-release.batch-size:100}")
-    private int batchSize;
+    private final StockReservationRepository reservationRepository;
+    private final ReservationAutoReleaseWorker worker;
+    private final InventoryProperties properties;
 
     @Scheduled(fixedDelayString = "${inventory.reservation.auto-release.delay-ms:30000}")
     public void releaseExpired() {
         try {
-            int released = reservationService.autoReleaseExpired(Instant.now(), batchSize);
+            int batchSize = properties.reservation().autoRelease().batchSize();
+            List<StockReservation> expired = reservationRepository.findExpired(Instant.now(), batchSize);
+            int released = 0;
+            for (StockReservation reservation : expired) {
+                try {
+                    worker.releaseOne(reservation.getReservationId());
+                    released++;
+                } catch (RuntimeException ex) {
+                    log.warn("Skip expired reservation {}: {}", reservation.getReservationId(), ex.getMessage());
+                }
+            }
             if (released > 0) {
                 log.info("Auto-released {} expired reservation(s)", released);
             }
@@ -38,4 +49,3 @@ public class ReservationAutoReleaseScheduler {
         }
     }
 }
-

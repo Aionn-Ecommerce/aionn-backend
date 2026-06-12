@@ -8,7 +8,6 @@ import com.aionn.inventory.application.port.out.InventoryItemRepository;
 import com.aionn.inventory.application.port.out.SafetyStockNotifier;
 import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
 import com.aionn.inventory.application.port.out.WarehouseRepository;
-import com.aionn.inventory.domain.event.InventoryEvent;
 import com.aionn.inventory.domain.event.InventoryItemEvents;
 import com.aionn.sharedkernel.domain.model.EventEnvelope;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
@@ -16,8 +15,8 @@ import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.InventoryItem;
 import com.aionn.inventory.domain.model.StockAdjustment;
 import com.aionn.inventory.domain.model.Warehouse;
-import com.aionn.inventory.domain.valueobject.AdjustmentType;
 import com.aionn.inventory.domain.valueobject.InventoryItemKey;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,10 +37,11 @@ public class InventoryItemService {
     private final InventoryResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final SafetyStockNotifier safetyStockNotifier;
+    private final MerchantQueryPort merchantQueryPort;
 
     public InventoryItemResult initialize(InventoryCommands.InitializeStock command) {
-        Warehouse warehouse = ownedWarehouse(command.warehouseId(), command.merchantId());
-        if (!warehouse.getStatus().canFulfill()) {
+        OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
+        if (!ctx.warehouse().getStatus().canFulfill()) {
             throw new InventoryException(InventoryErrorCode.WAREHOUSE_INVALID_TRANSITION,
                     "Cannot initialize stock for a non-active warehouse");
         }
@@ -56,16 +56,16 @@ public class InventoryItemService {
     }
 
     public InventoryItemResult configureSafetyStock(InventoryCommands.ConfigureSafetyStock command) {
-        ownedWarehouse(command.warehouseId(), command.merchantId());
+        OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.configureSafetyStock(command.safetyStockQty());
         InventoryItem saved = itemRepository.save(item);
-        publishWithSafetyHook(item.pullEvents(), command.merchantId());
+        publishWithSafetyHook(item.pullEvents(), ctx.merchantId());
         return mapper.toResult(saved);
     }
 
     public InventoryItemResult trackBatchAndExpiry(InventoryCommands.TrackBatchAndExpiry command) {
-        ownedWarehouse(command.warehouseId(), command.merchantId());
+        ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.trackBatchAndExpiry(command.batchNo(), command.expiryDate());
         InventoryItem saved = itemRepository.save(item);
@@ -74,7 +74,7 @@ public class InventoryItemService {
     }
 
     public InventoryItemResult manualAdjustment(InventoryCommands.ManualAdjustment command) {
-        ownedWarehouse(command.warehouseId(), command.merchantId());
+        OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
 
         int signedDelta = switch (command.type()) {
@@ -92,7 +92,7 @@ public class InventoryItemService {
         adjustmentRepository.save(adjustment);
         eventPublisher.publish(adjustment.pullEvents());
 
-        publishWithSafetyHook(item.pullEvents(), command.merchantId());
+        publishWithSafetyHook(item.pullEvents(), ctx.merchantId());
         return mapper.toResult(saved);
     }
 
@@ -113,12 +113,12 @@ public class InventoryItemService {
     }
 
     public InventoryItemResult auditInventory(InventoryCommands.AuditInventory command) {
-        ownedWarehouse(command.warehouseId(), command.merchantId());
+        OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.recordAudit(IdGenerator.ulid(), command.actualQty());
         item.emitBreachIfApplicable();
         InventoryItem saved = itemRepository.save(item);
-        publishWithSafetyHook(item.pullEvents(), command.merchantId());
+        publishWithSafetyHook(item.pullEvents(), ctx.merchantId());
         return mapper.toResult(saved);
     }
 
@@ -129,11 +129,14 @@ public class InventoryItemService {
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
     }
 
-    private Warehouse ownedWarehouse(String warehouseId, String merchantId) {
+    private OwnerContext ownerContext(String ownerId, String warehouseId) {
+        String merchantId = merchantQueryPort.findMerchantIdByOwnerId(ownerId)
+                .orElseThrow(() -> new InventoryException(InventoryErrorCode.WAREHOUSE_FORBIDDEN,
+                        "No merchant registered for the authenticated user"));
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.WAREHOUSE_NOT_FOUND));
         warehouse.ensureOwnedBy(merchantId);
-        return warehouse;
+        return new OwnerContext(merchantId, warehouse);
     }
 
     private InventoryItem lockedItem(String skuId, String warehouseId) {
@@ -141,7 +144,6 @@ public class InventoryItemService {
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
     }
 
-    @SuppressWarnings("unchecked")
     private void publishWithSafetyHook(List<EventEnvelope> events, String merchantId) {
         eventPublisher.publish(events);
         for (EventEnvelope envelope : events) {
@@ -150,5 +152,8 @@ public class InventoryItemService {
                         breach.skuId(), breach.warehouseId(), breach.availableQty(), breach.safetyStockQty());
             }
         }
+    }
+
+    private record OwnerContext(String merchantId, Warehouse warehouse) {
     }
 }

@@ -9,6 +9,7 @@ import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.Warehouse;
 import com.aionn.inventory.domain.valueobject.WarehouseStatus;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +27,19 @@ public class WarehouseService {
     private final WarehouseRepository warehouseRepository;
     private final InventoryResultMapper mapper;
     private final EventPublisher eventPublisher;
+    private final MerchantQueryPort merchantQueryPort;
 
     public WarehouseResult create(WarehouseCommands.CreateWarehouse command) {
+        String merchantId = requireMerchantIdForOwner(command.ownerId());
         Warehouse warehouse = Warehouse.create(IdGenerator.ulid(),
-                command.merchantId(), command.address(), command.priorityLevel());
+                merchantId, command.address(), command.priorityLevel());
         Warehouse saved = warehouseRepository.save(warehouse);
         eventPublisher.publish(warehouse.pullEvents());
         return mapper.toResult(saved);
     }
 
     public WarehouseResult changeStatus(WarehouseCommands.ChangeStatus command) {
-        Warehouse warehouse = ownedBy(command.warehouseId(), command.merchantId());
+        Warehouse warehouse = ownedByOwner(command.warehouseId(), command.ownerId());
         WarehouseStatus next;
         try {
             next = WarehouseStatus.valueOf(command.status());
@@ -51,7 +54,7 @@ public class WarehouseService {
     }
 
     public WarehouseResult adjustPriority(WarehouseCommands.AdjustPriority command) {
-        Warehouse warehouse = ownedBy(command.warehouseId(), command.merchantId());
+        Warehouse warehouse = ownedByOwner(command.warehouseId(), command.ownerId());
         warehouse.adjustPriority(command.priorityLevel());
         Warehouse saved = warehouseRepository.save(warehouse);
         eventPublisher.publish(warehouse.pullEvents());
@@ -80,7 +83,8 @@ public class WarehouseService {
     }
 
     @Transactional(readOnly = true)
-    public List<WarehouseResult> listByMerchant(String merchantId) {
+    public List<WarehouseResult> listByOwner(String ownerId) {
+        String merchantId = requireMerchantIdForOwner(ownerId);
         return warehouseRepository.findByMerchantOrderByPriority(merchantId).stream()
                 .map(mapper::toResult)
                 .toList();
@@ -91,10 +95,17 @@ public class WarehouseService {
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.WAREHOUSE_NOT_FOUND));
     }
 
-    private Warehouse ownedBy(String warehouseId, String merchantId) {
+    /** Resolves the caller's merchantId then verifies warehouse ownership. */
+    Warehouse ownedByOwner(String warehouseId, String ownerId) {
+        String merchantId = requireMerchantIdForOwner(ownerId);
         Warehouse warehouse = required(warehouseId);
         warehouse.ensureOwnedBy(merchantId);
         return warehouse;
     }
-}
 
+    String requireMerchantIdForOwner(String ownerId) {
+        return merchantQueryPort.findMerchantIdByOwnerId(ownerId)
+                .orElseThrow(() -> new InventoryException(InventoryErrorCode.WAREHOUSE_FORBIDDEN,
+                        "No merchant registered for the authenticated user"));
+    }
+}
