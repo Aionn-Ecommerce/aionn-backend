@@ -39,3 +39,7 @@ application-dev.yml
 
 # instruction files
 /instruction/
+
+# local helper scripts
+/commit-helper.ps1
+/run-commits.ps1
