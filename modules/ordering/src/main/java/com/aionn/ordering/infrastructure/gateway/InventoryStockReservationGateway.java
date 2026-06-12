@@ -1,6 +1,8 @@
 package com.aionn.ordering.infrastructure.gateway;
 
-import com.aionn.inventory.application.dto.reservation.command.ReservationCommands;
+import com.aionn.inventory.application.dto.reservation.command.CommitReservationCommand;
+import com.aionn.inventory.application.dto.reservation.command.ReleaseReservationCommand;
+import com.aionn.inventory.application.dto.reservation.command.ReserveStockCommand;
 import com.aionn.inventory.application.dto.reservation.result.ReservationResult;
 import com.aionn.inventory.application.service.StockReservationService;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
@@ -11,10 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * In-process bridge to the Inventory module. When Inventory is split out into
- * its own service we replace this with a remote stub.
- */
+/** In-process bridge to the Inventory module. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class InventoryStockReservationGateway implements StockReservationGateway
         List<Reservation> created = new ArrayList<>();
         try {
             for (ReservationLine line : lines) {
-                ReservationResult result = reservationService.reserve(new ReservationCommands.ReserveStock(
+                ReservationResult result = reservationService.reserve(new ReserveStockCommand(
                         line.skuId(), line.warehouseId(), orderId, line.qty(), ttlSeconds));
                 if (!"RESERVED".equals(result.status())) {
                     throw new ReservationException(line.skuId(), "Reservation result: " + result.status());
@@ -37,11 +36,10 @@ public class InventoryStockReservationGateway implements StockReservationGateway
             }
             return created;
         } catch (RuntimeException ex) {
-            // Compensate already-created reservations on failure so we never
-            // leave dangling holds.
+            // Compensate already-created reservations on failure.
             for (Reservation r : created) {
                 try {
-                    reservationService.release(new ReservationCommands.ReleaseReservation(
+                    reservationService.release(new ReleaseReservationCommand(
                             r.reservationId(), "compensation:" + ex.getMessage()));
                 } catch (Exception releaseEx) {
                     log.warn("Failed to release reservation {} during compensation: {}",
@@ -57,13 +55,12 @@ public class InventoryStockReservationGateway implements StockReservationGateway
 
     @Override
     public void commit(String reservationId) {
-        reservationService.commit(new ReservationCommands.CommitReservation(reservationId));
+        reservationService.commit(new CommitReservationCommand(reservationId));
     }
 
     @Override
     public void release(String reservationId, String reason) {
-        reservationService.release(new ReservationCommands.ReleaseReservation(reservationId,
+        reservationService.release(new ReleaseReservationCommand(reservationId,
                 reason == null ? "released" : reason));
     }
 }
-

@@ -1,9 +1,10 @@
 package com.aionn.inventory.application.service;
 
-import com.aionn.inventory.application.dto.reservation.command.ReservationCommands;
+import com.aionn.inventory.application.dto.reservation.command.CommitReservationCommand;
+import com.aionn.inventory.application.dto.reservation.command.ReleaseReservationCommand;
+import com.aionn.inventory.application.dto.reservation.command.ReserveStockCommand;
 import com.aionn.inventory.application.dto.reservation.result.ReservationResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.inventory.application.port.out.InventoryItemRepository;
 import com.aionn.inventory.application.port.out.OutboundOrderNotifier;
 import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
@@ -15,6 +16,7 @@ import com.aionn.inventory.domain.model.StockAdjustment;
 import com.aionn.inventory.domain.model.StockReservation;
 import com.aionn.inventory.domain.valueobject.InventoryItemKey;
 import com.aionn.inventory.domain.valueobject.ReservationStatus;
+import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,94 +32,97 @@ import java.time.Instant;
 @Transactional
 public class StockReservationService {
 
-    private final InventoryItemRepository itemRepository;
-    private final StockReservationRepository reservationRepository;
-    private final StockAdjustmentRepository adjustmentRepository;
-    private final InventoryResultMapper mapper;
-    private final EventPublisher eventPublisher;
-    private final OutboundOrderNotifier outboundOrderNotifier;
+        private final InventoryItemRepository itemRepository;
+        private final StockReservationRepository reservationRepository;
+        private final StockAdjustmentRepository adjustmentRepository;
+        private final InventoryResultMapper mapper;
+        private final EventPublisher eventPublisher;
+        private final OutboundOrderNotifier outboundOrderNotifier;
 
-    public ReservationResult reserve(ReservationCommands.ReserveStock command) {
-        InventoryItemKey key = new InventoryItemKey(command.skuId(), command.warehouseId());
-        InventoryItem item = itemRepository.lockByKey(key)
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
+        public ReservationResult reserve(ReserveStockCommand command) {
+                InventoryItemKey key = new InventoryItemKey(command.skuId(), command.warehouseId());
+                InventoryItem item = itemRepository.lockByKey(key)
+                                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
-        if (item.isLocked() || item.getAvailableQty() < command.qty()) {
-            String reason = item.isLocked() ? "Inventory locked" : "Insufficient stock";
-            StockReservation failed = StockReservation.failed(IdGenerator.ulid(),
-                    command.skuId(), command.warehouseId(), command.qty(), reason);
-            StockReservation saved = reservationRepository.save(failed);
-            eventPublisher.publish(failed.pullEvents());
-            outboundOrderNotifier.notifyReservationFailed(command.orderId(),
-                    command.skuId(), command.warehouseId(), command.qty(), reason);
-            return mapper.toResult(saved);
+                if (item.isLocked() || item.getAvailableQty() < command.qty()) {
+                        String reason = item.isLocked() ? "Inventory locked" : "Insufficient stock";
+                        StockReservation failed = StockReservation.failed(IdGenerator.ulid(),
+                                        command.skuId(), command.warehouseId(), command.qty(), reason);
+                        StockReservation saved = reservationRepository.save(failed);
+                        eventPublisher.publish(failed.pullEvents());
+                        outboundOrderNotifier.notifyReservationFailed(command.orderId(),
+                                        command.skuId(), command.warehouseId(), command.qty(), reason);
+                        return mapper.toResult(saved);
+                }
+
+                item.reserve(command.qty());
+                itemRepository.save(item);
+
+                Instant expiresAt = Instant.now().plus(Duration.ofSeconds(command.ttlSeconds()));
+                StockReservation reservation = StockReservation.reserve(IdGenerator.ulid(),
+                                command.skuId(), command.warehouseId(), command.orderId(), command.qty(), expiresAt);
+                StockReservation saved = reservationRepository.save(reservation);
+                eventPublisher.publish(reservation.pullEvents());
+                eventPublisher.publish(item.pullEvents());
+                return mapper.toResult(saved);
         }
 
-        item.reserve(command.qty());
-        itemRepository.save(item);
+        public ReservationResult commit(CommitReservationCommand command) {
+                StockReservation reservation = reservationRepository.findById(command.reservationId())
+                                .orElseThrow(() -> new InventoryException(
+                                                InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND));
+                if (reservation.getStatus() != ReservationStatus.RESERVED) {
+                        throw new InventoryException(InventoryErrorCode.STOCK_RESERVATION_INVALID_STATE);
+                }
+                InventoryItem item = itemRepository.lockByKey(
+                                new InventoryItemKey(reservation.getSkuId(), reservation.getWarehouseId()))
+                                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
-        Instant expiresAt = Instant.now().plus(Duration.ofSeconds(command.ttlSeconds()));
-        StockReservation reservation = StockReservation.reserve(IdGenerator.ulid(),
-                command.skuId(), command.warehouseId(), command.orderId(), command.qty(), expiresAt);
-        StockReservation saved = reservationRepository.save(reservation);
-        eventPublisher.publish(reservation.pullEvents());
-        eventPublisher.publish(item.pullEvents());
-        return mapper.toResult(saved);
-    }
+                item.commit(reservation.getQty());
+                itemRepository.save(item);
 
-    public ReservationResult commit(ReservationCommands.CommitReservation command) {
-        StockReservation reservation = reservationRepository.findById(command.reservationId())
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND));
-        if (reservation.getStatus() != ReservationStatus.RESERVED) {
-            throw new InventoryException(InventoryErrorCode.STOCK_RESERVATION_INVALID_STATE);
+                reservation.commit();
+                StockReservation saved = reservationRepository.save(reservation);
+
+                StockAdjustment outbound = StockAdjustment.outbound(IdGenerator.ulid(),
+                                reservation.getSkuId(), reservation.getWarehouseId(), reservation.getQty(),
+                                reservation.getOrderId());
+                adjustmentRepository.save(outbound);
+
+                eventPublisher.publish(reservation.pullEvents());
+                eventPublisher.publish(item.pullEvents());
+                eventPublisher.publish(outbound.pullEvents());
+                outboundOrderNotifier.notifyOutbound(reservation.getOrderId(),
+                                reservation.getSkuId(), reservation.getWarehouseId(), reservation.getQty());
+                return mapper.toResult(saved);
         }
-        InventoryItem item = itemRepository.lockByKey(
-                new InventoryItemKey(reservation.getSkuId(), reservation.getWarehouseId()))
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
-        item.commit(reservation.getQty());
-        itemRepository.save(item);
+        public ReservationResult release(ReleaseReservationCommand command) {
+                StockReservation reservation = reservationRepository.findById(command.reservationId())
+                                .orElseThrow(() -> new InventoryException(
+                                                InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND));
+                if (reservation.getStatus() != ReservationStatus.RESERVED) {
+                        throw new InventoryException(InventoryErrorCode.STOCK_RESERVATION_INVALID_STATE);
+                }
+                InventoryItem item = itemRepository.lockByKey(
+                                new InventoryItemKey(reservation.getSkuId(), reservation.getWarehouseId()))
+                                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
-        reservation.commit();
-        StockReservation saved = reservationRepository.save(reservation);
+                item.release(reservation.getQty());
+                itemRepository.save(item);
 
-        StockAdjustment outbound = StockAdjustment.outbound(IdGenerator.ulid(),
-                reservation.getSkuId(), reservation.getWarehouseId(), reservation.getQty(),
-                reservation.getOrderId());
-        adjustmentRepository.save(outbound);
+                reservation.release(command.reason());
+                StockReservation saved = reservationRepository.save(reservation);
 
-        eventPublisher.publish(reservation.pullEvents());
-        eventPublisher.publish(item.pullEvents());
-        eventPublisher.publish(outbound.pullEvents());
-        outboundOrderNotifier.notifyOutbound(reservation.getOrderId(),
-                reservation.getSkuId(), reservation.getWarehouseId(), reservation.getQty());
-        return mapper.toResult(saved);
-    }
-
-    public ReservationResult release(ReservationCommands.ReleaseReservation command) {
-        StockReservation reservation = reservationRepository.findById(command.reservationId())
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND));
-        if (reservation.getStatus() != ReservationStatus.RESERVED) {
-            throw new InventoryException(InventoryErrorCode.STOCK_RESERVATION_INVALID_STATE);
+                eventPublisher.publish(reservation.pullEvents());
+                eventPublisher.publish(item.pullEvents());
+                return mapper.toResult(saved);
         }
-        InventoryItem item = itemRepository.lockByKey(
-                new InventoryItemKey(reservation.getSkuId(), reservation.getWarehouseId()))
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
 
-        item.release(reservation.getQty());
-        itemRepository.save(item);
-
-        reservation.release(command.reason());
-        StockReservation saved = reservationRepository.save(reservation);
-
-        eventPublisher.publish(reservation.pullEvents());
-        eventPublisher.publish(item.pullEvents());
-        return mapper.toResult(saved);
-    }
-
-    @Transactional(readOnly = true)
-    public ReservationResult get(String reservationId) {
-        return mapper.toResult(reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new InventoryException(InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND)));
-    }
+        @Transactional(readOnly = true)
+        public ReservationResult get(String reservationId) {
+                return mapper.toResult(reservationRepository.findById(reservationId)
+                                .orElseThrow(() -> new InventoryException(
+                                                InventoryErrorCode.STOCK_RESERVATION_NOT_FOUND)));
+        }
 }

@@ -1,21 +1,27 @@
 package com.aionn.inventory.application.service;
 
-import com.aionn.inventory.application.dto.inventory.command.InventoryCommands;
+import com.aionn.inventory.application.dto.inventory.command.AuditInventoryCommand;
+import com.aionn.inventory.application.dto.inventory.command.ConfigureSafetyStockCommand;
+import com.aionn.inventory.application.dto.inventory.command.EmergencyLockCommand;
+import com.aionn.inventory.application.dto.inventory.command.EmergencyUnlockCommand;
+import com.aionn.inventory.application.dto.inventory.command.InitializeStockCommand;
+import com.aionn.inventory.application.dto.inventory.command.ManualAdjustmentCommand;
+import com.aionn.inventory.application.dto.inventory.command.TrackBatchAndExpiryCommand;
 import com.aionn.inventory.application.dto.inventory.result.InventoryItemResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.inventory.application.port.out.InventoryItemRepository;
 import com.aionn.inventory.application.port.out.SafetyStockNotifier;
 import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
 import com.aionn.inventory.application.port.out.WarehouseRepository;
 import com.aionn.inventory.domain.event.InventoryItemEvents;
-import com.aionn.sharedkernel.domain.model.EventEnvelope;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.InventoryItem;
 import com.aionn.inventory.domain.model.StockAdjustment;
 import com.aionn.inventory.domain.model.Warehouse;
 import com.aionn.inventory.domain.valueobject.InventoryItemKey;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.sharedkernel.domain.model.EventEnvelope;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +45,7 @@ public class InventoryItemService {
     private final SafetyStockNotifier safetyStockNotifier;
     private final MerchantQueryPort merchantQueryPort;
 
-    public InventoryItemResult initialize(InventoryCommands.InitializeStock command) {
+    public InventoryItemResult initialize(InitializeStockCommand command) {
         OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         if (!ctx.warehouse().getStatus().canFulfill()) {
             throw new InventoryException(InventoryErrorCode.WAREHOUSE_INVALID_TRANSITION,
@@ -55,7 +61,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult configureSafetyStock(InventoryCommands.ConfigureSafetyStock command) {
+    public InventoryItemResult configureSafetyStock(ConfigureSafetyStockCommand command) {
         OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.configureSafetyStock(command.safetyStockQty());
@@ -64,7 +70,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult trackBatchAndExpiry(InventoryCommands.TrackBatchAndExpiry command) {
+    public InventoryItemResult trackBatchAndExpiry(TrackBatchAndExpiryCommand command) {
         ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.trackBatchAndExpiry(command.batchNo(), command.expiryDate());
@@ -73,7 +79,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult manualAdjustment(InventoryCommands.ManualAdjustment command) {
+    public InventoryItemResult manualAdjustment(ManualAdjustmentCommand command) {
         OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
 
@@ -96,7 +102,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult emergencyLock(InventoryCommands.EmergencyLock command) {
+    public InventoryItemResult emergencyLock(EmergencyLockCommand command) {
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.emergencyLock(command.adminId(), command.reason());
         InventoryItem saved = itemRepository.save(item);
@@ -104,7 +110,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult emergencyUnlock(InventoryCommands.EmergencyUnlock command) {
+    public InventoryItemResult emergencyUnlock(EmergencyUnlockCommand command) {
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.emergencyUnlock(command.adminId());
         InventoryItem saved = itemRepository.save(item);
@@ -112,7 +118,7 @@ public class InventoryItemService {
         return mapper.toResult(saved);
     }
 
-    public InventoryItemResult auditInventory(InventoryCommands.AuditInventory command) {
+    public InventoryItemResult auditInventory(AuditInventoryCommand command) {
         OwnerContext ctx = ownerContext(command.ownerId(), command.warehouseId());
         InventoryItem item = lockedItem(command.skuId(), command.warehouseId());
         item.recordAudit(IdGenerator.ulid(), command.actualQty());

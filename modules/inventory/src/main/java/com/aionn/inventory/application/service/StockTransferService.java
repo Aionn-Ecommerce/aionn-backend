@@ -1,9 +1,10 @@
 package com.aionn.inventory.application.service;
 
-import com.aionn.inventory.application.dto.transfer.command.StockTransferCommands;
+import com.aionn.inventory.application.dto.transfer.command.CancelTransferCommand;
+import com.aionn.inventory.application.dto.transfer.command.CompleteTransferCommand;
+import com.aionn.inventory.application.dto.transfer.command.InitiateTransferCommand;
 import com.aionn.inventory.application.dto.transfer.result.StockTransferResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.inventory.application.port.out.InventoryItemRepository;
 import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
 import com.aionn.inventory.application.port.out.StockTransferRepository;
@@ -16,6 +17,7 @@ import com.aionn.inventory.domain.model.StockTransfer;
 import com.aionn.inventory.domain.model.Warehouse;
 import com.aionn.inventory.domain.valueobject.AdjustmentType;
 import com.aionn.inventory.domain.valueobject.InventoryItemKey;
+import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,7 @@ public class StockTransferService {
         private final EventPublisher eventPublisher;
         private final MerchantQueryPort merchantQueryPort;
 
-        public StockTransferResult initiate(StockTransferCommands.InitiateTransfer command) {
+        public StockTransferResult initiate(InitiateTransferCommand command) {
                 String merchantId = requireMerchantIdForOwner(command.ownerId());
                 Warehouse from = warehouseRepository.findById(command.fromWarehouseId())
                                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.WAREHOUSE_NOT_FOUND));
@@ -73,7 +75,7 @@ public class StockTransferService {
                 return mapper.toResult(saved);
         }
 
-        public StockTransferResult complete(StockTransferCommands.CompleteTransfer command) {
+        public StockTransferResult complete(CompleteTransferCommand command) {
                 StockTransfer transfer = ownedByOwner(command.transferId(), command.ownerId());
                 transfer.complete(command.receivedQty());
 
@@ -96,7 +98,7 @@ public class StockTransferService {
                 return mapper.toResult(saved);
         }
 
-        public StockTransferResult cancel(StockTransferCommands.CancelTransfer command) {
+        public StockTransferResult cancel(CancelTransferCommand command) {
                 StockTransfer transfer = ownedByOwner(command.transferId(), command.ownerId());
                 transfer.cancel(command.reason());
 

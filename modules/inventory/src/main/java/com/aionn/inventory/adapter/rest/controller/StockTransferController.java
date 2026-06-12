@@ -3,7 +3,9 @@ package com.aionn.inventory.adapter.rest.controller;
 import com.aionn.inventory.adapter.rest.dto.transfer.CancelTransferRequest;
 import com.aionn.inventory.adapter.rest.dto.transfer.CompleteTransferRequest;
 import com.aionn.inventory.adapter.rest.dto.transfer.InitiateTransferRequest;
-import com.aionn.inventory.application.dto.transfer.command.StockTransferCommands;
+import com.aionn.inventory.application.dto.transfer.command.CancelTransferCommand;
+import com.aionn.inventory.application.dto.transfer.command.CompleteTransferCommand;
+import com.aionn.inventory.application.dto.transfer.command.InitiateTransferCommand;
 import com.aionn.inventory.application.dto.transfer.result.StockTransferResult;
 import com.aionn.inventory.application.service.StockTransferService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -35,7 +37,7 @@ public class StockTransferController {
     public ResponseEntity<ApiResponse<StockTransferResult>> initiate(
             Authentication authentication,
             @Valid @RequestBody InitiateTransferRequest request) {
-        StockTransferResult result = transferService.initiate(new StockTransferCommands.InitiateTransfer(
+        StockTransferResult result = transferService.initiate(new InitiateTransferCommand(
                 authentication.getName(), request.fromWarehouseId(), request.toWarehouseId(),
                 request.skuId(), request.qty()));
         return ApiResponse.createdResponse("Transfer initiated", result);
@@ -48,7 +50,7 @@ public class StockTransferController {
             Authentication authentication,
             @PathVariable String transferId,
             @Valid @RequestBody CompleteTransferRequest request) {
-        StockTransferResult result = transferService.complete(new StockTransferCommands.CompleteTransfer(
+        StockTransferResult result = transferService.complete(new CompleteTransferCommand(
                 authentication.getName(), transferId, request.receivedQty()));
         return ResponseEntity.ok(ApiResponse.success(result, "Transfer completed"));
     }
@@ -60,7 +62,7 @@ public class StockTransferController {
             Authentication authentication,
             @PathVariable String transferId,
             @Valid @RequestBody CancelTransferRequest request) {
-        StockTransferResult result = transferService.cancel(new StockTransferCommands.CancelTransfer(
+        StockTransferResult result = transferService.cancel(new CancelTransferCommand(
                 authentication.getName(), transferId, request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Transfer cancelled"));
     }

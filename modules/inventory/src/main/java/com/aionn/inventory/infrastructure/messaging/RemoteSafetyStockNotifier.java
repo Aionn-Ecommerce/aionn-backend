@@ -4,10 +4,6 @@ import com.aionn.inventory.application.port.out.SafetyStockNotifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/**
- * Stub for the future Notification module integration. Fails closed so
- * misconfigured environments do not silently drop alerts.
- */
 @Component
 @ConditionalOnProperty(prefix = "inventory.safety-stock", name = "provider", havingValue = "remote")
 public class RemoteSafetyStockNotifier implements SafetyStockNotifier {
