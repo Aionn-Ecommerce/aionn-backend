@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "logging", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "logging")
 public class LoggingEmailSender implements ChannelSender {
 
     @Override
@@ -24,4 +24,3 @@ public class LoggingEmailSender implements ChannelSender {
         return DeliveryResult.ok("email-" + IdGenerator.ulid());
     }
 }
-

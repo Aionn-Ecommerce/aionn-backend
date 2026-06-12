@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "notification.sms", name = "provider", havingValue = "logging", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "notification.sms", name = "provider", havingValue = "logging")
 public class LoggingSmsSender implements ChannelSender {
 
     @Override
@@ -19,8 +19,9 @@ public class LoggingSmsSender implements ChannelSender {
 
     @Override
     public DeliveryResult send(DeliveryRequest request) {
-        log.info("[SMS] to={} content={}", request.to(), request.content());
+        // Don't log content - SMS often carries OTPs / reset tokens.
+        log.info("[SMS] to={} content-len={}",
+                request.to(), request.content() == null ? 0 : request.content().length());
         return DeliveryResult.ok("sms-" + IdGenerator.ulid());
     }
 }
-

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "notification.push", name = "provider", havingValue = "logging", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "notification.push", name = "provider", havingValue = "logging")
 public class LoggingPushSender implements ChannelSender {
 
     @Override
@@ -19,8 +19,9 @@ public class LoggingPushSender implements ChannelSender {
 
     @Override
     public DeliveryResult send(DeliveryRequest request) {
-        log.info("[PUSH] device={} title={} body={}", request.to(), request.subject(), request.content());
+        log.info("[PUSH] device={} title={} body-len={}",
+                request.to(), request.subject(),
+                request.content() == null ? 0 : request.content().length());
         return DeliveryResult.ok("push-" + IdGenerator.ulid());
     }
 }
-
