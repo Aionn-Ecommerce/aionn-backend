@@ -4,9 +4,9 @@ package com.aionn.payment.domain.valueobject;
  * Payment lifecycle.
  *
  * <pre>
- *   INITIATED â†’ PROCESSING â†’ PAID â†’ REFUNDED (partial or full)
- *   INITIATED â†’ FAILED
- *   PROCESSING â†’ FAILED
+ *   INITIATED -> PROCESSING -> PAID -> REFUNDED
+ *   INITIATED -> FAILED
+ *   PROCESSING -> FAILED
  * </pre>
  */
 public enum PaymentStatus {
@@ -29,4 +29,3 @@ public enum PaymentStatus {
         return this == FAILED || this == REFUNDED;
     }
 }
-

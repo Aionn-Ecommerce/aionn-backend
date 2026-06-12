@@ -1,0 +1,113 @@
+package com.aionn.payment.adapter.rest.controller;
+
+import com.aionn.payment.application.dto.payment.command.ConfirmPaymentCommand;
+import com.aionn.payment.application.dto.payment.command.FailPaymentCommand;
+import com.aionn.payment.application.dto.payment.result.PaymentResult;
+import com.aionn.payment.application.port.out.PaymentProviderClient;
+import com.aionn.payment.application.port.out.PaymentProviderRouter;
+import com.aionn.payment.application.service.PaymentService;
+import com.aionn.payment.domain.valueobject.PaymentGatewayKind;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/v1/payments/vnpay")
+@RequiredArgsConstructor
+@Tag(name = "Payment - VNPay return", description = "VNPay redirect + IPN callback")
+public class VnpayReturnController {
+
+    private final PaymentProviderRouter providerRouter;
+    private final PaymentService paymentService;
+
+    @GetMapping("/return")
+    @Operation(summary = "VNPay redirect callback")
+    public ResponseEntity<Map<String, Object>> handleReturn(HttpServletRequest request) {
+        return finalisePayment(request.getQueryString());
+    }
+
+    @PostMapping("/ipn")
+    @Operation(summary = "VNPay IPN callback")
+    public ResponseEntity<Map<String, String>> handleIpn(HttpServletRequest request) {
+        PaymentProviderClient client = providerRouter.route(PaymentGatewayKind.VNPAY);
+        PaymentProviderClient.WebhookEvent event = client.verifyAndParse(request.getQueryString(), null);
+
+        Map<String, String> response = new LinkedHashMap<>();
+        if (event.paymentId() == null) {
+            response.put("RspCode", "97");
+            response.put("Message", "Invalid Signature");
+            return ResponseEntity.ok(response);
+        }
+        try {
+            PaymentResult current = paymentService.get(event.paymentId());
+            if (!"PAID".equals(current.status()) && !"FAILED".equals(current.status())) {
+                if (event.success()) {
+                    paymentService.confirm(new ConfirmPaymentCommand(
+                            event.paymentId(), event.transactionNo()));
+                } else {
+                    paymentService.fail(new FailPaymentCommand(
+                            event.paymentId(),
+                            event.errorCode() == null ? "VNPAY_ERROR" : event.errorCode(),
+                            event.errorReason()));
+                }
+            }
+            response.put("RspCode", "00");
+            response.put("Message", "Confirm Success");
+        } catch (Exception ex) {
+            log.error("VNPay IPN finalisation failed for {}", event.paymentId(), ex);
+            response.put("RspCode", "99");
+            response.put("Message", "Unknown error");
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> finalisePayment(String query) {
+        PaymentProviderClient client = providerRouter.route(PaymentGatewayKind.VNPAY);
+        PaymentProviderClient.WebhookEvent event = client.verifyAndParse(query, null);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("paymentId", event.paymentId());
+        body.put("transactionNo", event.transactionNo());
+        body.put("success", event.success());
+        if (!event.success()) {
+            body.put("errorCode", event.errorCode());
+            body.put("errorReason", event.errorReason());
+        }
+
+        if (event.paymentId() == null) {
+            log.warn("VNPay return without paymentId, query={}", query);
+            return ResponseEntity.badRequest().body(body);
+        }
+
+        try {
+            PaymentResult current = paymentService.get(event.paymentId());
+            if (!"PAID".equals(current.status()) && !"FAILED".equals(current.status())) {
+                if (event.success()) {
+                    paymentService.confirm(new ConfirmPaymentCommand(
+                            event.paymentId(), event.transactionNo()));
+                } else {
+                    paymentService.fail(new FailPaymentCommand(
+                            event.paymentId(),
+                            event.errorCode() == null ? "VNPAY_ERROR" : event.errorCode(),
+                            event.errorReason()));
+                }
+            }
+        } catch (Exception ex) {
+            log.error("VNPay return finalisation failed for {}", event.paymentId(), ex);
+            body.put("error", ex.getMessage());
+            return ResponseEntity.internalServerError().body(body);
+        }
+        return ResponseEntity.ok(body);
+    }
+}

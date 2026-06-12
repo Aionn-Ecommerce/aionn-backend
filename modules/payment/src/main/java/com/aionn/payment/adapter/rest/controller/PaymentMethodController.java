@@ -1,7 +1,9 @@
 package com.aionn.payment.adapter.rest.controller;
 
 import com.aionn.payment.adapter.rest.dto.method.LinkMethodRequest;
-import com.aionn.payment.application.dto.method.command.PaymentMethodCommands;
+import com.aionn.payment.application.dto.method.command.LinkMethodCommand;
+import com.aionn.payment.application.dto.method.command.RemoveMethodCommand;
+import com.aionn.payment.application.dto.method.command.VerifyMethodCommand;
 import com.aionn.payment.application.dto.method.result.PaymentMethodResult;
 import com.aionn.payment.application.service.PaymentMethodService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -32,33 +34,33 @@ public class PaymentMethodController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Link method", description = "UC6.6")
+    @Operation(summary = "Link method")
     public ResponseEntity<ApiResponse<PaymentMethodResult>> link(
             Authentication authentication,
             @Valid @RequestBody LinkMethodRequest request) {
-        PaymentMethodResult result = methodService.link(new PaymentMethodCommands.LinkMethod(
+        PaymentMethodResult result = methodService.link(new LinkMethodCommand(
                 authentication.getName(), request.provider(), request.last4Digits(), request.gatewayToken()));
         return ApiResponse.createdResponse("Payment method linked", result);
     }
 
     @PostMapping("/{methodId}/verify")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Verify method", description = "UC6.8")
+    @Operation(summary = "Verify method")
     public ResponseEntity<ApiResponse<PaymentMethodResult>> verify(
             Authentication authentication,
             @PathVariable String methodId) {
-        PaymentMethodResult result = methodService.verify(new PaymentMethodCommands.VerifyMethod(
+        PaymentMethodResult result = methodService.verify(new VerifyMethodCommand(
                 authentication.getName(), methodId));
         return ResponseEntity.ok(ApiResponse.success(result, "Payment method verified"));
     }
 
     @DeleteMapping("/{methodId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Remove method", description = "UC6.7")
+    @Operation(summary = "Remove method")
     public ResponseEntity<Void> remove(
             Authentication authentication,
             @PathVariable String methodId) {
-        methodService.remove(new PaymentMethodCommands.RemoveMethod(authentication.getName(), methodId));
+        methodService.remove(new RemoveMethodCommand(authentication.getName(), methodId));
         return ResponseEntity.noContent().build();
     }
 
@@ -70,4 +72,3 @@ public class PaymentMethodController {
                 methodService.listMine(authentication.getName()), "Methods fetched"));
     }
 }
-

@@ -2,7 +2,8 @@ package com.aionn.payment.adapter.rest.controller;
 
 import com.aionn.payment.adapter.rest.dto.payment.InitiatePaymentRequest;
 import com.aionn.payment.adapter.rest.dto.payment.RefundRequest;
-import com.aionn.payment.application.dto.payment.command.PaymentCommands;
+import com.aionn.payment.application.dto.payment.command.InitiatePaymentCommand;
+import com.aionn.payment.application.dto.payment.command.RefundPaymentCommand;
 import com.aionn.payment.application.dto.payment.result.PaymentResult;
 import com.aionn.payment.application.service.PaymentService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -30,11 +31,11 @@ public class PaymentController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Initiate payment", description = "UC6.1")
+    @Operation(summary = "Initiate payment")
     public ResponseEntity<ApiResponse<PaymentResult>> initiate(
             Authentication authentication,
             @Valid @RequestBody InitiatePaymentRequest request) {
-        PaymentResult result = paymentService.initiate(new PaymentCommands.InitiatePayment(
+        PaymentResult result = paymentService.initiate(new InitiatePaymentCommand(
                 request.orderId(), authentication.getName(), request.paymentMethodId(),
                 request.amount(), request.currency(), request.gateway(), request.idempotencyKey()));
         return ApiResponse.createdResponse("Payment initiated", result);
@@ -42,20 +43,19 @@ public class PaymentController {
 
     @PostMapping("/{paymentId}/refund")
     @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
-    @Operation(summary = "Refund payment", description = "UC6.5")
+    @Operation(summary = "Refund payment")
     public ResponseEntity<ApiResponse<PaymentResult>> refund(
             @PathVariable String paymentId,
             @Valid @RequestBody RefundRequest request) {
-        PaymentResult result = paymentService.refund(new PaymentCommands.RefundPayment(
+        PaymentResult result = paymentService.refund(new RefundPaymentCommand(
                 paymentId, request.amount(), request.currency(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Payment refunded"));
     }
 
     @GetMapping("/{paymentId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get payment", description = "UC6.4")
+    @Operation(summary = "Get payment")
     public ResponseEntity<ApiResponse<PaymentResult>> get(@PathVariable String paymentId) {
         return ResponseEntity.ok(ApiResponse.success(paymentService.get(paymentId), "Payment fetched"));
     }
 }
-
