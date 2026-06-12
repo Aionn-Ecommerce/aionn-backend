@@ -5,4 +5,6 @@ import java.util.Optional;
 public interface MerchantQueryPort {
 
     Optional<String> findMerchantIdByOwnerId(String ownerId);
+
+    Optional<String> findOwnerIdByMerchantId(String merchantId);
 }
