@@ -8,9 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record ApplyVoucherRequest(
-        @NotBlank String userId,
-        @NotBlank String orderId,
-        @NotNull @DecimalMin("0.0") BigDecimal appliedAmount,
-        @Size(min = 3, max = 3) String currency) {
+                @NotBlank String orderId,
+                @NotNull @DecimalMin("0.0") BigDecimal appliedAmount,
+                @Size(min = 3, max = 3) String currency) {
 }
-

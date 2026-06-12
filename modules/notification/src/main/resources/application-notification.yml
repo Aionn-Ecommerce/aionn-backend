@@ -5,3 +5,25 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+  mail:
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 10000
+          timeout: 15000
+          writetimeout: 15000
+
+notification:
+  email:
+    provider: ${NOTIFICATION_EMAIL_PROVIDER:smtp}
+    from: ${NOTIFICATION_EMAIL_FROM:}
+  sms:
+    provider: ${NOTIFICATION_SMS_PROVIDER:logging}
+  push:
+    provider: ${NOTIFICATION_PUSH_PROVIDER:logging}
+
+  retry:
+    enabled: ${NOTIFICATION_RETRY_ENABLED:true}
+    delay-ms: ${NOTIFICATION_RETRY_DELAY_MS:30000}
+    batch-size: ${NOTIFICATION_RETRY_BATCH:100}

@@ -10,6 +10,8 @@ public interface UserVoucherRepository {
 
     UserVoucher save(UserVoucher userVoucher);
 
+    Optional<UserVoucher> findById(String userVoucherId);
+
     Optional<UserVoucher> findByUserAndCode(String userId, String voucherCode);
 
     long countByUserAndCampaign(String userId, String campaignId);
@@ -18,4 +20,3 @@ public interface UserVoucherRepository {
 
     List<UserVoucher> findExpiredReservations(Instant now, int limit);
 }
-

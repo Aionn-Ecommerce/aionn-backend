@@ -27,6 +27,11 @@ public class UserVoucherRepositoryAdapter implements UserVoucherRepository {
     }
 
     @Override
+    public Optional<UserVoucher> findById(String userVoucherId) {
+        return jpa.findById(userVoucherId).map(mapper::toDomain);
+    }
+
+    @Override
     public Optional<UserVoucher> findByUserAndCode(String userId, String voucherCode) {
         return jpa.findByUserIdAndVoucherCode(userId, voucherCode).map(mapper::toDomain);
     }
@@ -50,4 +55,3 @@ public class UserVoucherRepositoryAdapter implements UserVoucherRepository {
                 .toList();
     }
 }
-

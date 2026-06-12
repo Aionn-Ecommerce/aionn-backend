@@ -12,8 +12,7 @@ public interface PromotionCampaignRepository {
 
     Optional<PromotionCampaign> findById(String campaignId);
 
-List<PromotionCampaign> findToActivate(Instant now, int limit);
+    List<PromotionCampaign> findToActivate(Instant now, int limit);
 
-List<PromotionCampaign> findToEnd(Instant now, int limit);
+    List<PromotionCampaign> findToEnd(Instant now, int limit);
 }
-

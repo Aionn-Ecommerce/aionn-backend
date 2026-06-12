@@ -17,6 +17,7 @@ CREATE TABLE promotion_campaigns (
     applicable_categories  JSONB,
     max_claims_per_user    INT,
     max_uses_per_voucher   INT,
+    version                BIGINT      NOT NULL DEFAULT 0,
     created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_campaign_dates CHECK (start_date < end_date),
@@ -34,9 +35,9 @@ CREATE TABLE vouchers (
     reserved_count  INT NOT NULL DEFAULT 0,
     valid_from      TIMESTAMPTZ,
     valid_until     TIMESTAMPTZ,
+    version         BIGINT      NOT NULL DEFAULT 0,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    version         BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT fk_vouchers_campaign FOREIGN KEY (campaign_id) REFERENCES promotion_campaigns(campaign_id),
     CONSTRAINT chk_vouchers_counts CHECK (used_count >= 0 AND reserved_count >= 0
                                           AND (used_count + reserved_count) <= usage_limit)
@@ -56,6 +57,7 @@ CREATE TABLE user_vouchers (
     reserved_expires_at  TIMESTAMPTZ,
     applied_at           TIMESTAMPTZ,
     released_at          TIMESTAMPTZ,
+    version              BIGINT      NOT NULL DEFAULT 0,
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_user_vouchers_voucher FOREIGN KEY (voucher_code) REFERENCES vouchers(voucher_code)
 );

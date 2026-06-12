@@ -6,61 +6,27 @@ import com.aionn.promotion.application.dto.voucher.result.VoucherResult;
 import com.aionn.promotion.domain.model.PromotionCampaign;
 import com.aionn.promotion.domain.model.UserVoucher;
 import com.aionn.promotion.domain.model.Voucher;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class PromotionResultMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface PromotionResultMapper {
 
-    public CampaignResult toResult(PromotionCampaign c) {
-        return new CampaignResult(
-                c.getCampaignId(),
-                c.getName(),
-                c.getType().name(),
-                c.getBudget().amount(),
-                c.getBudgetRemaining().amount(),
-                c.getBudget().currency(),
-                c.getStartDate(),
-                c.getEndDate(),
-                c.getCreatedBy(),
-                c.getStatus().name(),
-                c.getCondition().minOrderValue(),
-                c.getCondition().applicableCategoryIds(),
-                c.getCondition().maxClaimsPerUser(),
-                c.getCondition().maxUsesPerVoucher(),
-                c.getCreatedAt(),
-                c.getUpdatedAt());
-    }
+    @Mapping(target = "budget", source = "budget.amount")
+    @Mapping(target = "budgetRemaining", source = "budgetRemaining.amount")
+    @Mapping(target = "currency", source = "budget.currency")
+    @Mapping(target = "minOrderValue", source = "condition.minOrderValue")
+    @Mapping(target = "applicableCategoryIds", source = "condition.applicableCategoryIds")
+    @Mapping(target = "maxClaimsPerUser", source = "condition.maxClaimsPerUser")
+    @Mapping(target = "maxUsesPerVoucher", source = "condition.maxUsesPerVoucher")
+    CampaignResult toResult(PromotionCampaign c);
 
-    public VoucherResult toResult(Voucher v) {
-        return new VoucherResult(
-                v.getVoucherCode(),
-                v.getCampaignId(),
-                v.getDiscountAmount().amount(),
-                v.getDiscountAmount().currency(),
-                v.getUsageLimit(),
-                v.getUsedCount(),
-                v.getReservedCount(),
-                v.getValidFrom(),
-                v.getValidUntil(),
-                v.getCreatedAt(),
-                v.getUpdatedAt());
-    }
+    @Mapping(target = "discountAmount", source = "discountAmount.amount")
+    @Mapping(target = "currency", source = "discountAmount.currency")
+    VoucherResult toResult(Voucher v);
 
-    public UserVoucherResult toResult(UserVoucher u) {
-        return new UserVoucherResult(
-                u.getUserVoucherId(),
-                u.getVoucherCode(),
-                u.getUserId(),
-                u.getStatus().name(),
-                u.getReservedOrderId(),
-                u.getAppliedAmount() == null ? null : u.getAppliedAmount().amount(),
-                u.getAppliedAmount() == null ? null : u.getAppliedAmount().currency(),
-                u.getClaimedAt(),
-                u.getReservedAt(),
-                u.getReservedExpiresAt(),
-                u.getAppliedAt(),
-                u.getReleasedAt(),
-                u.getUpdatedAt());
-    }
+    @Mapping(target = "appliedAmount", source = "appliedAmount.amount")
+    @Mapping(target = "currency", source = "appliedAmount.currency")
+    UserVoucherResult toResult(UserVoucher u);
 }
-

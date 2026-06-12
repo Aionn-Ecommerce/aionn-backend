@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification.retry", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "notification.retry", name = "enabled", havingValue = "true")
 public class NotificationRetryScheduler {
 
     private final NotificationDispatchService dispatchService;
@@ -31,4 +31,3 @@ public class NotificationRetryScheduler {
         }
     }
 }
-

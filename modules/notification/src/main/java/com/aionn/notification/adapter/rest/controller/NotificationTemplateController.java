@@ -51,9 +51,9 @@ public class NotificationTemplateController {
     }
 
     @GetMapping("/{templateId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
     @Operation(summary = "Get template")
     public ResponseEntity<ApiResponse<TemplateResult>> get(@PathVariable String templateId) {
         return ResponseEntity.ok(ApiResponse.success(templateService.get(templateId), "Template fetched"));
     }
 }
-

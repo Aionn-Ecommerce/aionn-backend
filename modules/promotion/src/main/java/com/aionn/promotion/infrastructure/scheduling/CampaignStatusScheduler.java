@@ -13,7 +13,7 @@ import java.time.Instant;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "promotion.scheduler", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "promotion.scheduler", name = "enabled", havingValue = "true")
 public class CampaignStatusScheduler {
 
     private final PromotionCampaignService campaignService;
@@ -33,4 +33,3 @@ public class CampaignStatusScheduler {
         }
     }
 }
-
