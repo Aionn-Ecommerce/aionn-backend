@@ -1,17 +1,20 @@
 package com.aionn.ordering.application.service;
 
-import com.aionn.ordering.application.dto.returns.command.ReturnCommands;
+import com.aionn.ordering.application.dto.returns.command.ApproveReturnCommand;
+import com.aionn.ordering.application.dto.returns.command.ConfirmItemReceivedCommand;
+import com.aionn.ordering.application.dto.returns.command.RejectReturnCommand;
+import com.aionn.ordering.application.dto.returns.command.RequestReturnCommand;
 import com.aionn.ordering.application.dto.returns.result.ReturnResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.ordering.application.port.out.OrderRepository;
 import com.aionn.ordering.application.port.out.OrderReturnRepository;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Order;
 import com.aionn.ordering.domain.model.OrderReturn;
-import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.ordering.domain.valueobject.OrderStatus;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +40,7 @@ public class OrderReturnService {
     private final EventPublisher eventPublisher;
     private final MerchantQueryPort merchantQueryPort;
 
-    public ReturnResult requestReturn(ReturnCommands.RequestReturn command) {
+    public ReturnResult requestReturn(RequestReturnCommand command) {
         Order order = orderRepository.findById(command.orderId())
                 .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_FOUND));
         if (!order.getUserId().equals(command.userId())) {
@@ -59,7 +62,7 @@ public class OrderReturnService {
         return mapper.toResult(saved);
     }
 
-    public ReturnResult approve(ReturnCommands.ApproveReturn command) {
+    public ReturnResult approve(ApproveReturnCommand command) {
         OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         Money refundAmount = command.refundAmount() == null
                 ? null
@@ -70,7 +73,7 @@ public class OrderReturnService {
         return mapper.toResult(saved);
     }
 
-    public ReturnResult reject(ReturnCommands.RejectReturn command) {
+    public ReturnResult reject(RejectReturnCommand command) {
         OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         r.reject(command.reason());
         OrderReturn saved = returnRepository.save(r);
@@ -78,7 +81,7 @@ public class OrderReturnService {
         return mapper.toResult(saved);
     }
 
-    public ReturnResult confirmItemReceived(ReturnCommands.ConfirmItemReceived command) {
+    public ReturnResult confirmItemReceived(ConfirmItemReceivedCommand command) {
         OrderReturn r = ownedByOwner(command.returnId(), command.ownerId());
         r.confirmReceived(command.itemCondition());
         OrderReturn saved = returnRepository.save(r);

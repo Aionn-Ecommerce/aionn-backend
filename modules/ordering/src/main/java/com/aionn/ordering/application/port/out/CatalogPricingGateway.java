@@ -5,11 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Outbound port to Catalog. Resolves SKU price + active merchant + warehouse
- * picking for the cart at the moment of placing an order. This is what
- * UC5.7 ("Kiá»ƒm tra tÃ­nh há»£p lá»‡ Ä‘Æ¡n hÃ ng") needs: AI agent / system must
- * confirm the SKU is still being sold, at what price, by which merchant,
- * and from which warehouse.
+ * Resolves SKU price/merchant/active + warehouse to draw stock from at order
+ * placement.
  */
 public interface CatalogPricingGateway {
 
@@ -24,4 +21,3 @@ public interface CatalogPricingGateway {
             boolean active) {
     }
 }
-

@@ -39,7 +39,7 @@ public class WarehouseController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Create warehouse", description = "UC4.1")
+    @Operation(summary = "Create warehouse")
     public ResponseEntity<ApiResponse<WarehouseResult>> create(
             Authentication authentication,
             @Valid @RequestBody CreateWarehouseRequest request) {
@@ -50,7 +50,7 @@ public class WarehouseController {
 
     @PutMapping("/{warehouseId}/status")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Change warehouse status", description = "UC4.2")
+    @Operation(summary = "Change warehouse status")
     public ResponseEntity<ApiResponse<WarehouseResult>> changeStatus(
             Authentication authentication,
             @PathVariable String warehouseId,
@@ -62,7 +62,7 @@ public class WarehouseController {
 
     @PutMapping("/{warehouseId}/priority")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Adjust priority", description = "UC4.4")
+    @Operation(summary = "Adjust priority")
     public ResponseEntity<ApiResponse<WarehouseResult>> adjustPriority(
             Authentication authentication,
             @PathVariable String warehouseId,
@@ -74,7 +74,7 @@ public class WarehouseController {
 
     @PostMapping("/{warehouseId}/suspend")
     @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
-    @Operation(summary = "Suspend warehouse", description = "UC4.3")
+    @Operation(summary = "Suspend warehouse")
     public ResponseEntity<ApiResponse<WarehouseResult>> suspend(
             Authentication authentication,
             @PathVariable String warehouseId,

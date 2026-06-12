@@ -42,5 +42,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 .map(mapper::toDomain)
                 .toList();
     }
-}
 
+    @Override
+    public List<Product> findBySkuIds(List<String> skuIds) {
+        return jpa.findBySkuIds(skuIds).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+}

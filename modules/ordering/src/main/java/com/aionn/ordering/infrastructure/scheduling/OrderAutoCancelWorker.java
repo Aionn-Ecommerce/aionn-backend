@@ -2,6 +2,8 @@ package com.aionn.ordering.infrastructure.scheduling;
 
 import com.aionn.ordering.application.port.out.OrderRepository;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
+import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort;
+import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort.CancellationKind;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Order;
@@ -21,6 +23,7 @@ public class OrderAutoCancelWorker {
     private final OrderRepository orderRepository;
     private final StockReservationGateway stockReservationGateway;
     private final EventPublisher eventPublisher;
+    private final OrderingIntegrationEventPublisherPort integrationEventPublisher;
 
     /** REQUIRES_NEW so a single failure does not poison the batch (audit B6). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -35,7 +38,9 @@ public class OrderAutoCancelWorker {
                 log.warn("Auto-cancel: reservation {} release failed: {}", item.reservationId(), ex.getMessage());
             }
         }
-        orderRepository.save(order);
+        Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderCancelled(saved.getOrderId(), "PAYMENT_TIMEOUT",
+                "Payment timeout", CancellationKind.AUTO_CANCELLED);
     }
 }

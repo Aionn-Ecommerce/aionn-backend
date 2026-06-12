@@ -15,4 +15,6 @@ public interface ProductRepository {
     List<Product> findByMerchant(String merchantId, OffsetPagination pagination);
 
     List<Product> findByMerchantAndSkuIds(String merchantId, List<String> skuIds);
+
+    List<Product> findBySkuIds(List<String> skuIds);
 }

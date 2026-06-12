@@ -1,24 +1,31 @@
 package com.aionn.ordering.application.service;
 
-import com.aionn.ordering.application.dto.order.command.OrderCommands;
+import com.aionn.ordering.application.dto.order.command.CancelOrderCommand;
+import com.aionn.ordering.application.dto.order.command.ChangeShippingInfoCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmDeliveredCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmShippedCommand;
+import com.aionn.ordering.application.dto.order.command.PlaceOrderCommand;
+import com.aionn.ordering.application.dto.order.command.RejectOrderCommand;
 import com.aionn.ordering.application.dto.order.result.OrderResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
 import com.aionn.ordering.application.port.out.CartRepository;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.ordering.application.port.out.OrderRepository;
 import com.aionn.ordering.application.port.out.PaymentGateway;
 import com.aionn.ordering.application.port.out.ShippingGateway;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
 import com.aionn.ordering.application.port.out.VoucherGateway;
+import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Cart;
 import com.aionn.ordering.domain.model.Order;
 import com.aionn.ordering.domain.model.OrderItem;
-import com.aionn.ordering.infrastructure.config.OrderingProperties;
-import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.ordering.domain.valueobject.OrderStatus;
+import com.aionn.ordering.infrastructure.config.OrderingProperties;
+import com.aionn.sharedkernel.application.port.EventPublisher;
+import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -48,9 +55,10 @@ public class OrderService {
     private final VoucherGateway voucherGateway;
     private final CartService cartService;
     private final MerchantQueryPort merchantQueryPort;
+    private final OrderingIntegrationEventPublisherPort integrationEventPublisher;
     private final OrderingProperties properties;
 
-    public OrderResult placeOrder(OrderCommands.PlaceOrder command) {
+    public OrderResult placeOrder(PlaceOrderCommand command) {
         Cart cart = cartService.loadOwned(command.userId());
         if (cart.isEmpty()) {
             throw new OrderingException(OrderingErrorCode.CART_EMPTY);
@@ -153,6 +161,8 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderPlaced(saved);
+        integrationEventPublisher.publishOrderApproved(saved.getOrderId(), auth.paymentId());
 
         Cart freshCart = cartService.loadOwned(command.userId());
         freshCart.clear("order-placed");
@@ -162,7 +172,7 @@ public class OrderService {
         return mapper.toResult(saved);
     }
 
-    public OrderResult confirmPreparation(OrderCommands.ConfirmPreparation command) {
+    public OrderResult confirmPreparation(ConfirmPreparationCommand command) {
         String merchantId = requireMerchantIdForOwner(command.ownerId());
         Order order = ownedByMerchant(command.orderId(), merchantId);
         order.confirmPreparation();
@@ -171,7 +181,7 @@ public class OrderService {
         return mapper.toResult(saved);
     }
 
-    public OrderResult cancel(OrderCommands.CancelOrder command) {
+    public OrderResult cancel(CancelOrderCommand command) {
         Order order = ownedByUser(command.orderId(), command.userId());
         if (order.getStatus().isPickedUpByCarrier()) {
             throw new OrderingException(OrderingErrorCode.ORDER_ALREADY_PICKED_UP);
@@ -186,10 +196,12 @@ public class OrderService {
         }
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderCancelled(saved.getOrderId(), "USER_CANCELLED",
+                command.reason(), OrderingIntegrationEventPublisherPort.CancellationKind.USER_CANCELLED);
         return mapper.toResult(saved);
     }
 
-    public OrderResult rejectByMerchant(OrderCommands.RejectOrder command) {
+    public OrderResult rejectByMerchant(RejectOrderCommand command) {
         String merchantId = requireMerchantIdForOwner(command.ownerId());
         Order order = ownedByMerchant(command.orderId(), merchantId);
         order.rejectByMerchant(merchantId, command.reason());
@@ -202,10 +214,12 @@ public class OrderService {
         }
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderCancelled(saved.getOrderId(), "MERCHANT_REJECTED",
+                command.reason(), OrderingIntegrationEventPublisherPort.CancellationKind.MERCHANT_REJECTED);
         return mapper.toResult(saved);
     }
 
-    public OrderResult changeShippingInfo(OrderCommands.ChangeShippingInfo command) {
+    public OrderResult changeShippingInfo(ChangeShippingInfoCommand command) {
         Order order = ownedByUser(command.orderId(), command.userId());
         BigDecimal feeOverride = command.newShippingFee();
         Money newFee;
@@ -222,7 +236,7 @@ public class OrderService {
         return mapper.toResult(saved);
     }
 
-    public OrderResult markShipped(OrderCommands.ConfirmShipped command) {
+    public OrderResult markShipped(ConfirmShippedCommand command) {
         Order order = required(command.orderId());
         order.markShipped(command.shipmentId());
         for (OrderItem item : order.items()) {
@@ -230,14 +244,16 @@ public class OrderService {
         }
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderShipped(saved.getOrderId(), command.shipmentId());
         return mapper.toResult(saved);
     }
 
-    public OrderResult complete(OrderCommands.ConfirmDelivered command) {
+    public OrderResult complete(ConfirmDeliveredCommand command) {
         Order order = required(command.orderId());
         order.complete();
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderCompleted(saved.getOrderId());
         return mapper.toResult(saved);
     }
 

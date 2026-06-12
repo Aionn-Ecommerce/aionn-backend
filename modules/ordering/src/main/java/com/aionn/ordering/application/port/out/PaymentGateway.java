@@ -3,8 +3,8 @@ package com.aionn.ordering.application.port.out;
 import java.math.BigDecimal;
 
 /**
- * Outbound port to Payment bounded context. Built as 2-impl: assume-success
- * for dev/test and a remote stub for the future.
+ * Outbound port for payment authorize / refund used during order placement and
+ * cancellation.
  */
 public interface PaymentGateway {
 
@@ -16,4 +16,3 @@ public interface PaymentGateway {
     record PaymentAuthorization(String paymentId, boolean approved, String declineReason) {
     }
 }
-

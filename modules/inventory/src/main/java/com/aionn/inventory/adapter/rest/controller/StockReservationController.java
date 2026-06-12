@@ -31,7 +31,7 @@ public class StockReservationController {
     private final StockReservationService reservationService;
 
     @PostMapping
-    @Operation(summary = "Reserve stock", description = "UC4.13")
+    @Operation(summary = "Reserve stock")
     public ResponseEntity<ApiResponse<ReservationResult>> reserve(@Valid @RequestBody ReserveStockRequest request) {
         ReservationResult result = reservationService.reserve(new ReserveStockCommand(
                 request.skuId(), request.warehouseId(), request.orderId(), request.qty(), request.ttlSeconds()));
@@ -39,14 +39,14 @@ public class StockReservationController {
     }
 
     @PostMapping("/{reservationId}/commit")
-    @Operation(summary = "Commit reservation", description = "UC4.15")
+    @Operation(summary = "Commit reservation")
     public ResponseEntity<ApiResponse<ReservationResult>> commit(@PathVariable String reservationId) {
         ReservationResult result = reservationService.commit(new CommitReservationCommand(reservationId));
         return ResponseEntity.ok(ApiResponse.success(result, "Reservation committed"));
     }
 
     @PostMapping("/{reservationId}/release")
-    @Operation(summary = "Release reservation", description = "UC4.16")
+    @Operation(summary = "Release reservation")
     public ResponseEntity<ApiResponse<ReservationResult>> release(
             @PathVariable String reservationId,
             @Valid @RequestBody ReleaseReservationRequest request) {

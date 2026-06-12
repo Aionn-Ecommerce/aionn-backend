@@ -1,13 +1,17 @@
 package com.aionn.ordering.application.service;
 
-import com.aionn.ordering.application.dto.cart.command.CartCommands;
+import com.aionn.ordering.application.dto.cart.command.AddItemCommand;
+import com.aionn.ordering.application.dto.cart.command.ApplyVoucherCommand;
+import com.aionn.ordering.application.dto.cart.command.ClearCartCommand;
+import com.aionn.ordering.application.dto.cart.command.RemoveItemCommand;
+import com.aionn.ordering.application.dto.cart.command.UpdateItemQtyCommand;
 import com.aionn.ordering.application.dto.cart.result.CartResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
 import com.aionn.ordering.application.port.out.CartRepository;
-import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Cart;
+import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.sharedkernel.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +28,7 @@ public class CartService {
     private final OrderingResultMapper mapper;
     private final EventPublisher eventPublisher;
 
-    public CartResult addItem(CartCommands.AddItem command) {
+    public CartResult addItem(AddItemCommand command) {
         Cart cart = loadOrCreate(command.userId());
         cart.addItem(command.skuId(), command.qty());
         Cart saved = cartRepository.save(cart);
@@ -32,7 +36,7 @@ public class CartService {
         return mapper.toResult(saved);
     }
 
-    public CartResult updateItemQty(CartCommands.UpdateItemQty command) {
+    public CartResult updateItemQty(UpdateItemQtyCommand command) {
         Cart cart = loadOwned(command.userId());
         cart.updateItemQty(command.skuId(), command.newQty());
         Cart saved = cartRepository.save(cart);
@@ -40,7 +44,7 @@ public class CartService {
         return mapper.toResult(saved);
     }
 
-    public CartResult removeItem(CartCommands.RemoveItem command) {
+    public CartResult removeItem(RemoveItemCommand command) {
         Cart cart = loadOwned(command.userId());
         cart.removeItem(command.skuId());
         Cart saved = cartRepository.save(cart);
@@ -48,7 +52,7 @@ public class CartService {
         return mapper.toResult(saved);
     }
 
-    public CartResult clearCart(CartCommands.ClearCart command) {
+    public CartResult clearCart(ClearCartCommand command) {
         Cart cart = loadOwned(command.userId());
         cart.clear(command.reason());
         Cart saved = cartRepository.save(cart);
@@ -56,7 +60,7 @@ public class CartService {
         return mapper.toResult(saved);
     }
 
-    public CartResult applyVoucher(CartCommands.ApplyVoucher command) {
+    public CartResult applyVoucher(ApplyVoucherCommand command) {
         Cart cart = loadOwned(command.userId());
         cart.applyVoucher(command.voucherCode());
         Cart saved = cartRepository.save(cart);
@@ -83,4 +87,3 @@ public class CartService {
         });
     }
 }
-

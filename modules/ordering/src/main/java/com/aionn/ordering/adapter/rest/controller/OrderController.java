@@ -6,7 +6,13 @@ import com.aionn.ordering.adapter.rest.dto.order.ConfirmPreparationRequest;
 import com.aionn.ordering.adapter.rest.dto.order.ConfirmShippedRequest;
 import com.aionn.ordering.adapter.rest.dto.order.PlaceOrderRequest;
 import com.aionn.ordering.adapter.rest.dto.order.RejectOrderRequest;
-import com.aionn.ordering.application.dto.order.command.OrderCommands;
+import com.aionn.ordering.application.dto.order.command.CancelOrderCommand;
+import com.aionn.ordering.application.dto.order.command.ChangeShippingInfoCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmDeliveredCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmShippedCommand;
+import com.aionn.ordering.application.dto.order.command.PlaceOrderCommand;
+import com.aionn.ordering.application.dto.order.command.RejectOrderCommand;
 import com.aionn.ordering.application.dto.order.result.OrderResult;
 import com.aionn.ordering.application.service.OrderService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
@@ -38,11 +44,11 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Place order", description = "UC5.6")
+    @Operation(summary = "Place order")
     public ResponseEntity<ApiResponse<OrderResult>> place(
             Authentication authentication,
             @Valid @RequestBody PlaceOrderRequest request) {
-        OrderResult result = orderService.placeOrder(new OrderCommands.PlaceOrder(
+        OrderResult result = orderService.placeOrder(new PlaceOrderCommand(
                 authentication.getName(),
                 request.addressId(),
                 request.paymentMethodId(),
@@ -54,67 +60,67 @@ public class OrderController {
 
     @PostMapping("/{orderId}/confirm-preparation")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Merchant confirms preparation", description = "UC5.8")
+    @Operation(summary = "Merchant confirms preparation")
     public ResponseEntity<ApiResponse<OrderResult>> confirmPreparation(
             Authentication authentication,
             @PathVariable String orderId,
             @Valid @RequestBody(required = false) ConfirmPreparationRequest request) {
         OrderResult result = orderService.confirmPreparation(
-                new OrderCommands.ConfirmPreparation(orderId, authentication.getName()));
+                new ConfirmPreparationCommand(orderId, authentication.getName()));
         return ResponseEntity.ok(ApiResponse.success(result, "Preparation confirmed"));
     }
 
     @PostMapping("/{orderId}/cancel")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "User cancel", description = "UC5.9")
+    @Operation(summary = "User cancel")
     public ResponseEntity<ApiResponse<OrderResult>> cancel(
             Authentication authentication,
             @PathVariable String orderId,
             @Valid @RequestBody CancelOrderRequest request) {
-        OrderResult result = orderService.cancel(new OrderCommands.CancelOrder(
+        OrderResult result = orderService.cancel(new CancelOrderCommand(
                 orderId, authentication.getName(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Order cancelled"));
     }
 
     @PostMapping("/{orderId}/reject")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Merchant reject", description = "UC5.13")
+    @Operation(summary = "Merchant reject")
     public ResponseEntity<ApiResponse<OrderResult>> reject(
             Authentication authentication,
             @PathVariable String orderId,
             @Valid @RequestBody RejectOrderRequest request) {
-        OrderResult result = orderService.rejectByMerchant(new OrderCommands.RejectOrder(
+        OrderResult result = orderService.rejectByMerchant(new RejectOrderCommand(
                 orderId, authentication.getName(), request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Order rejected"));
     }
 
     @PutMapping("/{orderId}/shipping-info")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Change shipping info", description = "UC5.14")
+    @Operation(summary = "Change shipping info")
     public ResponseEntity<ApiResponse<OrderResult>> changeShippingInfo(
             Authentication authentication,
             @PathVariable String orderId,
             @Valid @RequestBody ChangeShippingInfoRequest request) {
-        OrderResult result = orderService.changeShippingInfo(new OrderCommands.ChangeShippingInfo(
+        OrderResult result = orderService.changeShippingInfo(new ChangeShippingInfoCommand(
                 orderId, authentication.getName(), request.newAddress(), request.newShippingFee()));
         return ResponseEntity.ok(ApiResponse.success(result, "Shipping info changed"));
     }
 
     @PostMapping("/{orderId}/ship")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Mark shipped", description = "Triggered by Shipping context once carrier collects")
+    @Operation(summary = "Mark shipped", description = "Triggered by shipping when the carrier collects the parcel")
     public ResponseEntity<ApiResponse<OrderResult>> ship(
             @PathVariable String orderId,
             @Valid @RequestBody ConfirmShippedRequest request) {
-        OrderResult result = orderService.markShipped(new OrderCommands.ConfirmShipped(orderId, request.shipmentId()));
+        OrderResult result = orderService.markShipped(new ConfirmShippedCommand(orderId, request.shipmentId()));
         return ResponseEntity.ok(ApiResponse.success(result, "Order shipped"));
     }
 
     @PostMapping("/{orderId}/complete")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Complete order", description = "UC5.11 - shipment delivered")
+    @Operation(summary = "Complete order", description = "Shipment delivered")
     public ResponseEntity<ApiResponse<OrderResult>> complete(@PathVariable String orderId) {
-        OrderResult result = orderService.complete(new OrderCommands.ConfirmDelivered(orderId));
+        OrderResult result = orderService.complete(new ConfirmDeliveredCommand(orderId));
         return ResponseEntity.ok(ApiResponse.success(result, "Order completed"));
     }
 
