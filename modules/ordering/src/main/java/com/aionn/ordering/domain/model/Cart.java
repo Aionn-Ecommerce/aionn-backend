@@ -95,6 +95,15 @@ public class Cart extends AggregateRoot {
         record(new CartEvents.VoucherApplied(cartId, this.voucherCode, updatedAt));
     }
 
+    public void removeVoucher() {
+        if (this.voucherCode == null) {
+            return;
+        }
+        this.voucherCode = null;
+        touch();
+        record(new CartEvents.VoucherRemoved(cartId, updatedAt));
+    }
+
     public List<Map.Entry<String, Integer>> snapshot() {
         return Collections.unmodifiableList(new ArrayList<>(items.entrySet()));
     }

@@ -3,12 +3,12 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.message.command.MessageCommands;
 import com.aionn.chat.application.dto.message.result.MessageResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.ConversationRepository;
-import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
-import com.aionn.chat.application.port.out.MessageRepository;
+import com.aionn.chat.application.port.out.ConversationPersistencePort;
+import com.aionn.chat.application.port.out.MerchantAutoReplyPersistencePort;
+import com.aionn.chat.application.port.out.MessagePersistencePort;
 import com.aionn.chat.application.port.out.PresenceTracker;
 import com.aionn.chat.application.port.out.RealtimeBroadcaster;
-import com.aionn.chat.application.port.out.UserBlockRepository;
+import com.aionn.chat.application.port.out.UserBlockPersistencePort;
 import com.aionn.chat.application.port.out.integration.ChatIntegrationEventPublisherPort;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
@@ -39,10 +39,10 @@ public class MessageService {
 
     private static final String DEFAULT_AWAY_MESSAGE = "Hiện tại shop đang ngoài giờ làm việc, sẽ phản hồi bạn sớm nhất.";
 
-    private final ConversationRepository conversationRepository;
-    private final MessageRepository messageRepository;
-    private final UserBlockRepository userBlockRepository;
-    private final MerchantAutoReplyRepository autoReplyRepository;
+    private final ConversationPersistencePort conversationRepository;
+    private final MessagePersistencePort messageRepository;
+    private final UserBlockPersistencePort userBlockRepository;
+    private final MerchantAutoReplyPersistencePort autoReplyRepository;
     private final ChatResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final RealtimeBroadcaster broadcaster;

@@ -1,6 +1,6 @@
 package com.aionn.chat.infrastructure.realtime;
 
-import com.aionn.chat.application.port.out.ConversationRepository;
+import com.aionn.chat.application.port.out.ConversationPersistencePort;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.Conversation;
@@ -49,7 +49,7 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
     private static final String CONVERSATION_TOPIC_PREFIX = "/topic/conversations/";
 
     private final StompPrincipalResolver principalResolver;
-    private final ConversationRepository conversationRepository;
+    private final ConversationPersistencePort conversationRepository;
     private final ChatWebSocketProperties properties;
 
     @Override

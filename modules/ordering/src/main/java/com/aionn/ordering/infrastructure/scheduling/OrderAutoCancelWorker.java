@@ -1,6 +1,6 @@
 package com.aionn.ordering.infrastructure.scheduling;
 
-import com.aionn.ordering.application.port.out.OrderRepository;
+import com.aionn.ordering.application.port.out.OrderPersistencePort;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
 import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort;
 import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort.CancellationKind;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrderAutoCancelWorker {
 
-    private final OrderRepository orderRepository;
+    private final OrderPersistencePort orderRepository;
     private final StockReservationGateway stockReservationGateway;
     private final EventPublisher eventPublisher;
     private final OrderingIntegrationEventPublisherPort integrationEventPublisher;

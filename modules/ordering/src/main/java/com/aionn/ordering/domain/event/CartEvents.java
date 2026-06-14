@@ -26,5 +26,9 @@ public final class CartEvents {
     public record VoucherApplied(
             String cartId, String voucherCode, Instant occurredAt) implements OrderingEvent {
     }
+
+    public record VoucherRemoved(
+            String cartId, Instant occurredAt) implements OrderingEvent {
+    }
 }
 

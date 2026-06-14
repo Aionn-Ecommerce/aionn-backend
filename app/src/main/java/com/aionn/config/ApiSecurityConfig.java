@@ -70,7 +70,8 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/shipping/webhooks/**",
                                                                 "/ws/chat/**",
                                                                 "/.well-known/ucp",
-                                                                "/.well-known/ucp/**")
+                                                                "/.well-known/ucp/**",
+                                                                "/ucp/v1/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
                                                 .requestMatchers(

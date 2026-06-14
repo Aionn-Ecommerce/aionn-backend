@@ -7,6 +7,7 @@ import com.aionn.ordering.application.dto.cart.command.AddItemCommand;
 import com.aionn.ordering.application.dto.cart.command.ApplyVoucherCommand;
 import com.aionn.ordering.application.dto.cart.command.ClearCartCommand;
 import com.aionn.ordering.application.dto.cart.command.RemoveItemCommand;
+import com.aionn.ordering.application.dto.cart.command.RemoveVoucherCommand;
 import com.aionn.ordering.application.dto.cart.command.UpdateItemQtyCommand;
 import com.aionn.ordering.application.dto.cart.result.CartResult;
 import com.aionn.ordering.application.service.CartService;
@@ -93,5 +94,13 @@ public class CartController {
         CartResult result = cartService.applyVoucher(new ApplyVoucherCommand(
                 authentication.getName(), request.voucherCode()));
         return ResponseEntity.ok(ApiResponse.success(result, "Voucher applied"));
+    }
+
+    @DeleteMapping("/voucher")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Remove voucher")
+    public ResponseEntity<ApiResponse<CartResult>> removeVoucher(Authentication authentication) {
+        CartResult result = cartService.removeVoucher(new RemoveVoucherCommand(authentication.getName()));
+        return ResponseEntity.ok(ApiResponse.success(result, "Voucher removed"));
     }
 }

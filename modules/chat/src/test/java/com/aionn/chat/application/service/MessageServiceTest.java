@@ -3,12 +3,12 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.message.command.MessageCommands;
 import com.aionn.chat.application.dto.message.result.MessageResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.ConversationRepository;
-import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
-import com.aionn.chat.application.port.out.MessageRepository;
+import com.aionn.chat.application.port.out.ConversationPersistencePort;
+import com.aionn.chat.application.port.out.MerchantAutoReplyPersistencePort;
+import com.aionn.chat.application.port.out.MessagePersistencePort;
 import com.aionn.chat.application.port.out.PresenceTracker;
 import com.aionn.chat.application.port.out.RealtimeBroadcaster;
-import com.aionn.chat.application.port.out.UserBlockRepository;
+import com.aionn.chat.application.port.out.UserBlockPersistencePort;
 import com.aionn.chat.application.port.out.integration.ChatIntegrationEventPublisherPort;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.Conversation;
@@ -25,7 +25,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,13 +46,13 @@ import static org.mockito.Mockito.when;
 class MessageServiceTest {
 
     @Mock
-    ConversationRepository conversationRepository;
+    ConversationPersistencePort conversationRepository;
     @Mock
-    MessageRepository messageRepository;
+    MessagePersistencePort messageRepository;
     @Mock
-    UserBlockRepository userBlockRepository;
+    UserBlockPersistencePort userBlockRepository;
     @Mock
-    MerchantAutoReplyRepository autoReplyRepository;
+    MerchantAutoReplyPersistencePort autoReplyRepository;
     @Mock
     ChatResultMapper mapper;
     @Mock

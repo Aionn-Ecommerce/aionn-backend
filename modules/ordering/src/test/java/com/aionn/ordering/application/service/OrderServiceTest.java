@@ -2,9 +2,9 @@ package com.aionn.ordering.application.service;
 
 import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
-import com.aionn.ordering.application.port.out.CartRepository;
+import com.aionn.ordering.application.port.out.CartPersistencePort;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
-import com.aionn.ordering.application.port.out.OrderRepository;
+import com.aionn.ordering.application.port.out.OrderPersistencePort;
 import com.aionn.ordering.application.port.out.PaymentGateway;
 import com.aionn.ordering.application.port.out.ShippingGateway;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
@@ -46,9 +46,9 @@ import static org.mockito.Mockito.when;
 class OrderServiceTest {
 
     @Mock
-    CartRepository cartRepository;
+    CartPersistencePort cartRepository;
     @Mock
-    OrderRepository orderRepository;
+    OrderPersistencePort orderRepository;
     @Mock
     OrderingResultMapper mapper;
     @Mock

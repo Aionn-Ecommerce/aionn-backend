@@ -1,6 +1,6 @@
 package com.aionn.ordering.infrastructure.scheduling;
 
-import com.aionn.ordering.application.port.out.OrderRepository;
+import com.aionn.ordering.application.port.out.OrderPersistencePort;
 import com.aionn.ordering.infrastructure.config.OrderingProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "ordering.auto-cancel", name = "enabled", havingValue = "true")
 public class OrderAutoCancelScheduler {
 
-    private final OrderRepository orderRepository;
+    private final OrderPersistencePort orderRepository;
     private final OrderAutoCancelWorker worker;
     private final OrderingProperties properties;
 

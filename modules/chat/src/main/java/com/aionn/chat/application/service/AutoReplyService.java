@@ -3,7 +3,7 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.autoreply.command.AutoReplyCommands;
 import com.aionn.chat.application.dto.autoreply.result.AutoReplyResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
+import com.aionn.chat.application.port.out.MerchantAutoReplyPersistencePort;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.MerchantAutoReply;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AutoReplyService {
 
-    private final MerchantAutoReplyRepository repository;
+    private final MerchantAutoReplyPersistencePort repository;
     private final ChatResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final MerchantQueryPort merchantQueryPort;

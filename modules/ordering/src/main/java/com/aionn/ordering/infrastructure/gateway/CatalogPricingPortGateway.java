@@ -1,7 +1,7 @@
 package com.aionn.ordering.infrastructure.gateway;
 
-import com.aionn.inventory.application.port.out.InventoryItemRepository;
-import com.aionn.inventory.application.port.out.WarehouseRepository;
+import com.aionn.inventory.application.port.out.InventoryItemPersistencePort;
+import com.aionn.inventory.application.port.out.WarehousePersistencePort;
 import com.aionn.inventory.domain.model.InventoryItem;
 import com.aionn.inventory.domain.model.Warehouse;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
@@ -18,8 +18,8 @@ import java.util.Map;
 public class CatalogPricingPortGateway implements CatalogPricingGateway {
 
     private final PricingQueryPort pricingQueryPort;
-    private final WarehouseRepository warehouseRepository;
-    private final InventoryItemRepository inventoryItemRepository;
+    private final WarehousePersistencePort warehouseRepository;
+    private final InventoryItemPersistencePort inventoryItemRepository;
 
     @Override
     public Map<String, SkuPricing> resolve(List<String> skuIds) {

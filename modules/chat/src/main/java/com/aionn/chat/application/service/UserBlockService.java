@@ -4,7 +4,7 @@ import com.aionn.chat.application.dto.block.command.BlockCommands;
 import com.aionn.chat.application.dto.block.result.BlockResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.chat.application.port.out.UserBlockRepository;
+import com.aionn.chat.application.port.out.UserBlockPersistencePort;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.UserBlock;
@@ -22,7 +22,7 @@ import java.util.List;
 @Transactional
 public class UserBlockService {
 
-    private final UserBlockRepository repository;
+    private final UserBlockPersistencePort repository;
     private final ChatResultMapper mapper;
     private final EventPublisher eventPublisher;
 

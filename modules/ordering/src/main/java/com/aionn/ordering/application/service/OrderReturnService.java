@@ -6,8 +6,8 @@ import com.aionn.ordering.application.dto.returns.command.RejectReturnCommand;
 import com.aionn.ordering.application.dto.returns.command.RequestReturnCommand;
 import com.aionn.ordering.application.dto.returns.result.ReturnResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
-import com.aionn.ordering.application.port.out.OrderRepository;
-import com.aionn.ordering.application.port.out.OrderReturnRepository;
+import com.aionn.ordering.application.port.out.OrderPersistencePort;
+import com.aionn.ordering.application.port.out.OrderReturnPersistencePort;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Order;
@@ -34,8 +34,8 @@ public class OrderReturnService {
 
     private static final Duration RETURN_WINDOW = Duration.ofDays(7);
 
-    private final OrderRepository orderRepository;
-    private final OrderReturnRepository returnRepository;
+    private final OrderPersistencePort orderRepository;
+    private final OrderReturnPersistencePort returnRepository;
     private final OrderingResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final MerchantQueryPort merchantQueryPort;

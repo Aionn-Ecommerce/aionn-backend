@@ -1,7 +1,7 @@
 package com.aionn.ordering.infrastructure.integration;
 
 import com.aionn.ordering.domain.valueobject.OrderStatus;
-import com.aionn.ordering.infrastructure.persistence.repository.OrderJpaRepository;
+import com.aionn.ordering.infrastructure.persistence.repository.OrderRepository;
 import com.aionn.sharedkernel.integration.port.ordering.OrderQueryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public class OrderingOrderQueryAdapter implements OrderQueryPort {
             .map(Enum::name)
             .toList();
 
-    private final OrderJpaRepository orderJpaRepository;
+    private final OrderRepository orderJpaRepository;
 
     @Override
     @Transactional(readOnly = true)

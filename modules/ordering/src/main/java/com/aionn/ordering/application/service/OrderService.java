@@ -6,12 +6,13 @@ import com.aionn.ordering.application.dto.order.command.ConfirmDeliveredCommand;
 import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
 import com.aionn.ordering.application.dto.order.command.ConfirmShippedCommand;
 import com.aionn.ordering.application.dto.order.command.PlaceOrderCommand;
+import com.aionn.ordering.application.dto.order.command.PlaceOrderHeadlessCommand;
 import com.aionn.ordering.application.dto.order.command.RejectOrderCommand;
 import com.aionn.ordering.application.dto.order.result.OrderResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
-import com.aionn.ordering.application.port.out.CartRepository;
+import com.aionn.ordering.application.port.out.CartPersistencePort;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
-import com.aionn.ordering.application.port.out.OrderRepository;
+import com.aionn.ordering.application.port.out.OrderPersistencePort;
 import com.aionn.ordering.application.port.out.PaymentGateway;
 import com.aionn.ordering.application.port.out.ShippingGateway;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
@@ -44,8 +45,8 @@ import java.util.Map;
 @Transactional
 public class OrderService {
 
-    private final CartRepository cartRepository;
-    private final OrderRepository orderRepository;
+    private final CartPersistencePort cartRepository;
+    private final OrderPersistencePort orderRepository;
     private final OrderingResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final StockReservationGateway stockReservationGateway;
@@ -64,14 +65,67 @@ public class OrderService {
             throw new OrderingException(OrderingErrorCode.CART_EMPTY);
         }
 
-        List<String> skuIds = cart.snapshot().stream().map(Map.Entry::getKey).toList();
+        List<PlaceOrderHeadlessCommand.Line> lines = cart.snapshot().stream()
+                .map(e -> new PlaceOrderHeadlessCommand.Line(e.getKey(), e.getValue()))
+                .toList();
+        OrderResult result = placeFromLines(
+                command.userId(),
+                lines,
+                cart.getVoucherCode(),
+                command.paymentMethodId(),
+                command.currency(),
+                command.shippingFee(),
+                command.shippingAddressSnapshot());
+
+        // Clear the user's cart only after the cart-driven placement succeeds.
+        Cart freshCart = cartService.loadOwned(command.userId());
+        freshCart.clear("order-placed");
+        cartRepository.save(freshCart);
+        eventPublisher.publish(freshCart.pullEvents());
+
+        return result;
+    }
+
+    /**
+     * Headless placement: no cart involvement. Used by UCP agentic checkout
+     * where the agent commits a snapshot of line items directly.
+     */
+    public OrderResult placeOrderHeadless(PlaceOrderHeadlessCommand command) {
+        if (command.lines() == null || command.lines().isEmpty()) {
+            throw new OrderingException(OrderingErrorCode.CART_EMPTY,
+                    "Headless placement requires at least one line");
+        }
+        return placeFromLines(
+                command.userId(),
+                command.lines(),
+                command.voucherCode(),
+                command.paymentMethodId(),
+                command.currency(),
+                command.shippingFee(),
+                command.shippingAddressSnapshot());
+    }
+
+    /**
+     * Core placement flow shared by cart-driven and headless paths:
+     * pricing → reservation → voucher → payment → order create.
+     */
+    private OrderResult placeFromLines(
+            String userId,
+            List<PlaceOrderHeadlessCommand.Line> lines,
+            String voucherCode,
+            String paymentMethodId,
+            String requestCurrency,
+            BigDecimal shippingFeeAmount,
+            com.aionn.ordering.domain.valueobject.ShippingAddress shippingAddress) {
+
+        List<String> skuIds = lines.stream().map(PlaceOrderHeadlessCommand.Line::skuId).toList();
         Map<String, CatalogPricingGateway.SkuPricing> pricing = catalogPricingGateway.resolve(skuIds);
 
-        for (Map.Entry<String, Integer> line : cart.snapshot()) {
-            CatalogPricingGateway.SkuPricing skuInfo = pricing.get(line.getKey());
+        for (PlaceOrderHeadlessCommand.Line line : lines) {
+            CatalogPricingGateway.SkuPricing skuInfo = pricing.get(line.skuId());
             if (skuInfo == null || !skuInfo.active()) {
                 throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
-                        "SKU " + line.getKey() + " is not available for sale");
+                        "SKU " + line.skuId() + " is not available for sale");
             }
         }
 
@@ -89,7 +143,6 @@ public class OrderService {
             }
         }
 
-        String requestCurrency = command.currency();
         if (requestCurrency != null && !requestCurrency.equals(pricingCurrency)) {
             throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
                     "Request currency " + requestCurrency
@@ -97,11 +150,11 @@ public class OrderService {
         }
         String currency = pricingCurrency;
 
-        List<StockReservationGateway.ReservationLine> reservationLines = cart.snapshot().stream()
+        List<StockReservationGateway.ReservationLine> reservationLines = lines.stream()
                 .map(line -> {
-                    CatalogPricingGateway.SkuPricing p = pricing.get(line.getKey());
+                    CatalogPricingGateway.SkuPricing p = pricing.get(line.skuId());
                     return new StockReservationGateway.ReservationLine(
-                            line.getKey(), p.warehouseId(), line.getValue(),
+                            line.skuId(), p.warehouseId(), line.qty(),
                             p.price(), currency);
                 }).toList();
         List<StockReservationGateway.Reservation> reservations;
@@ -121,9 +174,9 @@ public class OrderService {
             lineSubtotal = lineSubtotal.add(unit.multiply(r.qty()));
         }
 
-        if (cart.getVoucherCode() != null) {
+        if (voucherCode != null) {
             VoucherGateway.Discount discount = voucherGateway.apply(
-                    command.userId(), cart.getVoucherCode(), lineSubtotal.amount(), currency);
+                    userId, voucherCode, lineSubtotal.amount(), currency);
             if (!discount.valid()) {
                 releaseReservations(reservations, "voucher-invalid");
                 throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
@@ -133,15 +186,15 @@ public class OrderService {
             lineSubtotal = Money.of(newSubtotal, currency);
         }
 
-        Money shippingFee = command.shippingFee() == null
+        Money shippingFee = shippingFeeAmount == null
                 ? Money.zero(currency)
-                : Money.of(command.shippingFee(), currency);
+                : Money.of(shippingFeeAmount, currency);
         Money totalAmount = lineSubtotal.add(shippingFee);
 
         PaymentGateway.PaymentAuthorization auth;
         try {
-            auth = paymentGateway.authorize(IdGenerator.ulid(), command.userId(),
-                    command.paymentMethodId(), totalAmount.amount(), currency);
+            auth = paymentGateway.authorize(IdGenerator.ulid(), userId,
+                    paymentMethodId, totalAmount.amount(), currency);
         } catch (Exception ex) {
             releaseReservations(reservations, "payment-error");
             throw new OrderingException(OrderingErrorCode.ORDER_PAYMENT_FAILED,
@@ -155,19 +208,14 @@ public class OrderService {
 
         String orderId = IdGenerator.ulid();
         String proposalId = "prop-" + System.nanoTime();
-        Order order = Order.place(orderId, command.userId(), merchantId, proposalId,
-                command.paymentMethodId(), currency, items, command.shippingAddressSnapshot(), shippingFee);
+        Order order = Order.place(orderId, userId, merchantId, proposalId,
+                paymentMethodId, currency, items, shippingAddress, shippingFee);
         order.approve(auth.paymentId());
 
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
         integrationEventPublisher.publishOrderPlaced(saved);
         integrationEventPublisher.publishOrderApproved(saved.getOrderId(), auth.paymentId());
-
-        Cart freshCart = cartService.loadOwned(command.userId());
-        freshCart.clear("order-placed");
-        cartRepository.save(freshCart);
-        eventPublisher.publish(freshCart.pullEvents());
 
         return mapper.toResult(saved);
     }

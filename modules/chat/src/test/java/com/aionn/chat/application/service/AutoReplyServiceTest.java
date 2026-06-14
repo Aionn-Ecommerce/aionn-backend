@@ -3,7 +3,7 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.autoreply.command.AutoReplyCommands;
 import com.aionn.chat.application.dto.autoreply.result.AutoReplyResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.MerchantAutoReplyRepository;
+import com.aionn.chat.application.port.out.MerchantAutoReplyPersistencePort;
 import com.aionn.chat.domain.exception.ChatException;
 import com.aionn.chat.domain.model.MerchantAutoReply;
 import com.aionn.sharedkernel.application.port.EventPublisher;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 class AutoReplyServiceTest {
 
     @Mock
-    MerchantAutoReplyRepository repository;
+    MerchantAutoReplyPersistencePort repository;
     @Mock
     ChatResultMapper mapper;
     @Mock

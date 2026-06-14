@@ -4,10 +4,11 @@ import com.aionn.ordering.application.dto.cart.command.AddItemCommand;
 import com.aionn.ordering.application.dto.cart.command.ApplyVoucherCommand;
 import com.aionn.ordering.application.dto.cart.command.ClearCartCommand;
 import com.aionn.ordering.application.dto.cart.command.RemoveItemCommand;
+import com.aionn.ordering.application.dto.cart.command.RemoveVoucherCommand;
 import com.aionn.ordering.application.dto.cart.command.UpdateItemQtyCommand;
 import com.aionn.ordering.application.dto.cart.result.CartResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
-import com.aionn.ordering.application.port.out.CartRepository;
+import com.aionn.ordering.application.port.out.CartPersistencePort;
 import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Cart;
@@ -24,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CartService {
 
-    private final CartRepository cartRepository;
+    private final CartPersistencePort cartRepository;
     private final OrderingResultMapper mapper;
     private final EventPublisher eventPublisher;
 
@@ -63,6 +64,14 @@ public class CartService {
     public CartResult applyVoucher(ApplyVoucherCommand command) {
         Cart cart = loadOwned(command.userId());
         cart.applyVoucher(command.voucherCode());
+        Cart saved = cartRepository.save(cart);
+        eventPublisher.publish(cart.pullEvents());
+        return mapper.toResult(saved);
+    }
+
+    public CartResult removeVoucher(RemoveVoucherCommand command) {
+        Cart cart = loadOwned(command.userId());
+        cart.removeVoucher();
         Cart saved = cartRepository.save(cart);
         eventPublisher.publish(cart.pullEvents());
         return mapper.toResult(saved);

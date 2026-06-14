@@ -3,9 +3,9 @@ package com.aionn.chat.application.service;
 import com.aionn.chat.application.dto.conversation.command.ConversationCommands;
 import com.aionn.chat.application.dto.conversation.result.ConversationResult;
 import com.aionn.chat.application.mapper.ChatResultMapper;
-import com.aionn.chat.application.port.out.ConversationRepository;
+import com.aionn.chat.application.port.out.ConversationPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.chat.application.port.out.MessageRepository;
+import com.aionn.chat.application.port.out.MessagePersistencePort;
 import com.aionn.chat.application.port.out.RealtimeBroadcaster;
 import com.aionn.chat.domain.exception.ChatErrorCode;
 import com.aionn.chat.domain.exception.ChatException;
@@ -25,8 +25,8 @@ import java.util.List;
 @Transactional
 public class ConversationService {
 
-    private final ConversationRepository conversationRepository;
-    private final MessageRepository messageRepository;
+    private final ConversationPersistencePort conversationRepository;
+    private final MessagePersistencePort messageRepository;
     private final ChatResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final RealtimeBroadcaster broadcaster;
