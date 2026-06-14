@@ -5,10 +5,10 @@ import com.aionn.inventory.application.dto.reservation.command.ReleaseReservatio
 import com.aionn.inventory.application.dto.reservation.command.ReserveStockCommand;
 import com.aionn.inventory.application.dto.reservation.result.ReservationResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.inventory.application.port.out.InventoryItemRepository;
+import com.aionn.inventory.application.port.out.InventoryItemPersistencePort;
 import com.aionn.inventory.application.port.out.OutboundOrderNotifier;
-import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
-import com.aionn.inventory.application.port.out.StockReservationRepository;
+import com.aionn.inventory.application.port.out.StockAdjustmentPersistencePort;
+import com.aionn.inventory.application.port.out.StockReservationPersistencePort;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.InventoryItem;
@@ -32,9 +32,9 @@ import java.time.Instant;
 @Transactional
 public class StockReservationService {
 
-        private final InventoryItemRepository itemRepository;
-        private final StockReservationRepository reservationRepository;
-        private final StockAdjustmentRepository adjustmentRepository;
+        private final InventoryItemPersistencePort itemRepository;
+        private final StockReservationPersistencePort reservationRepository;
+        private final StockAdjustmentPersistencePort adjustmentRepository;
         private final InventoryResultMapper mapper;
         private final EventPublisher eventPublisher;
         private final OutboundOrderNotifier outboundOrderNotifier;

@@ -55,4 +55,8 @@ public class CategoryEntity {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @jakarta.persistence.OneToMany(mappedBy = "category", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<CategoryTranslationEntity> translations = new java.util.ArrayList<>();
 }

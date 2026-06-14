@@ -1,6 +1,6 @@
 package com.aionn.catalog.infrastructure.integration;
 
-import com.aionn.catalog.application.port.out.MerchantRepository;
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.catalog.domain.model.Merchant;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CatalogMerchantQueryAdapter implements MerchantQueryPort {
 
-    private final MerchantRepository merchantRepository;
+    private final MerchantPersistencePort merchantRepository;
 
     @Override
     @Transactional(readOnly = true)

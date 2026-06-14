@@ -46,5 +46,9 @@ public class BrandEntity {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @jakarta.persistence.OneToMany(mappedBy = "brand", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<BrandTranslationEntity> translations = new java.util.ArrayList<>();
 }
 

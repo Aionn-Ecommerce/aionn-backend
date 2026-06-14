@@ -5,10 +5,10 @@ import com.aionn.inventory.application.dto.transfer.command.CompleteTransferComm
 import com.aionn.inventory.application.dto.transfer.command.InitiateTransferCommand;
 import com.aionn.inventory.application.dto.transfer.result.StockTransferResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.inventory.application.port.out.InventoryItemRepository;
-import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
-import com.aionn.inventory.application.port.out.StockTransferRepository;
-import com.aionn.inventory.application.port.out.WarehouseRepository;
+import com.aionn.inventory.application.port.out.InventoryItemPersistencePort;
+import com.aionn.inventory.application.port.out.StockAdjustmentPersistencePort;
+import com.aionn.inventory.application.port.out.StockTransferPersistencePort;
+import com.aionn.inventory.application.port.out.WarehousePersistencePort;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.InventoryItem;
@@ -31,10 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class StockTransferService {
 
-        private final WarehouseRepository warehouseRepository;
-        private final InventoryItemRepository itemRepository;
-        private final StockTransferRepository transferRepository;
-        private final StockAdjustmentRepository adjustmentRepository;
+        private final WarehousePersistencePort warehouseRepository;
+        private final InventoryItemPersistencePort itemRepository;
+        private final StockTransferPersistencePort transferRepository;
+        private final StockAdjustmentPersistencePort adjustmentRepository;
         private final InventoryResultMapper mapper;
         private final EventPublisher eventPublisher;
         private final MerchantQueryPort merchantQueryPort;

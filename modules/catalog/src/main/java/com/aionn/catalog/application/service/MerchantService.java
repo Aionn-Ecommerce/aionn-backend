@@ -8,7 +8,7 @@ import com.aionn.catalog.application.dto.merchant.command.UpdateMerchantProfileC
 import com.aionn.catalog.application.dto.merchant.result.MerchantResult;
 import com.aionn.catalog.application.mapper.MerchantResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.catalog.application.port.out.MerchantRepository;
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.sharedkernel.integration.port.ordering.OrderQueryPort;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MerchantService {
 
-    private final MerchantRepository merchantRepository;
+    private final MerchantPersistencePort merchantRepository;
     private final MerchantResultMapper merchantResultMapper;
     private final EventPublisher eventPublisher;
     private final OrderQueryPort orderQueryPort;

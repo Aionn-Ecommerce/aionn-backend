@@ -21,6 +21,13 @@ public class Category extends AggregateRoot {
     private final Instant createdAt;
     private Instant updatedAt;
     private Instant deletedAt;
+    private final java.util.List<Translation> translations = new java.util.ArrayList<>();
+
+    public record Translation(String locale, String name) {}
+
+    public java.util.List<Translation> translations() {
+        return java.util.Collections.unmodifiableList(translations);
+    }
 
     public Category(
             String categoryId,
@@ -31,7 +38,8 @@ public class Category extends AggregateRoot {
             boolean active,
             Instant createdAt,
             Instant updatedAt,
-            Instant deletedAt) {
+            Instant deletedAt,
+            java.util.List<Translation> translations) {
         this.categoryId = categoryId;
         this.parentId = parentId;
         this.name = name;
@@ -41,13 +49,16 @@ public class Category extends AggregateRoot {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
+        if (translations != null) {
+            this.translations.addAll(translations);
+        }
     }
 
     public static Category create(String categoryId, String parentId, String name, String slug) {
         Guard.require(name != null && !name.isBlank(),
                 () -> new CatalogException(CatalogErrorCode.INVALID_ARGUMENT, "name must not be blank"));
         Instant now = Instant.now();
-        Category category = new Category(categoryId, parentId, name.trim(), slug, null, true, now, now, null);
+        Category category = new Category(categoryId, parentId, name.trim(), slug, null, true, now, now, null, java.util.List.of());
         category.record(new CategoryEvents.CategoryCreated(categoryId, parentId, name, slug, now));
         return category;
     }

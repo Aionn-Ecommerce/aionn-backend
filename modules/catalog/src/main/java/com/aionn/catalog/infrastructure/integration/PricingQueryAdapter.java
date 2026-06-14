@@ -1,6 +1,6 @@
 package com.aionn.catalog.infrastructure.integration;
 
-import com.aionn.catalog.application.port.out.ProductRepository;
+import com.aionn.catalog.application.port.out.ProductPersistencePort;
 import com.aionn.catalog.domain.model.Product;
 import com.aionn.catalog.domain.model.ProductVariant;
 import com.aionn.catalog.domain.valueobject.ProductStatus;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PricingQueryAdapter implements PricingQueryPort {
 
-    private final ProductRepository productRepository;
+    private final ProductPersistencePort productRepository;
 
     @Override
     @Transactional(readOnly = true)

@@ -20,11 +20,11 @@ import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
 import com.aionn.catalog.application.dto.product.result.ProductResult;
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
 import com.aionn.catalog.application.mapper.ProductResultMapper;
-import com.aionn.catalog.application.port.out.AttributeTemplateRepository;
-import com.aionn.catalog.application.port.out.BrandRepository;
-import com.aionn.catalog.application.port.out.CategoryRepository;
-import com.aionn.catalog.application.port.out.MerchantRepository;
-import com.aionn.catalog.application.port.out.ProductRepository;
+import com.aionn.catalog.application.port.out.AttributeTemplatePersistencePort;
+import com.aionn.catalog.application.port.out.BrandPersistencePort;
+import com.aionn.catalog.application.port.out.CategoryPersistencePort;
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
+import com.aionn.catalog.application.port.out.ProductPersistencePort;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
 import com.aionn.catalog.domain.CatalogLimits;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
@@ -55,11 +55,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductRepository productRepository;
-    private final MerchantRepository merchantRepository;
-    private final BrandRepository brandRepository;
-    private final CategoryRepository categoryRepository;
-    private final AttributeTemplateRepository attributeTemplateRepository;
+    private final ProductPersistencePort productRepository;
+    private final MerchantPersistencePort merchantRepository;
+    private final BrandPersistencePort brandRepository;
+    private final CategoryPersistencePort categoryRepository;
+    private final AttributeTemplatePersistencePort attributeTemplateRepository;
     private final ProductResultMapper productResultMapper;
     private final ProductSearchIndex searchIndex;
     private final EventPublisher eventPublisher;

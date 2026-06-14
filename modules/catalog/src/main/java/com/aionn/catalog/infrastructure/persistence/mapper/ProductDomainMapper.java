@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.aionn.catalog.infrastructure.persistence.entity.ProductTranslationEntity;
 
 @Component
 public class ProductDomainMapper {
@@ -43,6 +44,21 @@ public class ProductDomainMapper {
             variantEntities.add(ve);
         }
         entity.setVariants(variantEntities);
+
+        List<ProductTranslationEntity> translationEntities = new ArrayList<>();
+        if (product.translations() != null) {
+            for (Product.Translation trans : product.translations()) {
+                ProductTranslationEntity te = ProductTranslationEntity.builder()
+                        .id(new ProductTranslationEntity.ProductTranslationId(product.getProductId(), trans.locale()))
+                        .product(entity)
+                        .name(trans.name())
+                        .aiDescription(trans.aiDescription())
+                        .build();
+                translationEntities.add(te);
+            }
+        }
+        entity.setTranslations(translationEntities);
+
         return entity;
     }
 
@@ -58,6 +74,14 @@ public class ProductDomainMapper {
                         price));
             }
         }
+
+        List<Product.Translation> translations = new ArrayList<>();
+        if (entity.getTranslations() != null) {
+            for (ProductTranslationEntity te : entity.getTranslations()) {
+                translations.add(new Product.Translation(te.getId().getLocale(), te.getName(), te.getAiDescription()));
+            }
+        }
+
         return new Product(
                 entity.getProductId(),
                 entity.getMerchantId(),
@@ -72,7 +96,8 @@ public class ProductDomainMapper {
                 entity.getAiDescription(),
                 ProductStatus.valueOf(entity.getStatus()),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getUpdatedAt(),
+                translations);
     }
 }
 

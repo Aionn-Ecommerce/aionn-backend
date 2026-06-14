@@ -4,11 +4,11 @@ import com.aionn.catalog.application.dto.product.command.BulkPriceUpdateCommand;
 import com.aionn.catalog.application.dto.product.command.CreateProductCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
 import com.aionn.catalog.application.mapper.ProductResultMapper;
-import com.aionn.catalog.application.port.out.AttributeTemplateRepository;
-import com.aionn.catalog.application.port.out.BrandRepository;
-import com.aionn.catalog.application.port.out.CategoryRepository;
-import com.aionn.catalog.application.port.out.MerchantRepository;
-import com.aionn.catalog.application.port.out.ProductRepository;
+import com.aionn.catalog.application.port.out.AttributeTemplatePersistencePort;
+import com.aionn.catalog.application.port.out.BrandPersistencePort;
+import com.aionn.catalog.application.port.out.CategoryPersistencePort;
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
+import com.aionn.catalog.application.port.out.ProductPersistencePort;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -46,15 +46,15 @@ import static org.mockito.Mockito.when;
 class ProductServiceTest {
 
     @Mock
-    ProductRepository productRepository;
+    ProductPersistencePort productRepository;
     @Mock
-    MerchantRepository merchantRepository;
+    MerchantPersistencePort merchantRepository;
     @Mock
-    BrandRepository brandRepository;
+    BrandPersistencePort brandRepository;
     @Mock
-    CategoryRepository categoryRepository;
+    CategoryPersistencePort categoryRepository;
     @Mock
-    AttributeTemplateRepository attributeTemplateRepository;
+    AttributeTemplatePersistencePort attributeTemplateRepository;
     @Mock
     ProductResultMapper productResultMapper;
     @Mock

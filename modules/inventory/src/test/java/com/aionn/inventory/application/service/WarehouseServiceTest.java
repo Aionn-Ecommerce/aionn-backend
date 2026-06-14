@@ -3,7 +3,7 @@ package com.aionn.inventory.application.service;
 import com.aionn.inventory.application.dto.warehouse.command.ChangeStatusCommand;
 import com.aionn.inventory.application.dto.warehouse.command.CreateWarehouseCommand;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.inventory.application.port.out.WarehouseRepository;
+import com.aionn.inventory.application.port.out.WarehousePersistencePort;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.Warehouse;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 class WarehouseServiceTest {
 
     @Mock
-    WarehouseRepository warehouseRepository;
+    WarehousePersistencePort warehouseRepository;
     @Mock
     InventoryResultMapper mapper;
     @Mock

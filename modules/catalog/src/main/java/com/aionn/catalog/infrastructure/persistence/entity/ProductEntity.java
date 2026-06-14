@@ -92,4 +92,8 @@ public class ProductEntity {
     @OrderBy("skuId asc")
     @Builder.Default
     private List<ProductVariantEntity> variants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductTranslationEntity> translations = new ArrayList<>();
 }

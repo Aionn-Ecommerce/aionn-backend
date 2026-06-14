@@ -1,6 +1,6 @@
 package com.aionn.inventory.infrastructure.scheduling;
 
-import com.aionn.inventory.application.port.out.StockReservationRepository;
+import com.aionn.inventory.application.port.out.StockReservationPersistencePort;
 import com.aionn.inventory.domain.model.StockReservation;
 import com.aionn.inventory.infrastructure.config.InventoryProperties;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "inventory.reservation.auto-release", name = "enabled", havingValue = "true")
 public class ReservationAutoReleaseScheduler {
 
-    private final StockReservationRepository reservationRepository;
+    private final StockReservationPersistencePort reservationRepository;
     private final ReservationAutoReleaseWorker worker;
     private final InventoryProperties properties;
 

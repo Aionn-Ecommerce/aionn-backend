@@ -21,10 +21,24 @@ public class ProductResultMapper {
                                                 v.price() == null ? null : v.price().amount(),
                                                 v.price() == null ? null : v.price().currency()))
                                 .toList();
+
+                java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+                String name = product.getName();
+                String aiDescription = product.getAiDescription();
+
+                Product.Translation trans = product.translations().stream()
+                                .filter(t -> t.locale().equalsIgnoreCase(locale.getLanguage()))
+                                .findFirst()
+                                .orElse(null);
+                if (trans != null) {
+                        name = trans.name();
+                        aiDescription = trans.aiDescription();
+                }
+
                 return new ProductResult(
                                 product.getProductId(),
                                 product.getMerchantId(),
-                                product.getName(),
+                                name,
                                 product.getBrandId(),
                                 product.categoryIds(),
                                 product.imageList(),
@@ -32,7 +46,7 @@ public class ProductResultMapper {
                                 product.collectionIds(),
                                 product.attributes(),
                                 variants,
-                                product.getAiDescription(),
+                                aiDescription,
                                 product.getStatus().name(),
                                 product.getCreatedAt(),
                                 product.getUpdatedAt());
@@ -54,11 +68,24 @@ public class ProductResultMapper {
                                 .findFirst()
                                 .orElse(null);
 
+                java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+                String name = product.getName();
+                String aiDescription = product.getAiDescription();
+
+                Product.Translation trans = product.translations().stream()
+                                .filter(t -> t.locale().equalsIgnoreCase(locale.getLanguage()))
+                                .findFirst()
+                                .orElse(null);
+                if (trans != null) {
+                        name = trans.name();
+                        aiDescription = trans.aiDescription();
+                }
+
                 return new ProductSearchDocument(
                                 product.getProductId(),
                                 product.getMerchantId(),
-                                product.getName(),
-                                product.getAiDescription(),
+                                name,
+                                aiDescription,
                                 product.getBrandId(),
                                 product.categoryIds(),
                                 product.collectionIds(),

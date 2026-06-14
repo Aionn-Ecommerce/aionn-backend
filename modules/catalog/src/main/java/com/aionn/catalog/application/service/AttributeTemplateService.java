@@ -3,8 +3,8 @@ package com.aionn.catalog.application.service;
 import com.aionn.catalog.application.dto.attribute.command.ConfigureFilterableCommand;
 import com.aionn.catalog.application.dto.attribute.command.CreateAttributeTemplateCommand;
 import com.aionn.catalog.application.dto.attribute.result.AttributeTemplateResult;
-import com.aionn.catalog.application.port.out.AttributeTemplateRepository;
-import com.aionn.catalog.application.port.out.CategoryRepository;
+import com.aionn.catalog.application.port.out.AttributeTemplatePersistencePort;
+import com.aionn.catalog.application.port.out.CategoryPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -24,8 +24,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AttributeTemplateService {
 
-    private final AttributeTemplateRepository attributeTemplateRepository;
-    private final CategoryRepository categoryRepository;
+    private final AttributeTemplatePersistencePort attributeTemplateRepository;
+    private final CategoryPersistencePort categoryRepository;
     private final EventPublisher eventPublisher;
 
     public AttributeTemplateResult create(CreateAttributeTemplateCommand command) {

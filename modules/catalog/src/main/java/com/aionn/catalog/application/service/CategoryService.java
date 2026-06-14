@@ -5,7 +5,7 @@ import com.aionn.catalog.application.dto.category.command.MoveCategoryCommand;
 import com.aionn.catalog.application.dto.category.command.UpdateCategoryCommand;
 import com.aionn.catalog.application.dto.category.result.CategoryResult;
 import com.aionn.catalog.application.mapper.CategoryResultMapper;
-import com.aionn.catalog.application.port.out.CategoryRepository;
+import com.aionn.catalog.application.port.out.CategoryPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CategoryService {
 
-    private final CategoryRepository categoryRepository;
+    private final CategoryPersistencePort categoryRepository;
     private final CategoryResultMapper categoryResultMapper;
     private final EventPublisher eventPublisher;
 

@@ -5,7 +5,7 @@ import com.aionn.catalog.application.dto.brand.command.DeleteBrandCommand;
 import com.aionn.catalog.application.dto.brand.command.UpdateBrandCommand;
 import com.aionn.catalog.application.dto.brand.result.BrandResult;
 import com.aionn.catalog.application.mapper.BrandResultMapper;
-import com.aionn.catalog.application.port.out.BrandRepository;
+import com.aionn.catalog.application.port.out.BrandPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BrandService {
 
-    private final BrandRepository brandRepository;
+    private final BrandPersistencePort brandRepository;
     private final BrandResultMapper brandResultMapper;
     private final EventPublisher eventPublisher;
 

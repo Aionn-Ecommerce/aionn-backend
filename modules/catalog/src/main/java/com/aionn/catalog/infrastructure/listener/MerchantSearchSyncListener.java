@@ -2,7 +2,7 @@ package com.aionn.catalog.infrastructure.listener;
 
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
 import com.aionn.catalog.application.mapper.ProductResultMapper;
-import com.aionn.catalog.application.port.out.ProductRepository;
+import com.aionn.catalog.application.port.out.ProductPersistencePort;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
 import com.aionn.catalog.domain.event.MerchantEvents;
 import com.aionn.catalog.domain.model.Product;
@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class MerchantSearchSyncListener {
 
-    private final ProductRepository productRepository;
+    private final ProductPersistencePort productRepository;
     private final ProductSearchIndex searchIndex;
     private final ProductResultMapper productResultMapper;
     private final CatalogProperties catalogProperties;

@@ -9,10 +9,10 @@ import com.aionn.inventory.application.dto.inventory.command.ManualAdjustmentCom
 import com.aionn.inventory.application.dto.inventory.command.TrackBatchAndExpiryCommand;
 import com.aionn.inventory.application.dto.inventory.result.InventoryItemResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.inventory.application.port.out.InventoryItemRepository;
+import com.aionn.inventory.application.port.out.InventoryItemPersistencePort;
 import com.aionn.inventory.application.port.out.SafetyStockNotifier;
-import com.aionn.inventory.application.port.out.StockAdjustmentRepository;
-import com.aionn.inventory.application.port.out.WarehouseRepository;
+import com.aionn.inventory.application.port.out.StockAdjustmentPersistencePort;
+import com.aionn.inventory.application.port.out.WarehousePersistencePort;
 import com.aionn.inventory.domain.event.InventoryItemEvents;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
@@ -37,9 +37,9 @@ import java.util.List;
 @Transactional
 public class InventoryItemService {
 
-    private final InventoryItemRepository itemRepository;
-    private final WarehouseRepository warehouseRepository;
-    private final StockAdjustmentRepository adjustmentRepository;
+    private final InventoryItemPersistencePort itemRepository;
+    private final WarehousePersistencePort warehouseRepository;
+    private final StockAdjustmentPersistencePort adjustmentRepository;
     private final InventoryResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final SafetyStockNotifier safetyStockNotifier;

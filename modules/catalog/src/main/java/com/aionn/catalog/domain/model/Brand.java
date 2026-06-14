@@ -20,6 +20,13 @@ public class Brand extends AggregateRoot {
     private BrandStatus status;
     private final Instant createdAt;
     private Instant updatedAt;
+    private final java.util.List<Translation> translations = new java.util.ArrayList<>();
+
+    public record Translation(String locale, String name, String description) {}
+
+    public java.util.List<Translation> translations() {
+        return java.util.Collections.unmodifiableList(translations);
+    }
 
     public Brand(
             String brandId,
@@ -28,7 +35,8 @@ public class Brand extends AggregateRoot {
             String description,
             BrandStatus status,
             Instant createdAt,
-            Instant updatedAt) {
+            Instant updatedAt,
+            java.util.List<Translation> translations) {
         this.brandId = brandId;
         this.name = name;
         this.logoUrl = logoUrl;
@@ -36,13 +44,16 @@ public class Brand extends AggregateRoot {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        if (translations != null) {
+            this.translations.addAll(translations);
+        }
     }
 
     public static Brand create(String brandId, String name, String logoUrl, String description) {
         Guard.require(name != null && !name.isBlank(),
                 () -> new CatalogException(CatalogErrorCode.INVALID_ARGUMENT, "name must not be blank"));
         Instant now = Instant.now();
-        Brand brand = new Brand(brandId, name.trim(), logoUrl, description, BrandStatus.ACTIVE, now, now);
+        Brand brand = new Brand(brandId, name.trim(), logoUrl, description, BrandStatus.ACTIVE, now, now, java.util.List.of());
         brand.record(new BrandEvents.BrandCreated(brandId, name, logoUrl, description, now));
         return brand;
     }

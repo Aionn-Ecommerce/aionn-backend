@@ -7,7 +7,7 @@ import com.aionn.inventory.application.dto.warehouse.command.LiftSuspensionComma
 import com.aionn.inventory.application.dto.warehouse.command.SuspendWarehouseCommand;
 import com.aionn.inventory.application.dto.warehouse.result.WarehouseResult;
 import com.aionn.inventory.application.mapper.InventoryResultMapper;
-import com.aionn.inventory.application.port.out.WarehouseRepository;
+import com.aionn.inventory.application.port.out.WarehousePersistencePort;
 import com.aionn.inventory.domain.exception.InventoryErrorCode;
 import com.aionn.inventory.domain.exception.InventoryException;
 import com.aionn.inventory.domain.model.Warehouse;
@@ -28,7 +28,7 @@ import java.util.List;
 @Transactional
 public class WarehouseService {
 
-    private final WarehouseRepository warehouseRepository;
+    private final WarehousePersistencePort warehouseRepository;
     private final InventoryResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final MerchantQueryPort merchantQueryPort;
