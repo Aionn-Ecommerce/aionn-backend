@@ -2,7 +2,7 @@ package com.aionn.notification.application.service;
 
 import com.aionn.notification.application.dto.analytics.result.AnalyticsResult;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.notification.application.port.out.NotificationRepository;
+import com.aionn.notification.application.port.out.NotificationPersistencePort;
 import com.aionn.notification.domain.event.NotificationEvents;
 import com.aionn.sharedkernel.domain.model.EventEnvelope;
 import com.aionn.sharedkernel.util.IdGenerator;
@@ -19,7 +19,7 @@ import java.time.Instant;
 @Transactional
 public class NotificationAnalyticsService {
 
-    private final NotificationRepository notificationRepository;
+    private final NotificationPersistencePort notificationRepository;
     private final EventPublisher eventPublisher;
 
     public AnalyticsResult report(String campaignId) {

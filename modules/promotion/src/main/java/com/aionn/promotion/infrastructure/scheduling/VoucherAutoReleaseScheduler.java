@@ -1,6 +1,6 @@
 package com.aionn.promotion.infrastructure.scheduling;
 
-import com.aionn.promotion.application.port.out.UserVoucherRepository;
+import com.aionn.promotion.application.port.out.UserVoucherPersistencePort;
 import com.aionn.promotion.domain.model.UserVoucher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "promotion.voucher.auto-release", name = "enabled", havingValue = "true")
 public class VoucherAutoReleaseScheduler {
 
-    private final UserVoucherRepository userVoucherRepository;
+    private final UserVoucherPersistencePort userVoucherRepository;
     private final VoucherAutoReleaseWorker worker;
 
     @Value("${promotion.voucher.auto-release.batch-size:100}")

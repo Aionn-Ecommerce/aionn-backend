@@ -4,7 +4,7 @@ import com.aionn.notification.application.dto.provider.command.ProviderCommands;
 import com.aionn.notification.application.dto.provider.result.ProviderResult;
 import com.aionn.notification.application.mapper.NotificationResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.notification.application.port.out.NotificationProviderRepository;
+import com.aionn.notification.application.port.out.NotificationProviderPersistencePort;
 import com.aionn.notification.domain.exception.NotificationErrorCode;
 import com.aionn.notification.domain.exception.NotificationException;
 import com.aionn.notification.domain.model.NotificationProvider;
@@ -22,7 +22,7 @@ import java.util.List;
 @Transactional
 public class NotificationProviderService {
 
-    private final NotificationProviderRepository repository;
+    private final NotificationProviderPersistencePort repository;
     private final NotificationResultMapper mapper;
     private final EventPublisher eventPublisher;
 

@@ -1,6 +1,6 @@
 package com.aionn.notification.infrastructure.recipient;
 
-import com.aionn.notification.application.port.out.DeviceTokenRepository;
+import com.aionn.notification.application.port.out.DeviceTokenPersistencePort;
 import com.aionn.notification.application.port.out.RecipientResolver;
 import com.aionn.notification.domain.exception.NotificationErrorCode;
 import com.aionn.notification.domain.exception.NotificationException;
@@ -17,7 +17,7 @@ import java.util.List;
 public class IdentityBackedRecipientResolver implements RecipientResolver {
 
     private final RecipientResolverPort identityResolver;
-    private final DeviceTokenRepository deviceTokenRepository;
+    private final DeviceTokenPersistencePort deviceTokenRepository;
 
     @Override
     public String resolve(String userId, NotificationChannel channel) {

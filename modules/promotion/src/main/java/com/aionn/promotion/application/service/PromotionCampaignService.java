@@ -5,8 +5,8 @@ import com.aionn.promotion.application.dto.campaign.result.CampaignResult;
 import com.aionn.promotion.application.dto.voucher.result.VoucherResult;
 import com.aionn.promotion.application.mapper.PromotionResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.promotion.application.port.out.PromotionCampaignRepository;
-import com.aionn.promotion.application.port.out.VoucherRepository;
+import com.aionn.promotion.application.port.out.PromotionCampaignPersistencePort;
+import com.aionn.promotion.application.port.out.VoucherPersistencePort;
 import com.aionn.promotion.domain.exception.PromotionErrorCode;
 import com.aionn.promotion.domain.exception.PromotionException;
 import com.aionn.promotion.domain.model.PromotionCampaign;
@@ -27,8 +27,8 @@ import java.time.Instant;
 @Transactional
 public class PromotionCampaignService {
 
-    private final PromotionCampaignRepository campaignRepository;
-    private final VoucherRepository voucherRepository;
+    private final PromotionCampaignPersistencePort campaignRepository;
+    private final VoucherPersistencePort voucherRepository;
     private final PromotionResultMapper mapper;
     private final EventPublisher eventPublisher;
 

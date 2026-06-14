@@ -5,9 +5,9 @@ import com.aionn.notification.application.dto.notification.result.NotificationRe
 import com.aionn.notification.application.mapper.NotificationResultMapper;
 import com.aionn.notification.application.port.out.ChannelSender;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.notification.application.port.out.NotificationRepository;
-import com.aionn.notification.application.port.out.NotificationSubscriptionRepository;
-import com.aionn.notification.application.port.out.NotificationTemplateRepository;
+import com.aionn.notification.application.port.out.NotificationPersistencePort;
+import com.aionn.notification.application.port.out.NotificationSubscriptionPersistencePort;
+import com.aionn.notification.application.port.out.NotificationTemplatePersistencePort;
 import com.aionn.notification.application.port.out.RecipientResolver;
 import com.aionn.notification.domain.exception.NotificationErrorCode;
 import com.aionn.notification.domain.exception.NotificationException;
@@ -33,9 +33,9 @@ import java.util.Map;
 @Transactional
 public class NotificationDispatchService {
 
-    private final NotificationRepository notificationRepository;
-    private final NotificationTemplateRepository templateRepository;
-    private final NotificationSubscriptionRepository subscriptionRepository;
+    private final NotificationPersistencePort notificationRepository;
+    private final NotificationTemplatePersistencePort templateRepository;
+    private final NotificationSubscriptionPersistencePort subscriptionRepository;
     private final RecipientResolver recipientResolver;
     private final NotificationResultMapper mapper;
     private final EventPublisher eventPublisher;
@@ -57,7 +57,13 @@ public class NotificationDispatchService {
                 log.debug("Skipping {} for user {} - subscription disabled", channel, command.userId());
                 continue;
             }
-            String locale = command.locale() == null ? "vi-VN" : command.locale();
+            final String locale;
+            if (command.locale() != null) {
+                locale = command.locale();
+            } else {
+                java.util.Locale current = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+                locale = "en".equalsIgnoreCase(current.getLanguage()) ? "en-US" : "vi-VN";
+            }
             NotificationTemplate template = templateRepository.findByEventChannelLocale(
                     command.eventType(), channel, locale)
                     .or(() -> templateRepository.findByEventChannelLocale(command.eventType(), channel, "vi-VN"))
@@ -80,7 +86,13 @@ public class NotificationDispatchService {
     }
 
     public NotificationResult sendDirectByEvent(NotificationCommands.SendDirectByEvent command) {
-        String locale = command.locale() == null ? "vi-VN" : command.locale();
+        final String locale;
+        if (command.locale() != null) {
+            locale = command.locale();
+        } else {
+            java.util.Locale current = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+            locale = "en".equalsIgnoreCase(current.getLanguage()) ? "en-US" : "vi-VN";
+        }
         NotificationTemplate template = templateRepository.findByEventChannelLocale(
                 command.eventType(), command.channel(), locale)
                 .or(() -> templateRepository.findByEventChannelLocale(command.eventType(), command.channel(), "vi-VN"))

@@ -67,7 +67,16 @@ public class VnpayPaymentProviderClient implements PaymentProviderClient {
         params.put("vnp_TxnRef", txnRef);
         params.put("vnp_OrderInfo", "Payment for order " + request.orderId());
         params.put("vnp_OrderType", "other");
-        params.put("vnp_Locale", properties.locale());
+        String vnpLocale = properties.locale();
+        if (vnpLocale == null || vnpLocale.isBlank() || "vn".equalsIgnoreCase(vnpLocale)) {
+            java.util.Locale current = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+            if (current != null && "en".equalsIgnoreCase(current.getLanguage())) {
+                vnpLocale = "en";
+            } else {
+                vnpLocale = "vn";
+            }
+        }
+        params.put("vnp_Locale", vnpLocale);
         params.put("vnp_ReturnUrl", request.returnUrl() != null && !request.returnUrl().isBlank()
                 ? request.returnUrl()
                 : properties.returnUrl());

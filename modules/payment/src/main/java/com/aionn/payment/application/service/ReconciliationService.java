@@ -2,7 +2,7 @@ package com.aionn.payment.application.service;
 
 import com.aionn.payment.application.dto.ledger.result.ReconciliationResult;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.payment.application.port.out.TransactionLedgerRepository;
+import com.aionn.payment.application.port.out.TransactionLedgerPersistencePort;
 import com.aionn.payment.domain.event.LedgerEvents;
 import com.aionn.payment.domain.model.TransactionLedger;
 import com.aionn.sharedkernel.domain.model.EventEnvelope;
@@ -24,7 +24,7 @@ import java.util.Map;
 @Transactional
 public class ReconciliationService {
 
-    private final TransactionLedgerRepository ledgerRepository;
+    private final TransactionLedgerPersistencePort ledgerRepository;
     private final EventPublisher eventPublisher;
 
     public ReconciliationResult reconcile(

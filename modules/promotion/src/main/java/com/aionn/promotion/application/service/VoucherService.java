@@ -4,9 +4,9 @@ import com.aionn.promotion.application.dto.voucher.command.VoucherCommands;
 import com.aionn.promotion.application.dto.voucher.result.UserVoucherResult;
 import com.aionn.promotion.application.mapper.PromotionResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.promotion.application.port.out.PromotionCampaignRepository;
-import com.aionn.promotion.application.port.out.UserVoucherRepository;
-import com.aionn.promotion.application.port.out.VoucherRepository;
+import com.aionn.promotion.application.port.out.PromotionCampaignPersistencePort;
+import com.aionn.promotion.application.port.out.UserVoucherPersistencePort;
+import com.aionn.promotion.application.port.out.VoucherPersistencePort;
 import com.aionn.promotion.domain.exception.PromotionErrorCode;
 import com.aionn.promotion.domain.exception.PromotionException;
 import com.aionn.promotion.domain.model.PromotionCampaign;
@@ -31,9 +31,9 @@ public class VoucherService {
 
     private static final Duration DEFAULT_RESERVATION_TTL = Duration.ofMinutes(15);
 
-    private final VoucherRepository voucherRepository;
-    private final UserVoucherRepository userVoucherRepository;
-    private final PromotionCampaignRepository campaignRepository;
+    private final VoucherPersistencePort voucherRepository;
+    private final UserVoucherPersistencePort userVoucherRepository;
+    private final PromotionCampaignPersistencePort campaignRepository;
     private final PromotionResultMapper mapper;
     private final EventPublisher eventPublisher;
 

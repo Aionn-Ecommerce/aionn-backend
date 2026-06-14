@@ -7,11 +7,11 @@ import com.aionn.payment.application.dto.payment.command.RefundPaymentCommand;
 import com.aionn.payment.application.dto.payment.result.PaymentResult;
 import com.aionn.payment.application.mapper.PaymentResultMapper;
 import com.aionn.payment.application.port.out.InvoiceStorage;
-import com.aionn.payment.application.port.out.PaymentMethodRepository;
+import com.aionn.payment.application.port.out.PaymentMethodPersistencePort;
 import com.aionn.payment.application.port.out.PaymentProviderClient;
 import com.aionn.payment.application.port.out.PaymentProviderRouter;
-import com.aionn.payment.application.port.out.PaymentRepository;
-import com.aionn.payment.application.port.out.TransactionLedgerRepository;
+import com.aionn.payment.application.port.out.PaymentPersistencePort;
+import com.aionn.payment.application.port.out.TransactionLedgerPersistencePort;
 import com.aionn.payment.application.port.out.integration.PaymentIntegrationEventPublisherPort;
 import com.aionn.payment.domain.exception.PaymentErrorCode;
 import com.aionn.payment.domain.exception.PaymentException;
@@ -34,9 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class PaymentService {
 
-    private final PaymentRepository paymentRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
-    private final TransactionLedgerRepository ledgerRepository;
+    private final PaymentPersistencePort paymentRepository;
+    private final PaymentMethodPersistencePort paymentMethodRepository;
+    private final TransactionLedgerPersistencePort ledgerRepository;
     private final PaymentProviderRouter providerRouter;
     private final InvoiceStorage invoiceStorage;
     private final PaymentResultMapper mapper;

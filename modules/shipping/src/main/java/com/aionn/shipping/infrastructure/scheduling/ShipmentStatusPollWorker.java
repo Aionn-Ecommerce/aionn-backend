@@ -1,7 +1,7 @@
 package com.aionn.shipping.infrastructure.scheduling;
 
 import com.aionn.shipping.application.port.out.CarrierClient;
-import com.aionn.shipping.application.port.out.ShipmentRepository;
+import com.aionn.shipping.application.port.out.ShipmentPersistencePort;
 import com.aionn.shipping.application.port.out.integration.ShippingIntegrationEventPublisherPort;
 import com.aionn.shipping.domain.model.Shipment;
 import com.aionn.shipping.domain.valueobject.ShipmentStatus;
@@ -20,7 +20,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ShipmentStatusPollWorker {
 
-    private final ShipmentRepository shipmentRepository;
+    private final ShipmentPersistencePort shipmentRepository;
     private final CarrierClient carrierClient;
     private final GhnStatusMapper statusMapper;
     private final EventPublisher eventPublisher;

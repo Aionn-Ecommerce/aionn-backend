@@ -4,7 +4,7 @@ import com.aionn.notification.application.dto.template.command.TemplateCommands;
 import com.aionn.notification.application.dto.template.result.TemplateResult;
 import com.aionn.notification.application.mapper.NotificationResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.notification.application.port.out.NotificationTemplateRepository;
+import com.aionn.notification.application.port.out.NotificationTemplatePersistencePort;
 import com.aionn.notification.domain.exception.NotificationErrorCode;
 import com.aionn.notification.domain.exception.NotificationException;
 import com.aionn.notification.domain.model.NotificationTemplate;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class NotificationTemplateService {
 
-    private final NotificationTemplateRepository repository;
+    private final NotificationTemplatePersistencePort repository;
     private final NotificationResultMapper mapper;
     private final EventPublisher eventPublisher;
 

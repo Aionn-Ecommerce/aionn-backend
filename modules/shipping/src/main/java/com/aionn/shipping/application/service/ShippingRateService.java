@@ -4,7 +4,7 @@ import com.aionn.shipping.application.dto.rate.command.ConfigureRateCommand;
 import com.aionn.shipping.application.dto.rate.command.UpdateRateCommand;
 import com.aionn.shipping.application.dto.rate.result.ShippingRateResult;
 import com.aionn.shipping.application.mapper.ShippingResultMapper;
-import com.aionn.shipping.application.port.out.ShippingRateRepository;
+import com.aionn.shipping.application.port.out.ShippingRatePersistencePort;
 import com.aionn.shipping.domain.exception.ShippingErrorCode;
 import com.aionn.shipping.domain.exception.ShippingException;
 import com.aionn.shipping.domain.model.ShippingRate;
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ShippingRateService {
 
-    private final ShippingRateRepository repository;
+    private final ShippingRatePersistencePort repository;
     private final ShippingResultMapper mapper;
     private final EventPublisher eventPublisher;
 

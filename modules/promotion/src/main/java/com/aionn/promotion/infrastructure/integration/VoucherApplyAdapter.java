@@ -1,6 +1,6 @@
 package com.aionn.promotion.infrastructure.integration;
 
-import com.aionn.promotion.application.port.out.VoucherRepository;
+import com.aionn.promotion.application.port.out.VoucherPersistencePort;
 import com.aionn.promotion.domain.model.Voucher;
 import com.aionn.sharedkernel.integration.port.promotion.VoucherApplyPort;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class VoucherApplyAdapter implements VoucherApplyPort {
 
-    private final VoucherRepository voucherRepository;
+    private final VoucherPersistencePort voucherRepository;
 
     @Override
     @Transactional(readOnly = true)

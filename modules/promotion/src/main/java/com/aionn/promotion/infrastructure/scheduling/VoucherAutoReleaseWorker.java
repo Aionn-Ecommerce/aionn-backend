@@ -1,7 +1,7 @@
 package com.aionn.promotion.infrastructure.scheduling;
 
-import com.aionn.promotion.application.port.out.UserVoucherRepository;
-import com.aionn.promotion.application.port.out.VoucherRepository;
+import com.aionn.promotion.application.port.out.UserVoucherPersistencePort;
+import com.aionn.promotion.application.port.out.VoucherPersistencePort;
 import com.aionn.promotion.domain.model.UserVoucher;
 import com.aionn.promotion.domain.model.Voucher;
 import com.aionn.sharedkernel.application.port.EventPublisher;
@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class VoucherAutoReleaseWorker {
 
-    private final VoucherRepository voucherRepository;
-    private final UserVoucherRepository userVoucherRepository;
+    private final VoucherPersistencePort voucherRepository;
+    private final UserVoucherPersistencePort userVoucherRepository;
     private final EventPublisher eventPublisher;
 
     /**

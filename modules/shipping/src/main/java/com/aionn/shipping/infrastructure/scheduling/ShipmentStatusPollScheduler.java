@@ -1,6 +1,6 @@
 package com.aionn.shipping.infrastructure.scheduling;
 
-import com.aionn.shipping.application.port.out.ShipmentRepository;
+import com.aionn.shipping.application.port.out.ShipmentPersistencePort;
 import com.aionn.shipping.domain.model.Shipment;
 import com.aionn.shipping.infrastructure.config.ShippingProperties;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "shipping.status-poller", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ShipmentStatusPollScheduler {
 
-    private final ShipmentRepository shipmentRepository;
+    private final ShipmentPersistencePort shipmentRepository;
     private final ShipmentStatusPollWorker worker;
     private final ShippingProperties properties;
 

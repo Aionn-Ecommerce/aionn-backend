@@ -10,8 +10,8 @@ import com.aionn.shipping.application.dto.shipment.command.ResolveIssueCommand;
 import com.aionn.shipping.application.dto.shipment.result.ShipmentResult;
 import com.aionn.shipping.application.mapper.ShippingResultMapper;
 import com.aionn.shipping.application.port.out.CarrierClient;
-import com.aionn.shipping.application.port.out.ShipmentRepository;
-import com.aionn.shipping.application.port.out.ShippingRateRepository;
+import com.aionn.shipping.application.port.out.ShipmentPersistencePort;
+import com.aionn.shipping.application.port.out.ShippingRatePersistencePort;
 import com.aionn.shipping.application.port.out.integration.ShippingIntegrationEventPublisherPort;
 import com.aionn.shipping.domain.exception.ShippingErrorCode;
 import com.aionn.shipping.domain.exception.ShippingException;
@@ -31,8 +31,8 @@ import java.util.List;
 @Service
 public class ShipmentService {
 
-    private final ShipmentRepository shipmentRepository;
-    private final ShippingRateRepository rateRepository;
+    private final ShipmentPersistencePort shipmentRepository;
+    private final ShippingRatePersistencePort rateRepository;
     private final ShippingResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final CarrierClient carrierClient;
@@ -40,8 +40,8 @@ public class ShipmentService {
     private final MerchantQueryPort merchantQueryPort;
     private final ShipmentService self;
 
-    public ShipmentService(ShipmentRepository shipmentRepository,
-            ShippingRateRepository rateRepository,
+    public ShipmentService(ShipmentPersistencePort shipmentRepository,
+            ShippingRatePersistencePort rateRepository,
             ShippingResultMapper mapper,
             EventPublisher eventPublisher,
             CarrierClient carrierClient,

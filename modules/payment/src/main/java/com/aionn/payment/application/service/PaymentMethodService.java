@@ -5,7 +5,7 @@ import com.aionn.payment.application.dto.method.command.RemoveMethodCommand;
 import com.aionn.payment.application.dto.method.command.VerifyMethodCommand;
 import com.aionn.payment.application.dto.method.result.PaymentMethodResult;
 import com.aionn.payment.application.mapper.PaymentResultMapper;
-import com.aionn.payment.application.port.out.PaymentMethodRepository;
+import com.aionn.payment.application.port.out.PaymentMethodPersistencePort;
 import com.aionn.payment.domain.exception.PaymentErrorCode;
 import com.aionn.payment.domain.exception.PaymentException;
 import com.aionn.payment.domain.model.PaymentMethod;
@@ -24,7 +24,7 @@ import java.util.List;
 @Transactional
 public class PaymentMethodService {
 
-    private final PaymentMethodRepository repository;
+    private final PaymentMethodPersistencePort repository;
     private final PaymentResultMapper mapper;
     private final EventPublisher eventPublisher;
 

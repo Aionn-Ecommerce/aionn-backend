@@ -4,9 +4,9 @@ import com.aionn.notification.application.dto.subscription.command.SubscriptionC
 import com.aionn.notification.application.dto.subscription.result.DeviceTokenResult;
 import com.aionn.notification.application.dto.subscription.result.SubscriptionResult;
 import com.aionn.notification.application.mapper.NotificationResultMapper;
-import com.aionn.notification.application.port.out.DeviceTokenRepository;
+import com.aionn.notification.application.port.out.DeviceTokenPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
-import com.aionn.notification.application.port.out.NotificationSubscriptionRepository;
+import com.aionn.notification.application.port.out.NotificationSubscriptionPersistencePort;
 import com.aionn.notification.domain.exception.NotificationErrorCode;
 import com.aionn.notification.domain.exception.NotificationException;
 import com.aionn.notification.domain.model.DeviceToken;
@@ -25,8 +25,8 @@ import java.util.List;
 @Transactional
 public class NotificationSubscriptionService {
 
-    private final NotificationSubscriptionRepository subscriptionRepository;
-    private final DeviceTokenRepository deviceTokenRepository;
+    private final NotificationSubscriptionPersistencePort subscriptionRepository;
+    private final DeviceTokenPersistencePort deviceTokenRepository;
     private final NotificationResultMapper mapper;
     private final EventPublisher eventPublisher;
 
