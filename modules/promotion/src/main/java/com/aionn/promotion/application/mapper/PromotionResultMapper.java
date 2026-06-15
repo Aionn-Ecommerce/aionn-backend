@@ -1,8 +1,10 @@
 package com.aionn.promotion.application.mapper;
 
+import com.aionn.promotion.application.dto.banner.result.PromotionBannerResult;
 import com.aionn.promotion.application.dto.campaign.result.CampaignResult;
 import com.aionn.promotion.application.dto.voucher.result.UserVoucherResult;
 import com.aionn.promotion.application.dto.voucher.result.VoucherResult;
+import com.aionn.promotion.domain.model.PromotionBanner;
 import com.aionn.promotion.domain.model.PromotionCampaign;
 import com.aionn.promotion.domain.model.UserVoucher;
 import com.aionn.promotion.domain.model.Voucher;
@@ -29,4 +31,6 @@ public interface PromotionResultMapper {
     @Mapping(target = "appliedAmount", source = "appliedAmount.amount")
     @Mapping(target = "currency", source = "appliedAmount.currency")
     UserVoucherResult toResult(UserVoucher u);
+
+    PromotionBannerResult toResult(PromotionBanner b);
 }
