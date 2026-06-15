@@ -25,6 +25,16 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, String
 
         List<CategoryEntity> findByParentId(String parentId);
 
+        @Query("SELECT c FROM CategoryEntity c WHERE c.parentId IS NULL AND c.deletedAt IS NULL AND c.active = true")
+        List<CategoryEntity> findActiveRoots();
+
+        @Query("SELECT c FROM CategoryEntity c WHERE c.parentId = :parentId AND c.deletedAt IS NULL AND c.active = true")
+        List<CategoryEntity> findActiveByParentId(String parentId);
+
+        @Query("SELECT c FROM CategoryEntity c WHERE c.deletedAt IS NULL AND c.active = true")
+        List<CategoryEntity> findAllActive();
+
+
         @Query(value = """
                         WITH RECURSIVE descendants AS (
                             SELECT category_id FROM categories WHERE parent_id = :categoryId

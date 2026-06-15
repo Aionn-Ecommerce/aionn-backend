@@ -29,4 +29,22 @@ public class OrderingOrderQueryAdapter implements OrderQueryPort {
         }
         return orderJpaRepository.existsByMerchantIdAndStatusNotIn(merchantId, TERMINAL_STATUSES);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasCompletedPurchaseForSkus(String userId, java.util.Collection<String> skuIds) {
+        if (userId == null || userId.isBlank() || skuIds == null || skuIds.isEmpty()) {
+            return false;
+        }
+        return orderJpaRepository.existsCompletedPurchaseForSkus(userId, skuIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String findCompletedOrderIdForSkus(String userId, java.util.Collection<String> skuIds) {
+        if (userId == null || userId.isBlank() || skuIds == null || skuIds.isEmpty()) {
+            return null;
+        }
+        return orderJpaRepository.findCompletedOrderIdForSkus(userId, skuIds);
+    }
 }

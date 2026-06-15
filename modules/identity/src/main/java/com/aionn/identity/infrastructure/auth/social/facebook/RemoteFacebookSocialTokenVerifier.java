@@ -1,5 +1,6 @@
 package com.aionn.identity.infrastructure.auth.social.facebook;
 
+import com.aionn.identity.application.port.out.social.SocialUserProfile;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.infrastructure.config.properties.SocialAuthProperties;
@@ -17,9 +18,11 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
+    private static final String GRAPH_ME_URL = "https://graph.facebook.com/me";
 
     private final SocialAuthProperties socialAuthProperties;
-    private final RestClient restClient;
+    private final RestClient debugRestClient;
+    private final RestClient graphRestClient;
 
     public RemoteFacebookSocialTokenVerifier(SocialAuthProperties socialAuthProperties) {
         this.socialAuthProperties = socialAuthProperties;
@@ -27,16 +30,17 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
         factory.setConnectTimeout((int) CONNECT_TIMEOUT.toMillis());
         factory.setReadTimeout((int) READ_TIMEOUT.toMillis());
         SocialAuthProperties.Facebook config = socialAuthProperties.facebook();
-        String baseUrl = config != null ? config.debugTokenUrl() : null;
-        RestClient.Builder builder = RestClient.builder().requestFactory(factory);
-        if (baseUrl != null && !baseUrl.isBlank()) {
-            builder.baseUrl(baseUrl);
+        String debugUrl = config != null ? config.debugTokenUrl() : null;
+        RestClient.Builder debugBuilder = RestClient.builder().requestFactory(factory);
+        if (debugUrl != null && !debugUrl.isBlank()) {
+            debugBuilder.baseUrl(debugUrl);
         }
-        this.restClient = builder.build();
+        this.debugRestClient = debugBuilder.build();
+        this.graphRestClient = RestClient.builder().requestFactory(factory).baseUrl(GRAPH_ME_URL).build();
     }
 
     @Override
-    public String verifyAndExtractUserId(String providerToken) {
+    public SocialUserProfile verify(String providerToken) {
         requireNotBlank(providerToken);
 
         SocialAuthProperties.Facebook config = socialAuthProperties.facebook();
@@ -49,7 +53,7 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
 
         try {
             String appAccessToken = config.appId() + "|" + config.appSecret();
-            FacebookDebugTokenResponse response = restClient.get()
+            FacebookDebugTokenResponse response = debugRestClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .queryParam("input_token", providerToken)
                             .queryParam("access_token", appAccessToken)
@@ -77,7 +81,23 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
                         "Facebook token user id is missing");
             }
 
-            return data.user_id();
+            FacebookProfileResponse profile = null;
+            try {
+                profile = graphRestClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .queryParam("fields", "id,name,email")
+                                .queryParam("access_token", providerToken)
+                                .build())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .retrieve()
+                        .body(FacebookProfileResponse.class);
+            } catch (Exception ex) {
+                log.warn("Failed to fetch Facebook /me profile (continuing without it)", ex);
+            }
+
+            String email = profile != null ? profile.email() : null;
+            String displayName = profile != null ? profile.name() : null;
+            return new SocialUserProfile(data.user_id(), email, displayName);
         } catch (IdentityException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -91,5 +111,8 @@ public class RemoteFacebookSocialTokenVerifier implements FacebookSocialTokenVer
     }
 
     private record FacebookDebugTokenData(Boolean is_valid, String app_id, String user_id) {
+    }
+
+    private record FacebookProfileResponse(String id, String name, String email) {
     }
 }

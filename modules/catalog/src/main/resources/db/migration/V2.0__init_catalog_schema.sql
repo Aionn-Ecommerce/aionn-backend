@@ -90,3 +90,63 @@ CREATE TABLE product_variants (
     CONSTRAINT fk_variants_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );
 CREATE INDEX idx_variants_product ON product_variants(product_id);
+
+-- Internationalization tables for catalog (song ngữ)
+
+CREATE TABLE product_translations (
+    product_id VARCHAR(50) NOT NULL,
+    locale VARCHAR(5) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    ai_description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (product_id, locale),
+    CONSTRAINT fk_product_translations_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_product_translations_locale ON product_translations(locale);
+
+CREATE TABLE category_translations (
+    category_id VARCHAR(50) NOT NULL,
+    locale VARCHAR(5) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (category_id, locale),
+    CONSTRAINT fk_category_translations_category FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_category_translations_locale ON category_translations(locale);
+
+CREATE TABLE brand_translations (
+    brand_id VARCHAR(50) NOT NULL,
+    locale VARCHAR(5) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (brand_id, locale),
+    CONSTRAINT fk_brand_translations_brand FOREIGN KEY (brand_id) REFERENCES brands(brand_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_brand_translations_locale ON brand_translations(locale);
+
+CREATE TABLE product_reviews (
+    review_id            VARCHAR(50) PRIMARY KEY,
+    product_id           VARCHAR(50) NOT NULL,
+    user_id              VARCHAR(50) NOT NULL,
+    order_id             VARCHAR(50),
+    rating               SMALLINT NOT NULL,
+    title                VARCHAR(200),
+    content              TEXT,
+    image_urls           JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status               VARCHAR(20) NOT NULL DEFAULT 'VISIBLE',
+    merchant_reply       TEXT,
+    merchant_replied_at  TIMESTAMPTZ,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_reviews_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5)
+);
+CREATE UNIQUE INDEX uq_reviews_user_product ON product_reviews(user_id, product_id);
+CREATE INDEX idx_reviews_product ON product_reviews(product_id, created_at DESC);
+CREATE INDEX idx_reviews_user ON product_reviews(user_id);
+CREATE INDEX idx_reviews_status ON product_reviews(status);
+

@@ -25,6 +25,7 @@ import com.aionn.identity.application.port.out.security.TotpManagerPort;
 import com.aionn.identity.application.port.out.security.UserSecurityPort;
 import com.aionn.identity.application.port.out.social.SocialLinkPersistencePort;
 import com.aionn.identity.application.port.out.social.SocialTokenVerifierPort;
+import com.aionn.identity.application.port.out.social.SocialUserProfile;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
@@ -92,7 +93,8 @@ public class AuthService {
         log.debug("Social login attempt: provider={}", command.provider());
 
         AuthProvider provider = AuthProvider.from(command.provider());
-        String providerUserId = socialTokenVerifier.verifyAndExtractProviderUserId(provider, command.providerToken());
+        SocialUserProfile profile = socialTokenVerifier.verifyAndExtract(provider, command.providerToken());
+        String providerUserId = profile.providerUserId();
 
         IdentityUser user;
         boolean isNewUser = false;
@@ -101,7 +103,7 @@ public class AuthService {
             user = userPersistencePort.findById(socialLink.get().userId())
                     .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
         } else {
-            user = createUserForSocial(provider, providerUserId);
+            user = createUserForSocial(provider, profile);
             IdentityUser savedUser = userPersistencePort.save(user);
             SocialLink newSocialLink = SocialLink.createNew(
                     IdGenerator.ulid(),
@@ -140,7 +142,7 @@ public class AuthService {
     public SocialLink linkSocial(LinkSocialCommand command) {
         IdentityUser user = validateUserExists(command.userId());
         AuthProvider provider = AuthProvider.from(command.provider());
-        String providerUserId = socialTokenVerifier.verifyAndExtractProviderUserId(provider, command.providerToken());
+        String providerUserId = socialTokenVerifier.verifyAndExtract(provider, command.providerToken()).providerUserId();
 
         if (socialLinkPersistencePort.existsByProviderAndProviderUserId(provider, providerUserId)
                 || socialLinkPersistencePort.findByUserIdAndProvider(command.userId(), provider).isPresent()) {
@@ -332,17 +334,28 @@ public class AuthService {
         }
     }
 
-    private IdentityUser createUserForSocial(AuthProvider provider, String providerUserId) {
-        return IdentityUser.createNew(
-                IdGenerator.ulid(),
-                null,
-                null,
-                generateSocialUsername(provider, providerUserId));
+    private IdentityUser createUserForSocial(AuthProvider provider, SocialUserProfile profile) {
+        String email = (profile.email() != null && !profile.email().isBlank()) ? profile.email().trim() : null;
+        if (email != null && userPersistencePort.findByIdentity(email).isPresent()) {
+            email = null;
+        }
+        String username = generateSocialUsername(provider, profile);
+        IdentityUser user = IdentityUser.createNew(IdGenerator.ulid(), email, null, username);
+        if (email != null) {
+            user.verifyEmail();
+        }
+        if (profile.displayName() != null && !profile.displayName().isBlank()) {
+            user.updateDisplayName(profile.displayName());
+        }
+        return user;
     }
 
-    private String generateSocialUsername(AuthProvider provider, String providerUserId) {
-        String base = (provider.name().toLowerCase() + "_" + providerUserId.replace(':', '_')
-                .replaceAll("[^a-zA-Z0-9_]", "")).toLowerCase();
+    private String generateSocialUsername(AuthProvider provider, SocialUserProfile profile) {
+        String base = sanitizeUsernameBase(profile.email(), profile.displayName());
+        if (base == null) {
+            base = (provider.name().toLowerCase() + "_" + profile.providerUserId().replace(':', '_')
+                    .replaceAll("[^a-zA-Z0-9_]", "")).toLowerCase();
+        }
         if (base.length() > 40) {
             base = base.substring(0, 40);
         }
@@ -355,6 +368,27 @@ public class AuthService {
             }
         }
         return candidate;
+    }
+
+    private String sanitizeUsernameBase(String email, String displayName) {
+        if (email != null && email.contains("@")) {
+            String local = email.substring(0, email.indexOf('@')).toLowerCase()
+                    .replaceAll("[^a-z0-9._-]", "");
+            if (local.length() >= 3) {
+                return local;
+            }
+        }
+        if (displayName != null && !displayName.isBlank()) {
+            String slug = java.text.Normalizer.normalize(displayName, java.text.Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                    .toLowerCase()
+                    .replaceAll("\\s+", "_")
+                    .replaceAll("[^a-z0-9_]", "");
+            if (slug.length() >= 3) {
+                return slug;
+            }
+        }
+        return null;
     }
 
     private AuthSession createSession(String userId, String ipAddress, String userAgent) {

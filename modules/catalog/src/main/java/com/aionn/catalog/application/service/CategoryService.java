@@ -4,6 +4,7 @@ import com.aionn.catalog.application.dto.category.command.CreateCategoryCommand;
 import com.aionn.catalog.application.dto.category.command.MoveCategoryCommand;
 import com.aionn.catalog.application.dto.category.command.UpdateCategoryCommand;
 import com.aionn.catalog.application.dto.category.result.CategoryResult;
+import com.aionn.catalog.application.dto.category.result.CategoryTreeNode;
 import com.aionn.catalog.application.mapper.CategoryResultMapper;
 import com.aionn.catalog.application.port.out.CategoryPersistencePort;
 import com.aionn.sharedkernel.application.port.EventPublisher;
@@ -16,6 +17,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -93,6 +98,48 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryResult get(String categoryId) {
         return categoryResultMapper.toResult(required(categoryId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResult> listRoots() {
+        return categoryRepository.findActiveRoots().stream()
+                .map(categoryResultMapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResult> listChildren(String parentId) {
+        return categoryRepository.findActiveChildren(parentId).stream()
+                .map(categoryResultMapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryTreeNode> tree() {
+        List<Category> allActive = categoryRepository.findAllActive();
+        List<CategoryResult> results = allActive.stream()
+                .map(categoryResultMapper::toResult)
+                .toList();
+
+        Map<String, List<CategoryResult>> byParent = results.stream()
+                .filter(c -> c.parentId() != null)
+                .collect(Collectors.groupingBy(CategoryResult::parentId));
+
+        List<CategoryResult> roots = results.stream()
+                .filter(c -> c.parentId() == null)
+                .toList();
+
+        return roots.stream()
+                .map(root -> buildNode(root, byParent))
+                .toList();
+    }
+
+    private CategoryTreeNode buildNode(CategoryResult category, Map<String, List<CategoryResult>> byParent) {
+        List<CategoryResult> children = byParent.getOrDefault(category.categoryId(), List.of());
+        List<CategoryTreeNode> childNodes = children.stream()
+                .map(child -> buildNode(child, byParent))
+                .toList();
+        return new CategoryTreeNode(category, childNodes);
     }
 
     private Category required(String categoryId) {
