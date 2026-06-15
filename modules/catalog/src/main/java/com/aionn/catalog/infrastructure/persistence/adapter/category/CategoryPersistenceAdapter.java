@@ -56,5 +56,26 @@ public class CategoryPersistenceAdapter implements CategoryPersistencePort {
                 .map(mapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<Category> findActiveRoots() {
+        return jpa.findActiveRoots().stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Category> findActiveChildren(String parentId) {
+        return jpa.findActiveByParentId(parentId).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Category> findAllActive() {
+        return jpa.findAllActive().stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }
 

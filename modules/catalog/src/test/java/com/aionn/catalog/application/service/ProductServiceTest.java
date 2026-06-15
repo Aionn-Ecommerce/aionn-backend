@@ -9,6 +9,8 @@ import com.aionn.catalog.application.port.out.BrandPersistencePort;
 import com.aionn.catalog.application.port.out.CategoryPersistencePort;
 import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.catalog.application.port.out.ProductPersistencePort;
+import com.aionn.catalog.application.port.out.UserBrowsingHistoryPersistencePort;
+import com.aionn.catalog.domain.model.UserBrowsingHistory;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
@@ -61,6 +63,8 @@ class ProductServiceTest {
     ProductSearchIndex searchIndex;
     @Mock
     EventPublisher eventPublisher;
+    @Mock
+    UserBrowsingHistoryPersistencePort userBrowsingHistoryRepository;
 
     @InjectMocks
     ProductService productService;
@@ -135,5 +139,92 @@ class ProductServiceTest {
 
         verify(productRepository, never()).save(any());
         verifyNoInteractions(eventPublisher, searchIndex);
+    }
+
+    @Test
+    @DisplayName("getRelatedProducts() returns mapped products from port")
+    void getRelatedProducts_returnsProducts() {
+        Product product = Product.create("P_1", "M_1", "Base Product");
+        Product related = Product.create("P_2", "M_1", "Related Product");
+        when(productRepository.findById("P_1")).thenReturn(Optional.of(product));
+        when(productRepository.findRelatedProducts("P_1", null, List.of(), 5))
+                .thenReturn(List.of(related));
+
+        productService.getRelatedProducts("P_1", 5);
+
+        verify(productRepository).findRelatedProducts("P_1", null, List.of(), 5);
+        verify(productResultMapper).toResult(related);
+    }
+
+    @Test
+    @DisplayName("getPopularProducts() returns mapped popular products from port")
+    void getPopularProducts_returnsProducts() {
+        Product popular = Product.create("P_1", "M_1", "Popular Product");
+        when(productRepository.findPopularProducts(5)).thenReturn(List.of(popular));
+
+        productService.getPopularProducts(5);
+
+        verify(productRepository).findPopularProducts(5);
+        verify(productResultMapper).toResult(popular);
+    }
+
+    @Test
+    @DisplayName("getPersonalizedProducts() returns mapped personalized products from database when user is logged in")
+    void getPersonalizedProducts_returnsProductsFromDb_whenUserLoggedIn() {
+        Product personalized = Product.create("P_1", "M_1", "Personalized Product");
+        UserBrowsingHistory history = new UserBrowsingHistory("user-1", List.of("C_1"), List.of("B_1"));
+        when(userBrowsingHistoryRepository.findByUserId("user-1")).thenReturn(Optional.of(history));
+        when(productRepository.findPersonalizedProducts(List.of("C_1"), List.of("B_1"), 5))
+                .thenReturn(List.of(personalized));
+
+        productService.getPersonalizedProducts("user-1", List.of(), List.of(), 5);
+
+        verify(userBrowsingHistoryRepository).findByUserId("user-1");
+        verify(productRepository).findPersonalizedProducts(List.of("C_1"), List.of("B_1"), 5);
+        verify(productResultMapper).toResult(personalized);
+    }
+
+    @Test
+    @DisplayName("getPersonalizedProducts() returns mapped personalized products from query parameters when user is anonymous")
+    void getPersonalizedProducts_returnsProductsFromQuery_whenUserAnonymous() {
+        Product personalized = Product.create("P_1", "M_1", "Personalized Product");
+        when(productRepository.findPersonalizedProducts(List.of("C_1"), List.of("B_1"), 5))
+                .thenReturn(List.of(personalized));
+
+        productService.getPersonalizedProducts(null, List.of("C_1"), List.of("B_1"), 5);
+
+        verify(productRepository).findPersonalizedProducts(List.of("C_1"), List.of("B_1"), 5);
+        verify(userBrowsingHistoryRepository, never()).findByUserId(any());
+        verify(productResultMapper).toResult(personalized);
+    }
+
+    @Test
+    @DisplayName("getPersonalizedProducts() falls back to popular products when preferences are empty")
+    void getPersonalizedProducts_fallsBackToPopular() {
+        Product popular = Product.create("P_1", "M_1", "Popular Product");
+        when(productRepository.findPopularProducts(5)).thenReturn(List.of(popular));
+
+        productService.getPersonalizedProducts(null, List.of(), List.of(), 5);
+
+        verify(productRepository).findPopularProducts(5);
+        verify(productRepository, never()).findPersonalizedProducts(any(), any(), any(Integer.class));
+    }
+
+    @Test
+    @DisplayName("trackProductView() saves history for logged in user")
+    void trackProductView_savesHistory_whenUserLoggedIn() {
+        Product product = Product.create("P_1", "M_1", "Sample Product");
+        product.categorize(List.of("C_1"));
+        product.assignBrand("B_1");
+        when(productRepository.findById("P_1")).thenReturn(Optional.of(product));
+        when(userBrowsingHistoryRepository.findByUserId("user-1")).thenReturn(Optional.empty());
+
+        productService.trackProductView("P_1", "user-1");
+
+        ArgumentCaptor<UserBrowsingHistory> captor = ArgumentCaptor.forClass(UserBrowsingHistory.class);
+        verify(userBrowsingHistoryRepository).save(captor.capture());
+        assertEquals("user-1", captor.getValue().getUserId());
+        assertEquals(List.of("C_1"), captor.getValue().getCategoryIds());
+        assertEquals(List.of("B_1"), captor.getValue().getBrandIds());
     }
 }

@@ -40,6 +40,13 @@ public enum CatalogErrorCode {
     ATTRIBUTE_TEMPLATE_NOT_FOUND("CATALOG_401", "Attribute template not found"),
     ATTRIBUTE_KEY_NOT_FOUND("CATALOG_402", "Attribute key not declared on template"),
 
+    // Product Reviews
+    REVIEW_NOT_FOUND("CATALOG_501", "Product review not found"),
+    REVIEW_ALREADY_EXISTS("CATALOG_502", "User has already reviewed this product"),
+    REVIEW_NOT_PURCHASED("CATALOG_503", "Only verified purchasers can review this product"),
+    REVIEW_FORBIDDEN("CATALOG_504", "Action on review is not allowed for current user"),
+    REVIEW_INVALID_RATING("CATALOG_505", "Rating must be between 1 and 5 stars"),
+
     // Generic
     INVALID_ARGUMENT("CATALOG_900", "Invalid argument");
 

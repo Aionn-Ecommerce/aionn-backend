@@ -31,6 +31,8 @@ import com.aionn.catalog.application.dto.product.command.RestoreCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateAiMetadataCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
 import com.aionn.catalog.application.dto.product.result.ProductResult;
+import com.aionn.catalog.application.dto.search.ProductSearchCriteria;
+import com.aionn.catalog.application.dto.search.ProductSearchResult;
 import com.aionn.catalog.application.service.ProductService;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,7 +49,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.aionn.catalog.application.dto.common.PageResult;
+import com.aionn.catalog.domain.valueobject.ProductStatus;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/catalog/products")
@@ -263,5 +275,99 @@ public class ProductController {
         @Operation(summary = "Get product", description = "Public read of a product")
         public ResponseEntity<ApiResponse<ProductResult>> get(@PathVariable String productId) {
                 return ResponseEntity.ok(ApiResponse.success(productService.get(productId), "Product fetched"));
+        }
+
+        @GetMapping
+        @Operation(summary = "List products by merchant", description = "Public read - paginated list by merchantId")
+        public ResponseEntity<ApiResponse<PageResult<ProductResult>>> listByMerchant(
+                        @RequestParam String merchantId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
+                return ResponseEntity.ok(ApiResponse.success(
+                        productService.listByMerchant(merchantId, page, size), "Products fetched"));
+        }
+
+        @GetMapping("/search")
+        @Operation(summary = "Search products",
+                description = "Public faceted search. Supports free-text q, brand/category multi-select, "
+                        + "price range, attribute facets (attr.<key>=value), and sort.")
+        public ResponseEntity<ApiResponse<ProductSearchResult>> search(
+                        @RequestParam(required = false) String q,
+                        @RequestParam(required = false) String merchantId,
+                        @RequestParam(required = false) String status,
+                        @RequestParam(required = false) List<String> categoryIds,
+                        @RequestParam(required = false) List<String> brandIds,
+                        @RequestParam(required = false) BigDecimal priceMin,
+                        @RequestParam(required = false) BigDecimal priceMax,
+                        @RequestParam(required = false) String sort,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size,
+                        @RequestParam Map<String, String> allParams) {
+                ProductStatus productStatus = status != null ? ProductStatus.valueOf(status) : null;
+                ProductSearchCriteria.Sort sortEnum;
+                try {
+                        sortEnum = sort == null ? ProductSearchCriteria.Sort.RELEVANCE
+                                : ProductSearchCriteria.Sort.valueOf(sort.toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                        sortEnum = ProductSearchCriteria.Sort.RELEVANCE;
+                }
+                Map<String, List<String>> attributes = new LinkedHashMap<>();
+                for (Map.Entry<String, String> e : allParams.entrySet()) {
+                        if (e.getKey().startsWith("attr.") && e.getValue() != null && !e.getValue().isBlank()) {
+                                String key = e.getKey().substring(5);
+                                attributes.put(key, Arrays.stream(e.getValue().split(","))
+                                                .map(String::trim)
+                                                .filter(s -> !s.isEmpty())
+                                                .toList());
+                        }
+                }
+                ProductSearchCriteria criteria = new ProductSearchCriteria(
+                                q, merchantId, productStatus,
+                                categoryIds == null ? List.of() : categoryIds,
+                                brandIds == null ? List.of() : brandIds,
+                                priceMin, priceMax,
+                                attributes, sortEnum, page, size);
+                return ResponseEntity.ok(ApiResponse.success(
+                                productService.search(criteria), "Search results"));
+        }
+
+        @GetMapping("/{productId}/recommendations")
+        @Operation(summary = "Get related products", description = "Public read of related products based on category/brand")
+        public ResponseEntity<ApiResponse<List<ProductResult>>> getRelatedProducts(
+                @PathVariable String productId,
+                @RequestParam(defaultValue = "5") int limit) {
+            List<ProductResult> results = productService.getRelatedProducts(productId, limit);
+            return ResponseEntity.ok(ApiResponse.success(results, "Related products fetched"));
+        }
+
+        @GetMapping("/recommendations/popular")
+        @Operation(summary = "Get popular products", description = "Public read of popular products based on ratings")
+        public ResponseEntity<ApiResponse<List<ProductResult>>> getPopularProducts(
+                @RequestParam(defaultValue = "5") int limit) {
+            List<ProductResult> results = productService.getPopularProducts(limit);
+            return ResponseEntity.ok(ApiResponse.success(results, "Popular products fetched"));
+        }
+
+        @GetMapping("/recommendations/personalized")
+        @Operation(summary = "Get personalized products", description = "Public read of personalized products based on provided categories/brands or database history")
+        public ResponseEntity<ApiResponse<List<ProductResult>>> getPersonalizedProducts(
+                Authentication authentication,
+                @RequestParam(required = false) List<String> categoryIds,
+                @RequestParam(required = false) List<String> brandIds,
+                @RequestParam(defaultValue = "5") int limit) {
+            String userId = authentication != null ? authentication.getName() : null;
+            List<ProductResult> results = productService.getPersonalizedProducts(userId, categoryIds, brandIds, limit);
+            return ResponseEntity.ok(ApiResponse.success(results, "Personalized products fetched"));
+        }
+
+        @PostMapping("/{productId}/view")
+        @Operation(summary = "Track product view", description = "Track product view in the database for personalized recommendations")
+        public ResponseEntity<ApiResponse<Void>> trackView(
+                Authentication authentication,
+                @PathVariable String productId) {
+            if (authentication != null) {
+                productService.trackProductView(productId, authentication.getName());
+            }
+            return ResponseEntity.ok(ApiResponse.success(null, "Product view tracked"));
         }
 }

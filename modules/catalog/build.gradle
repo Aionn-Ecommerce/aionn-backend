@@ -12,7 +12,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // OpenSearch (AI search/filter index). Compatible with Elasticsearch APIs.
     implementation 'org.opensearch.client:opensearch-rest-high-level-client:2.11.1'
     implementation 'org.opensearch.client:opensearch-java:2.13.0'
     // HttpClient 5 transport for opensearch-java

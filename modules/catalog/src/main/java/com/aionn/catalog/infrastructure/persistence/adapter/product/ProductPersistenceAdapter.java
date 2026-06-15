@@ -51,10 +51,55 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
+    public List<Product> findPublished(int limit, int offset) {
+        return jpa.findPublished(limit, offset).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Product> searchPublished(String queryOrNull, int limit) {
         String q = (queryOrNull == null || queryOrNull.isBlank()) ? null : queryOrNull.trim();
-        return jpa.searchPublished(q, PageRequest.of(0, Math.max(1, limit))).stream()
+        return jpa.searchPublished(q, Math.max(1, limit)).stream()
                 .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Product> findRelatedProducts(String productId, String brandId, List<String> categoryIds, int limit) {
+        List<String> safeCategoryIds = (categoryIds == null || categoryIds.isEmpty()) ? List.of("") : categoryIds;
+        return jpa.findRelatedProducts(productId, brandId, safeCategoryIds, limit).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Product> findPopularProducts(int limit) {
+        return jpa.findPopularProducts(limit).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Product> findPersonalizedProducts(List<String> categoryIds, List<String> brandIds, int limit) {
+        List<String> safeCategoryIds = (categoryIds == null || categoryIds.isEmpty()) ? List.of("") : categoryIds;
+        List<String> safeBrandIds = (brandIds == null || brandIds.isEmpty()) ? List.of("") : brandIds;
+        return jpa.findPersonalizedProducts(safeCategoryIds, safeBrandIds, limit).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Product> findByIdsPreserveOrder(List<String> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        java.util.Map<String, Product> byId = jpa.findAllById(productIds).stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
+        return productIds.stream()
+                .map(byId::get)
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 }

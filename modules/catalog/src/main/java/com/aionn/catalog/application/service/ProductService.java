@@ -17,20 +17,25 @@ import com.aionn.catalog.application.dto.product.command.RemoveVariantCommand;
 import com.aionn.catalog.application.dto.product.command.RestoreCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateAiMetadataCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
+import com.aionn.catalog.application.dto.common.PageResult;
 import com.aionn.catalog.application.dto.product.result.ProductResult;
+import com.aionn.catalog.application.dto.search.ProductSearchCriteria;
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
+import com.aionn.catalog.application.dto.search.ProductSearchResult;
 import com.aionn.catalog.application.mapper.ProductResultMapper;
 import com.aionn.catalog.application.port.out.AttributeTemplatePersistencePort;
 import com.aionn.catalog.application.port.out.BrandPersistencePort;
 import com.aionn.catalog.application.port.out.CategoryPersistencePort;
 import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.catalog.application.port.out.ProductPersistencePort;
+import com.aionn.catalog.application.port.out.UserBrowsingHistoryPersistencePort;
+import com.aionn.catalog.domain.model.UserBrowsingHistory;
 import com.aionn.catalog.application.port.out.ProductSearchIndex;
-import com.aionn.catalog.domain.CatalogLimits;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
 import com.aionn.catalog.domain.model.AttributeTemplate;
 import com.aionn.catalog.domain.model.Brand;
+import com.aionn.catalog.application.policy.CatalogValidationConstants;
 import com.aionn.catalog.domain.model.Merchant;
 import com.aionn.catalog.domain.model.Product;
 import com.aionn.catalog.domain.model.ProductVariant;
@@ -48,6 +53,8 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import com.aionn.sharedkernel.domain.vo.OffsetPagination;
 
 @Slf4j
 @Service
@@ -56,6 +63,7 @@ import java.util.Map;
 public class ProductService {
 
     private final ProductPersistencePort productRepository;
+    private final UserBrowsingHistoryPersistencePort userBrowsingHistoryRepository;
     private final MerchantPersistencePort merchantRepository;
     private final BrandPersistencePort brandRepository;
     private final CategoryPersistencePort categoryRepository;
@@ -250,10 +258,10 @@ public class ProductService {
         if (command.skuIds() == null || command.skuIds().isEmpty()) {
             throw new CatalogException(CatalogErrorCode.INVALID_ARGUMENT, "skuIds must not be empty");
         }
-        if (command.skuIds().size() > CatalogLimits.BULK_PRICE_UPDATE_MAX_SIZE) {
+        if (command.skuIds().size() > CatalogValidationConstants.BULK_PRICE_UPDATE_MAX_SIZE) {
             throw new CatalogException(CatalogErrorCode.PRODUCT_BULK_TOO_LARGE,
                     "Bulk size " + command.skuIds().size() + " exceeds max "
-                            + CatalogLimits.BULK_PRICE_UPDATE_MAX_SIZE);
+                            + CatalogValidationConstants.BULK_PRICE_UPDATE_MAX_SIZE);
         }
 
         String merchantId = requireMerchantIdForOwner(command.ownerId());
@@ -284,6 +292,73 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResult get(String productId) {
         return productResultMapper.toResult(required(productId));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<ProductResult> listByMerchant(String merchantId, int page, int size) {
+        var pagination = OffsetPagination.safe(page, size);
+        List<Product> products = productRepository.findByMerchant(merchantId, pagination);
+        List<ProductResult> results = products.stream()
+                .map(productResultMapper::toResult)
+                .toList();
+        return new PageResult<>(results, page, size, results.size());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<ProductResult> search(String merchantId, ProductStatus status, int page, int size) {
+        return search(new ProductSearchCriteria(
+                null, merchantId, status,
+                List.of(), List.of(),
+                null, null,
+                Map.of(),
+                ProductSearchCriteria.Sort.NEWEST,
+                page, size)).page();
+    }
+
+    @Transactional(readOnly = true)
+    public ProductSearchResult search(ProductSearchCriteria criteria) {
+        // Try OpenSearch first — it carries facets and full-text. Fall through to
+        // a JPA-only path when the index is unreachable so the storefront stays up.
+        Optional<ProductSearchIndex.SearchHits> hitsOpt = searchIndex.search(criteria);
+        if (hitsOpt.isPresent()) {
+            ProductSearchIndex.SearchHits hits = hitsOpt.get();
+            List<Product> products = productRepository.findByIdsPreserveOrder(hits.productIds());
+            List<ProductResult> results = products.stream()
+                    .map(productResultMapper::toResult)
+                    .toList();
+            ProductSearchResult.Facets facets = new ProductSearchResult.Facets(
+                    hits.brandCounts(),
+                    hits.categoryCounts(),
+                    hits.attributeCounts(),
+                    hits.priceMin() == null && hits.priceMax() == null
+                            ? null
+                            : new ProductSearchResult.PriceRange(hits.priceMin(), hits.priceMax()));
+            return ProductSearchResult.of(results, criteria.page(), criteria.size(), hits.totalHits(), facets);
+        }
+        return ProductSearchResult.of(jpaSearchFallback(criteria));
+    }
+
+    /** Pure JPA path used when OpenSearch is offline or the index is empty. */
+    private PageResult<ProductResult> jpaSearchFallback(ProductSearchCriteria criteria) {
+        var pagination = OffsetPagination.safe(criteria.page(), criteria.size());
+        List<Product> products;
+        if (criteria.merchantId() != null && !criteria.merchantId().isBlank()) {
+            products = productRepository.findByMerchant(criteria.merchantId(), pagination);
+            ProductStatus status = criteria.status();
+            if (status != null) {
+                products = products.stream()
+                        .filter(p -> p.getStatus() == status)
+                        .toList();
+            }
+        } else if (criteria.hasText()) {
+            products = productRepository.searchPublished(criteria.q(), pagination.size());
+        } else {
+            products = productRepository.findPublished(pagination.size(), pagination.offset());
+        }
+        List<ProductResult> results = products.stream()
+                .map(productResultMapper::toResult)
+                .toList();
+        return new PageResult<>(results, criteria.page(), criteria.size(), results.size());
     }
 
     private static BigDecimal applyChange(BigDecimal oldAmount, BulkPriceUpdateCommand command) {
@@ -349,5 +424,65 @@ public class ProductService {
 
     private void publish(Product product) {
         eventPublisher.publish(product.pullEvents());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResult> getRelatedProducts(String productId, int limit) {
+        Product product = required(productId);
+        List<Product> products = productRepository.findRelatedProducts(
+                product.getProductId(),
+                product.getBrandId(),
+                product.categoryIds(),
+                limit);
+        return products.stream()
+                .map(productResultMapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResult> getPopularProducts(int limit) {
+        List<Product> products = productRepository.findPopularProducts(limit);
+        return products.stream()
+                .map(productResultMapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResult> getPersonalizedProducts(String userId, List<String> categoryIds, List<String> brandIds,
+            int limit) {
+        List<String> activeCategoryIds = categoryIds != null ? categoryIds : List.of();
+        List<String> activeBrandIds = brandIds != null ? brandIds : List.of();
+
+        if (userId != null && !userId.isBlank() && !userId.equals("anonymousUser")) {
+            Optional<UserBrowsingHistory> history = userBrowsingHistoryRepository.findByUserId(userId);
+            if (history.isPresent()) {
+                activeCategoryIds = history.get().getCategoryIds();
+                activeBrandIds = history.get().getBrandIds();
+            }
+        }
+
+        if (activeCategoryIds.isEmpty() && activeBrandIds.isEmpty()) {
+            return getPopularProducts(limit);
+        }
+
+        List<Product> products = productRepository.findPersonalizedProducts(activeCategoryIds, activeBrandIds, limit);
+        if (products.isEmpty()) {
+            return getPopularProducts(limit);
+        }
+
+        return products.stream()
+                .map(productResultMapper::toResult)
+                .toList();
+    }
+
+    public void trackProductView(String productId, String userId) {
+        if (userId == null || userId.isBlank() || userId.equals("anonymousUser")) {
+            return;
+        }
+        Product product = required(productId);
+        UserBrowsingHistory history = userBrowsingHistoryRepository.findByUserId(userId)
+                .orElseGet(() -> UserBrowsingHistory.create(userId));
+        history.trackView(product.categoryIds(), product.getBrandId());
+        userBrowsingHistoryRepository.save(history);
     }
 }
