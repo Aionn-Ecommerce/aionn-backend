@@ -11,13 +11,19 @@ public final class ProductVariant {
     private final String skuId;
     private final Map<String, String> attributeValues;
     private Money price;
+    private Money originalPrice;
 
     public ProductVariant(String skuId, Map<String, String> attributeValues, Money price) {
+        this(skuId, attributeValues, price, null);
+    }
+
+    public ProductVariant(String skuId, Map<String, String> attributeValues, Money price, Money originalPrice) {
         this.skuId = skuId;
         this.attributeValues = attributeValues == null
                 ? new LinkedHashMap<>()
                 : new LinkedHashMap<>(attributeValues);
         this.price = price;
+        this.originalPrice = originalPrice;
     }
 
     public String skuId() {
@@ -34,6 +40,14 @@ public final class ProductVariant {
 
     public void setPrice(Money price) {
         this.price = Objects.requireNonNull(price, "price");
+    }
+
+    public Money originalPrice() {
+        return originalPrice;
+    }
+
+    public void setOriginalPrice(Money originalPrice) {
+        this.originalPrice = originalPrice;
     }
 
     boolean matches(Map<String, String> other) {

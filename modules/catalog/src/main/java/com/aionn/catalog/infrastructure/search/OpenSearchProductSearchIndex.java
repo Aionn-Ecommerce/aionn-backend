@@ -147,6 +147,34 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
                 })));
             }
 
+            if (criteria.ratingMin() != null) {
+                filters.add(Query.of(q -> q.range(r -> r
+                        .field("rating")
+                        .gte(JsonData.of(criteria.ratingMin())))));
+            }
+
+            if (criteria.onSale() != null && criteria.onSale()) {
+                filters.add(Query.of(q -> q.term(t -> t
+                        .field("onSale")
+                        .value(FieldValue.of(true)))));
+            }
+
+            if (criteria.shipping() != null && !criteria.shipping().isEmpty()) {
+                filters.add(Query.of(q -> q.terms(t -> t
+                        .field("shipping.keyword")
+                        .terms(v -> v.value(criteria.shipping().stream()
+                                .map(FieldValue::of)
+                                .toList())))));
+            }
+
+            if (criteria.locations() != null && !criteria.locations().isEmpty()) {
+                filters.add(Query.of(q -> q.terms(t -> t
+                        .field("location.keyword")
+                        .terms(v -> v.value(criteria.locations().stream()
+                                .map(FieldValue::of)
+                                .toList())))));
+            }
+
             for (Map.Entry<String, List<String>> entry : criteria.attributes().entrySet()) {
                 if (entry.getValue() == null || entry.getValue().isEmpty()) {
                     continue;

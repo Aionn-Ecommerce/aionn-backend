@@ -39,6 +39,7 @@ public class ProductDomainMapper {
                     .product(entity)
                     .attributeValues(new HashMap<>(variant.attributeValues()))
                     .price(Optional.ofNullable(variant.price()).map(Money::amount).orElse(null))
+                    .originalPrice(Optional.ofNullable(variant.originalPrice()).map(Money::amount).orElse(null))
                     .currency(Optional.ofNullable(variant.price()).map(Money::currency).orElse(null))
                     .build();
             variantEntities.add(ve);
@@ -69,9 +70,13 @@ public class ProductDomainMapper {
                 Money price = ve.getPrice() != null && ve.getCurrency() != null
                         ? Money.of(ve.getPrice(), ve.getCurrency())
                         : null;
+                Money originalPrice = ve.getOriginalPrice() != null && ve.getCurrency() != null
+                        ? Money.of(ve.getOriginalPrice(), ve.getCurrency())
+                        : null;
                 variants.add(new ProductVariant(ve.getSkuId(),
                         ve.getAttributeValues() != null ? ve.getAttributeValues() : Map.of(),
-                        price));
+                        price,
+                        originalPrice));
             }
         }
 

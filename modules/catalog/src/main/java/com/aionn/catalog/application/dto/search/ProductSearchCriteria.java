@@ -24,7 +24,11 @@ public record ProductSearchCriteria(
         Map<String, List<String>> attributes,
         Sort sort,
         int page,
-        int size) {
+        int size,
+        Double ratingMin,
+        Boolean onSale,
+        List<String> shipping,
+        List<String> locations) {
 
     public enum Sort {
         RELEVANCE,
@@ -37,6 +41,8 @@ public record ProductSearchCriteria(
         categoryIds = categoryIds == null ? List.of() : List.copyOf(categoryIds);
         brandIds = brandIds == null ? List.of() : List.copyOf(brandIds);
         attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
+        shipping = shipping == null ? List.of() : List.copyOf(shipping);
+        locations = locations == null ? List.of() : List.copyOf(locations);
         if (sort == null) {
             sort = Sort.RELEVANCE;
         }
@@ -49,6 +55,21 @@ public record ProductSearchCriteria(
         if (size > 100) {
             size = 100;
         }
+    }
+
+    public ProductSearchCriteria(
+            String q,
+            String merchantId,
+            ProductStatus status,
+            List<String> categoryIds,
+            List<String> brandIds,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            Map<String, List<String>> attributes,
+            Sort sort,
+            int page,
+            int size) {
+        this(q, merchantId, status, categoryIds, brandIds, priceMin, priceMax, attributes, sort, page, size, null, null, List.of(), List.of());
     }
 
     public boolean hasText() {

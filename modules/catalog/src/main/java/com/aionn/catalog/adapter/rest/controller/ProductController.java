@@ -300,6 +300,10 @@ public class ProductController {
                         @RequestParam(required = false) BigDecimal priceMin,
                         @RequestParam(required = false) BigDecimal priceMax,
                         @RequestParam(required = false) String sort,
+                        @RequestParam(required = false) Double ratingMin,
+                        @RequestParam(required = false) Boolean onSale,
+                        @RequestParam(required = false) List<String> shipping,
+                        @RequestParam(required = false) List<String> locations,
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam Map<String, String> allParams) {
@@ -326,7 +330,8 @@ public class ProductController {
                                 categoryIds == null ? List.of() : categoryIds,
                                 brandIds == null ? List.of() : brandIds,
                                 priceMin, priceMax,
-                                attributes, sortEnum, page, size);
+                                attributes, sortEnum, page, size,
+                                ratingMin, onSale, shipping, locations);
                 return ResponseEntity.ok(ApiResponse.success(
                                 productService.search(criteria), "Search results"));
         }

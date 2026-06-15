@@ -1,6 +1,9 @@
 package com.aionn.catalog.infrastructure.search;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.hc.core5.http.HttpHost;
+import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.transport.OpenSearchTransport;
 import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
@@ -22,8 +25,12 @@ public class OpenSearchConfig {
 
     @Bean
     public OpenSearchClient openSearchClient() {
+        ObjectMapper objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule());
+        
         OpenSearchTransport transport = ApacheHttpClient5TransportBuilder
                 .builder(new HttpHost(scheme, host, port))
+                .setMapper(new JacksonJsonpMapper(objectMapper))
                 .build();
         return new OpenSearchClient(transport);
     }

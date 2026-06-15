@@ -74,6 +74,7 @@ public class ApiSecurityConfig {
                                                                 "/ucp/v1/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/banners").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/feedbacks").permitAll()
                                                 .requestMatchers(
                                                                 "/actuator/health",

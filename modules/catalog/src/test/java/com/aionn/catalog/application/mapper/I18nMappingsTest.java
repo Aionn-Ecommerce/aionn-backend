@@ -15,6 +15,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.aionn.catalog.application.port.out.ProductReviewPersistencePort;
+import org.mockito.Mockito;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -24,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class I18nMappingsTest {
 
-    private final ProductResultMapper productResultMapper = new ProductResultMapper();
+    private final ProductReviewPersistencePort reviewRepository = Mockito.mock(ProductReviewPersistencePort.class);
+    private final ProductResultMapper productResultMapper = new ProductResultMapper(reviewRepository);
     private final CategoryResultMapper categoryResultMapper = new CategoryResultMapper();
     private final BrandResultMapper brandResultMapper = new BrandResultMapper();
 

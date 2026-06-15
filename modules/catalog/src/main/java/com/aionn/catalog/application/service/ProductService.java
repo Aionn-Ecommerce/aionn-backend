@@ -398,6 +398,27 @@ public class ProductService {
         return productResultMapper.toSearchDocument(product, filterable);
     }
 
+    @Transactional(readOnly = true)
+    public void syncAllToSearchIndex() {
+        log.info("Starting OpenSearch sync for all published products...");
+        int limit = 100;
+        int offset = 0;
+        long totalSynced = 0;
+        while (true) {
+            List<Product> products = productRepository.findPublished(limit, offset);
+            if (products.isEmpty()) {
+                break;
+            }
+            List<ProductSearchDocument> docs = products.stream()
+                    .map(this::buildSearchDocument)
+                    .toList();
+            searchIndex.indexAll(docs);
+            totalSynced += products.size();
+            offset += limit;
+        }
+        log.info("Successfully synced {} published products to OpenSearch.", totalSynced);
+    }
+
     /** Resolves the caller's merchantId from their authenticated user id. */
     private String requireMerchantIdForOwner(String ownerId) {
         Merchant merchant = merchantRepository.findByOwnerId(ownerId)

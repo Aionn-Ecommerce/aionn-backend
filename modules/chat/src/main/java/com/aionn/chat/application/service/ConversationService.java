@@ -100,5 +100,18 @@ public class ConversationService {
         long unread = messageRepository.countUnread(c.getConversationId(), forUserId, since);
         return mapper.toResult(c, unread);
     }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getUnreadCounts(String userId) {
+        List<Conversation> activeConversations = conversationRepository.findByUser(userId, false, 100);
+        java.util.Map<String, Long> counts = new java.util.HashMap<>();
+        for (Conversation c : activeConversations) {
+            Instant lastRead = c.participantLastReadMap().get(userId);
+            Instant since = lastRead == null ? c.getCreatedAt() : lastRead;
+            long unread = messageRepository.countUnread(c.getConversationId(), userId, since);
+            counts.put(c.getConversationId(), unread);
+        }
+        return counts;
+    }
 }
 

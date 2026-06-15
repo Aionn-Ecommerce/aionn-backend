@@ -19,12 +19,15 @@ public record ProductResult(
         String aiDescription,
         String status,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        Double rating,
+        Long reviewCount) {
 
     public record VariantResult(
             String skuId,
             Map<String, String> attributeValues,
             BigDecimal price,
+            BigDecimal originalPrice,
             String currency) {
     }
 }

@@ -110,4 +110,12 @@ public class ChatConversationController {
                                                 auth.getName(), conversationId, displayName, avatarUrl)),
                                 "Support joined"));
         }
+
+        @GetMapping("/unread-counts")
+        @PreAuthorize("isAuthenticated()")
+        public ResponseEntity<ApiResponse<java.util.Map<String, Long>>> getUnreadCounts(Authentication auth) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                conversationService.getUnreadCounts(auth.getName()),
+                                "Unread counts fetched"));
+        }
 }

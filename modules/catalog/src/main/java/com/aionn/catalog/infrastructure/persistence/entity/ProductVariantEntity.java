@@ -45,6 +45,9 @@ public class ProductVariantEntity {
     @Column(name = "price", precision = 18, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "original_price", precision = 18, scale = 2)
+    private BigDecimal originalPrice;
+
     @Column(name = "currency", length = 3)
     private String currency;
 }

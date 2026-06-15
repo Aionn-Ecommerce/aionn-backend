@@ -26,6 +26,10 @@ public record ProductSearchDocument(
         BigDecimal priceTo,
         String currency,
         String status,
-        Instant updatedAt) {
+        Instant updatedAt,
+        Double rating,
+        Boolean onSale,
+        List<String> shipping,
+        String location) {
 }
 
