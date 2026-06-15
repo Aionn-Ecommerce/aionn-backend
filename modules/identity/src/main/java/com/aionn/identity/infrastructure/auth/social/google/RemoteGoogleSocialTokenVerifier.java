@@ -1,5 +1,6 @@
 package com.aionn.identity.infrastructure.auth.social.google;
 
+import com.aionn.identity.application.port.out.social.SocialUserProfile;
 import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.infrastructure.config.properties.SocialAuthProperties;
@@ -39,7 +40,7 @@ public class RemoteGoogleSocialTokenVerifier implements GoogleSocialTokenVerifie
     }
 
     @Override
-    public String verifyAndExtractUserId(String providerToken) {
+    public SocialUserProfile verify(String providerToken) {
         requireNotBlank(providerToken);
 
         SocialAuthProperties.Google config = socialAuthProperties.google();
@@ -77,7 +78,16 @@ public class RemoteGoogleSocialTokenVerifier implements GoogleSocialTokenVerifie
                         "Google token has expired");
             }
 
-            return response.sub();
+            String email = response.email_verified() != null && response.email_verified() ? response.email() : null;
+            String displayName = response.name();
+            if (displayName == null || displayName.isBlank()) {
+                String given = response.given_name();
+                String family = response.family_name();
+                if (given != null || family != null) {
+                    displayName = ((given == null ? "" : given) + " " + (family == null ? "" : family)).trim();
+                }
+            }
+            return new SocialUserProfile(response.sub(), email, displayName);
         } catch (IdentityException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -87,6 +97,16 @@ public class RemoteGoogleSocialTokenVerifier implements GoogleSocialTokenVerifie
         }
     }
 
-    private record GoogleTokenInfoResponse(String aud, String iss, String sub, Long exp) {
+    private record GoogleTokenInfoResponse(
+            String aud,
+            String iss,
+            String sub,
+            Long exp,
+            String email,
+            Boolean email_verified,
+            String name,
+            String given_name,
+            String family_name,
+            String picture) {
     }
 }
