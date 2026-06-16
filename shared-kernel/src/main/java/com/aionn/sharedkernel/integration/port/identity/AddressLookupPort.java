@@ -6,6 +6,8 @@ public interface AddressLookupPort {
 
     Optional<ResolvedAddress> resolve(String provinceCode, String districtCode, String wardCode);
 
+    Optional<ResolvedProvince> resolveProvince(String provinceCode);
+
     record ResolvedAddress(
             String provinceCode,
             String provinceName,
@@ -13,5 +15,8 @@ public interface AddressLookupPort {
             String districtName,
             String wardCode,
             String wardName) {
+    }
+
+    record ResolvedProvince(String code, String name) {
     }
 }
