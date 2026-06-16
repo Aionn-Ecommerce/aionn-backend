@@ -68,6 +68,12 @@ shared-kernel:
       enabled: ${SHARED_KERNEL_TWO_TIER_CACHE_ENABLED:true}
       origin: ${SHARED_KERNEL_CACHE_ORIGIN:}
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+  upload-base-url: ${CLOUDINARY_UPLOAD_BASE_URL:https://api.cloudinary.com/v1_1}
+
 security:
   idempotency:
     enabled: ${SECURITY_IDEMPOTENCY_ENABLED:true}
