@@ -8,7 +8,9 @@ import com.aionn.identity.infrastructure.persistence.repository.auth.AuthSession
 import com.aionn.identity.infrastructure.persistence.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,5 +57,11 @@ public class AuthSessionPersistenceAdapter implements AuthSessionPersistencePort
         return savedEntities.stream()
                 .map(authSessionDomainMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public int deleteIdleBefore(LocalDateTime cutoff) {
+        return authSessionRepository.deleteIdleBefore(cutoff);
     }
 }

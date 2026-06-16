@@ -108,11 +108,13 @@ public class UcpCheckoutService {
 
         long discountTotal = 0;
         DiscountDtos.DiscountResponse discountResponse = null;
+        String discountsJson = null;
         if (request.discounts() != null && request.discounts().codes() != null
                 && !request.discounts().codes().isEmpty()) {
             DiscountResult dr = processDiscountCodes(request.discounts().codes(), userId, subtotal, currency, messages);
             discountTotal = dr.totalDiscount();
             discountResponse = dr.response();
+            discountsJson = discountsJson(firstAppliedCode(discountResponse));
         }
 
         long shippingFee = 0;
@@ -142,6 +144,7 @@ public class UcpCheckoutService {
                 status, currency,
                 lineCodec.encode(snapshots),
                 totalsJson(subtotal, totalAmount),
+                discountsJson,
                 null, null, buildContinueUrl(sessionId),
                 now, now);
         sessionRepository.save(session);
@@ -225,10 +228,12 @@ public class UcpCheckoutService {
 
         long discountTotal = 0;
         DiscountDtos.DiscountResponse discountResponse = null;
+        String discountsJson = s.discountsJson();
         if (request.discounts() != null && request.discounts().codes() != null) {
             DiscountResult dr = processDiscountCodes(request.discounts().codes(), userId, subtotal, currency, messages);
             discountTotal = dr.totalDiscount();
             discountResponse = dr.response();
+            discountsJson = discountsJson(firstAppliedCode(discountResponse));
         }
 
         long shippingFee = getDefaultShippingFee(fulfillment);
@@ -242,6 +247,7 @@ public class UcpCheckoutService {
                 newStatus, currency,
                 lineCodec.encode(snapshots),
                 totalsJson(subtotal, totalAmount),
+                discountsJson,
                 s.orderId(), s.cartId(), s.continueUrl(),
                 s.createdAt(), now);
         sessionRepository.save(updated);
@@ -271,6 +277,10 @@ public class UcpCheckoutService {
             throw new UcpException(UcpErrorCode.CHECKOUT_INVALID_STATE,
                     "Session " + sessionId + " is in state " + s.status());
         }
+        if (s.status() == CheckoutSessionStatus.COMPLETE_IN_PROGRESS) {
+            throw new UcpException(UcpErrorCode.CHECKOUT_INVALID_STATE,
+                    "Session " + sessionId + " is already being completed");
+        }
         if (s.userId() != null && !s.userId().equals(userId)) {
             throw new UcpException(UcpErrorCode.CHECKOUT_FORBIDDEN);
         }
@@ -285,6 +295,7 @@ public class UcpCheckoutService {
                 s.sessionId(), s.userId(), s.platformProfileUrl(), s.webhookUrl(),
                 CheckoutSessionStatus.COMPLETE_IN_PROGRESS,
                 s.currency(), s.lineItemsJson(), s.totalsJson(),
+                s.discountsJson(),
                 s.orderId(), s.cartId(), s.continueUrl(),
                 s.createdAt(), Instant.now());
         sessionRepository.save(inProgress);
@@ -295,13 +306,14 @@ public class UcpCheckoutService {
                 .toList();
         OrderPlacementPort.PlacedOrder placed = orderPlacementPort.place(
                 new OrderPlacementPort.PlaceCommand(
-                        userId, lines, request.payment_method_id(),
+                        userId, lines, firstDiscountCode(s.discountsJson()), request.payment_method_id(),
                         request.address_id(), s.currency(), null));
 
         Session completed = new Session(
                 s.sessionId(), s.userId(), s.platformProfileUrl(), s.webhookUrl(),
                 CheckoutSessionStatus.COMPLETED,
                 s.currency(), s.lineItemsJson(), s.totalsJson(),
+                s.discountsJson(),
                 placed.orderId(), s.cartId(), s.continueUrl(),
                 s.createdAt(), Instant.now());
         sessionRepository.save(completed);
@@ -330,6 +342,7 @@ public class UcpCheckoutService {
                 s.sessionId(), s.userId(), s.platformProfileUrl(), s.webhookUrl(),
                 CheckoutSessionStatus.CANCELED,
                 s.currency(), s.lineItemsJson(), s.totalsJson(),
+                s.discountsJson(),
                 s.orderId(), s.cartId(), null,
                 s.createdAt(), Instant.now());
         sessionRepository.save(canceled);
@@ -518,6 +531,59 @@ public class UcpCheckoutService {
         return "{\"subtotal\":" + subtotal + ",\"total\":" + total + "}";
     }
 
+    private static String firstAppliedCode(DiscountDtos.DiscountResponse response) {
+        if (response == null || response.applied() == null || response.applied().isEmpty()) {
+            return null;
+        }
+        return response.applied().get(0).code();
+    }
+
+    private static String discountsJson(String voucherCode) {
+        if (voucherCode == null || voucherCode.isBlank()) {
+            return null;
+        }
+        return "{\"voucherCode\":\"" + escapeJson(voucherCode.trim()) + "\"}";
+    }
+
+    private static String firstDiscountCode(String discountsJson) {
+        if (discountsJson == null || discountsJson.isBlank()) {
+            return null;
+        }
+        String marker = "\"voucherCode\"";
+        int markerIndex = discountsJson.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+        int colonIndex = discountsJson.indexOf(':', markerIndex + marker.length());
+        if (colonIndex < 0) {
+            return null;
+        }
+        int startQuote = discountsJson.indexOf('"', colonIndex + 1);
+        if (startQuote < 0) {
+            return null;
+        }
+        StringBuilder value = new StringBuilder();
+        boolean escaped = false;
+        for (int i = startQuote + 1; i < discountsJson.length(); i++) {
+            char ch = discountsJson.charAt(i);
+            if (escaped) {
+                value.append(ch);
+                escaped = false;
+            } else if (ch == '\\') {
+                escaped = true;
+            } else if (ch == '"') {
+                return value.toString();
+            } else {
+                value.append(ch);
+            }
+        }
+        return null;
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
     /**
      * Cart-to-checkout conversion per UCP spec.
      * Idempotent: if incomplete checkout already exists for cart_id, returns
@@ -558,6 +624,7 @@ public class UcpCheckoutService {
                 status, cart.currency(),
                 cart.lineItemsJson(),
                 totalsJson(subtotal, totalAmount),
+                null,
                 null, cartId, buildContinueUrl(sessionId),
                 now, now);
         sessionRepository.save(session);

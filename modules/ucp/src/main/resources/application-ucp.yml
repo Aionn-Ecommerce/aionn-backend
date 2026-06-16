@@ -11,13 +11,14 @@ ucp:
     private-key-pem: ${UCP_SIGNING_PRIVATE_KEY_PEM:}
     public-key-pem: ${UCP_SIGNING_PUBLIC_KEY_PEM:}
   capabilities:
-    catalog-search: true
-    catalog-lookup: true
-    checkout: ${UCP_CAPABILITY_CHECKOUT_ENABLED:true}
-    order: ${UCP_CAPABILITY_ORDER_ENABLED:true}
-    fulfillment: ${UCP_CAPABILITY_FULFILLMENT_ENABLED:true}
-    discount: ${UCP_CAPABILITY_DISCOUNT_ENABLED:true}
-    identity-linking: ${UCP_CAPABILITY_IDENTITY_LINKING_ENABLED:true}
+    cart:
+      enabled: true
+    checkout:
+      enabled: ${UCP_CAPABILITY_CHECKOUT_ENABLED:true}
+    order:
+      enabled: ${UCP_CAPABILITY_ORDER_ENABLED:true}
+    identity-linking:
+      enabled: ${UCP_CAPABILITY_IDENTITY_LINKING_ENABLED:true}
   webhook:
     enabled: ${UCP_WEBHOOK_ENABLED:true}
     delay-ms: ${UCP_WEBHOOK_DELAY_MS:30000}

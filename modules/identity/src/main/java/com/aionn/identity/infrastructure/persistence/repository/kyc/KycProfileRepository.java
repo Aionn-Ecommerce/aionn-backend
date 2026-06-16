@@ -1,6 +1,7 @@
 package com.aionn.identity.infrastructure.persistence.repository.kyc;
 
 import com.aionn.identity.infrastructure.persistence.entity.KycProfileEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,6 +14,6 @@ public interface KycProfileRepository extends JpaRepository<KycProfileEntity, St
     Optional<KycProfileEntity> findByKycIdAndUser_UserId(String kycId, String userId);
 
     Optional<KycProfileEntity> findByProviderApplicantId(String providerApplicantId);
+
+    List<KycProfileEntity> findByStatusOrderBySubmittedAtDesc(String status, Pageable pageable);
 }
-
-

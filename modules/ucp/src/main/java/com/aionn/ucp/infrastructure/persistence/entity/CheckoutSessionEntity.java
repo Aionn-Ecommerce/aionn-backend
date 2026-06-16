@@ -48,6 +48,10 @@ public class CheckoutSessionEntity {
     @Column(name = "totals_json", columnDefinition = "jsonb", nullable = false)
     private String totalsJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "discounts_json", columnDefinition = "jsonb")
+    private String discountsJson;
+
     @Column(name = "order_id", length = 64)
     private String orderId;
 

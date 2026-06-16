@@ -22,12 +22,13 @@ public class PromotionQueryGateway implements PromotionQueryPort {
         try {
             var vouchers = jdbcTemplate.query(
                     """
-                            SELECT v.voucher_code, v.discount_amount, v.discount_currency,
+                            SELECT v.voucher_code, v.discount_amount, v.currency AS discount_currency,
                                    v.usage_limit, v.used_count, v.reserved_count,
-                                   v.valid_from, v.valid_until,
-                                   c.title, c.status AS campaign_status
-                            FROM voucher v
-                            JOIN promotion_campaign c ON c.campaign_id = v.campaign_id
+                                   v.valid_from, v.valid_until, v.scope,
+                                   COALESCE(c.name, v.voucher_code) AS title,
+                                   c.status AS campaign_status
+                            FROM vouchers v
+                            LEFT JOIN promotion_campaigns c ON c.campaign_id = v.campaign_id
                             WHERE LOWER(v.voucher_code) = LOWER(?)
                             """,
                     (rs, rowNum) -> new VoucherRow(
@@ -39,6 +40,7 @@ public class PromotionQueryGateway implements PromotionQueryPort {
                             rs.getInt("reserved_count"),
                             rs.getTimestamp("valid_from") != null ? rs.getTimestamp("valid_from").toInstant() : null,
                             rs.getTimestamp("valid_until") != null ? rs.getTimestamp("valid_until").toInstant() : null,
+                            rs.getString("scope"),
                             rs.getString("title"),
                             rs.getString("campaign_status")),
                     code);
@@ -51,7 +53,7 @@ public class PromotionQueryGateway implements PromotionQueryPort {
             Instant now = Instant.now();
 
             // Check campaign status
-            if (!"RUNNING".equalsIgnoreCase(row.campaignStatus())) {
+            if ("PLATFORM".equalsIgnoreCase(row.scope()) && !"RUNNING".equalsIgnoreCase(row.campaignStatus())) {
                 return Optional.of(new DiscountInfo(code, row.title(), 0, currency, "discount_code_expired"));
             }
 
@@ -66,7 +68,7 @@ public class PromotionQueryGateway implements PromotionQueryPort {
             }
 
             // Check usage limit
-            int remaining = row.usageLimit() - row.usedCount() - row.reservedCount();
+            int remaining = row.usageLimit() - row.usedCount();
             if (remaining <= 0) {
                 return Optional.of(new DiscountInfo(code, row.title(), 0, currency, "discount_code_expired"));
             }
@@ -95,6 +97,7 @@ public class PromotionQueryGateway implements PromotionQueryPort {
             int reservedCount,
             Instant validFrom,
             Instant validUntil,
+            String scope,
             String title,
             String campaignStatus) {
     }

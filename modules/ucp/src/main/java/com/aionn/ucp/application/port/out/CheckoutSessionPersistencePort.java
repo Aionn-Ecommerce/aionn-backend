@@ -21,6 +21,7 @@ public interface CheckoutSessionPersistencePort {
             String currency,
             String lineItemsJson,
             String totalsJson,
+            String discountsJson,
             String orderId,
             String cartId,
             String continueUrl,

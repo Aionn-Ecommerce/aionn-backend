@@ -15,12 +15,29 @@ class IdentityUserEntitySaveSupport {
     private final IdentityUserMapper identityUserMapper;
 
     IdentityUser save(IdentityUser user) {
-        UserEntity entity = identityUserMapper.toEntity(user);
-        userRepository.findById(user.getUserId()).ifPresent(existing -> {
-            entity.setMfaEnabled(existing.isMfaEnabled());
-            entity.setMfaSecret(existing.getMfaSecret());
-            entity.setFailedLoginAttempts(existing.getFailedLoginAttempts());
-        });
+        UserEntity entity = userRepository.findById(user.getUserId())
+                .orElseGet(() -> UserEntity.builder()
+                        .userId(user.getUserId())
+                        .roles(new java.util.LinkedHashSet<>())
+                        .build());
+
+        entity.setEmail(user.getEmail());
+        entity.setPhone(user.getPhone());
+        entity.setUsername(user.getUsername());
+        entity.setPasswordHash(user.getPasswordHash());
+        entity.setDisplayName(user.getDisplayName());
+        entity.setAvatarUrl(user.getAvatarUrl());
+        entity.setStatus(user.getStatus());
+        entity.setEmailVerifiedAt(user.getEmailVerifiedAt());
+        entity.setPhoneVerifiedAt(user.getPhoneVerifiedAt());
+        entity.setLockedUntil(user.getLockedUntil());
+
+        // Update roles without replacing the collection reference
+        entity.getRoles().clear();
+        if (user.getRoles() != null) {
+            entity.getRoles().addAll(user.getRoles());
+        }
+
         UserEntity savedEntity = userRepository.save(entity);
         return identityUserMapper.toDomain(savedEntity);
     }

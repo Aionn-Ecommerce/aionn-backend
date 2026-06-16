@@ -58,6 +58,9 @@ public class UserFeedbackEntity {
     @Column(name = "handled_at")
     private LocalDateTime handledAt;
 
+    @Column(name = "admin_reply", columnDefinition = "TEXT")
+    private String adminReply;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;

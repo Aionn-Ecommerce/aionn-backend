@@ -13,4 +13,6 @@ public interface UserFeedbackRepository extends JpaRepository<UserFeedbackEntity
     List<UserFeedbackEntity> findByUserIdOrderByCreatedAtDesc(String userId);
 
     Page<UserFeedbackEntity> findByStatusOrderByCreatedAtDesc(FeedbackStatus status, Pageable pageable);
+
+    Page<UserFeedbackEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

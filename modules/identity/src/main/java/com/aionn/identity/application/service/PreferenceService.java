@@ -92,7 +92,7 @@ public class PreferenceService {
         try {
             return preferencePersistencePort.createDefault(userId);
         } catch (Exception e) {
-            log.debug("Concurrent preference creation detected for user: {}, retrying read", userId);
+            log.error("Concurrent preference creation failed for user: {}", userId, e);
             return preferencePersistencePort.findById(userId)
                     .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
         }

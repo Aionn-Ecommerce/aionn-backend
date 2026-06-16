@@ -1,68 +1,82 @@
 package com.aionn.identity.adapter.rest.support.session;
 
+import com.aionn.identity.infrastructure.security.web.SecurityRequestAttributeKeys;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.ServletWebRequest;
-
-import com.aionn.identity.infrastructure.security.web.SecurityRequestAttributeKeys;
-
-import java.lang.reflect.Method;
+import org.springframework.web.context.request.NativeWebRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CurrentSessionIdArgumentResolverTest {
 
-    private final CurrentSessionIdArgumentResolver resolver = new CurrentSessionIdArgumentResolver();
+    @Mock
+    private MethodParameter methodParameter;
+    @Mock
+    private NativeWebRequest webRequest;
 
-    static class Sample {
-        public void handle(@CurrentSessionId String sessionId, String otherParam) {
-        }
-    }
+    private CurrentSessionIdArgumentResolver resolver;
 
-    private static MethodParameter param(int index) throws Exception {
-        Method method = Sample.class.getMethod("handle", String.class, String.class);
-        return new MethodParameter(method, index);
-    }
-
-    @Test
-    void supportsAnnotatedStringParameter() throws Exception {
-        assertTrue(resolver.supportsParameter(param(0)));
-        assertFalse(resolver.supportsParameter(param(1)));
+    @BeforeEach
+    void setUp() {
+        resolver = new CurrentSessionIdArgumentResolver();
     }
 
     @Test
-    void resolvesSessionIdFromRequestAttribute() throws Exception {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    void supportsParameterWithCurrentSessionIdAndStringType() {
+        when(methodParameter.hasParameterAnnotation(CurrentSessionId.class)).thenReturn(true);
+        when(methodParameter.getParameterType()).thenReturn((Class) String.class);
+
+        assertTrue(resolver.supportsParameter(methodParameter));
+    }
+
+    @Test
+    void rejectsParameterWithoutAnnotation() {
+        when(methodParameter.hasParameterAnnotation(CurrentSessionId.class)).thenReturn(false);
+
+        assertFalse(resolver.supportsParameter(methodParameter));
+    }
+
+    @Test
+    void resolveArgumentReturnsSessionIdFromRequestAttribute() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setAttribute(SecurityRequestAttributeKeys.SESSION_ID, "session-1");
-        var webRequest = new ServletWebRequest(request);
+        request.setAttribute(SecurityRequestAttributeKeys.SESSION_ID, "session-42");
+        when(webRequest.getNativeRequest(jakarta.servlet.http.HttpServletRequest.class))
+                .thenReturn(request);
 
-        Object result = resolver.resolveArgument(param(0), null, webRequest, null);
+        Object resolved = resolver.resolveArgument(methodParameter, null, webRequest, null);
 
-        assertEquals("session-1", result);
+        assertEquals("session-42", resolved);
     }
 
     @Test
-    void returnsNullWhenAttributeAbsent() throws Exception {
+    void resolveArgumentReturnsNullWhenAttributeMissing() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        var webRequest = new ServletWebRequest(request);
+        when(webRequest.getNativeRequest(jakarta.servlet.http.HttpServletRequest.class))
+                .thenReturn(request);
 
-        Object result = resolver.resolveArgument(param(0), null, webRequest, null);
+        Object resolved = resolver.resolveArgument(methodParameter, null, webRequest, null);
 
-        assertNull(result);
+        assertNull(resolved);
     }
 
     @Test
-    void returnsNullWhenAttributeNotString() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setAttribute(SecurityRequestAttributeKeys.SESSION_ID, 123);
-        var webRequest = new ServletWebRequest(request);
+    void resolveArgumentReturnsNullWhenNativeRequestMissing() {
+        when(webRequest.getNativeRequest(jakarta.servlet.http.HttpServletRequest.class))
+                .thenReturn(null);
 
-        Object result = resolver.resolveArgument(param(0), null, webRequest, null);
+        Object resolved = resolver.resolveArgument(methodParameter, null, webRequest, null);
 
-        assertNull(result);
+        assertNull(resolved);
     }
 }

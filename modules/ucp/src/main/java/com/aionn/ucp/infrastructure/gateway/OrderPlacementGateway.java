@@ -1,60 +1,50 @@
 package com.aionn.ucp.infrastructure.gateway;
 
-import com.aionn.identity.application.port.out.address.AddressPersistencePort;
-import com.aionn.identity.domain.model.Address;
-import com.aionn.ordering.application.dto.order.command.PlaceOrderHeadlessCommand;
-import com.aionn.ordering.application.dto.order.result.OrderResult;
-import com.aionn.ordering.application.service.OrderService;
-import com.aionn.ordering.domain.valueobject.ShippingAddress;
-import com.aionn.ucp.application.port.out.OrderPlacementPort;
+import com.aionn.sharedkernel.integration.port.identity.UserAddressLookupPort;
+import com.aionn.sharedkernel.integration.port.ordering.OrderPlacementPort;
 import com.aionn.ucp.domain.exception.UcpErrorCode;
 import com.aionn.ucp.domain.exception.UcpException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
-public class OrderPlacementGateway implements OrderPlacementPort {
+public class OrderPlacementGateway implements com.aionn.ucp.application.port.out.OrderPlacementPort {
 
-        private final OrderService orderService;
-        private final AddressPersistencePort addressPersistencePort;
+    private final OrderPlacementPort orderPlacementPort;
+    private final UserAddressLookupPort userAddressLookupPort;
 
-        @Override
-        public PlacedOrder place(PlaceCommand command) {
-                ShippingAddress addressSnapshot = resolveAddress(command.userId(), command.addressId());
+    @Override
+    public com.aionn.ucp.application.port.out.OrderPlacementPort.PlacedOrder place(
+            com.aionn.ucp.application.port.out.OrderPlacementPort.PlaceCommand command) {
+        UserAddressLookupPort.UserAddress addr = userAddressLookupPort
+                .findOwned(command.addressId(), command.userId())
+                .orElseThrow(() -> new UcpException(UcpErrorCode.INVALID_ARGUMENT,
+                        "Address not found for user: " + command.addressId()));
 
-                List<PlaceOrderHeadlessCommand.Line> lines = command.lines().stream()
-                                .map(l -> new PlaceOrderHeadlessCommand.Line(l.skuId(), l.qty()))
-                                .toList();
-                PlaceOrderHeadlessCommand cmd = new PlaceOrderHeadlessCommand(
-                                command.userId(),
-                                lines,
-                                null,
-                                command.paymentMethodId(),
-                                command.currency(),
-                                command.shippingFee(),
-                                addressSnapshot);
+        var lines = command.lines().stream()
+                .map(l -> new OrderPlacementPort.PlaceCommand.Line(l.skuId(), l.qty()))
+                .toList();
 
-                OrderResult result = orderService.placeOrderHeadless(cmd);
-                return new PlacedOrder(result.orderId(),
-                                result.totalAmount() == null ? 0L : result.totalAmount().longValue(),
-                                result.currency());
-        }
+        OrderPlacementPort.PlacedOrder result = orderPlacementPort.placeHeadless(
+                new OrderPlacementPort.PlaceCommand(
+                        command.userId(),
+                        lines,
+                        command.voucherCode(),
+                        command.paymentMethodId(),
+                        command.currency(),
+                        command.shippingFee(),
+                        new OrderPlacementPort.PlaceCommand.ShippingAddress(
+                                addr.addressId(),
+                                addr.contactName(),
+                                addr.phone(),
+                                addr.detailAddress(),
+                                addr.wardCode(),
+                                addr.districtCode(),
+                                addr.provinceCode(),
+                                addr.countryCode())));
 
-        private ShippingAddress resolveAddress(String userId, String addressId) {
-                Address address = addressPersistencePort.findByAddressIdAndUserId(addressId, userId)
-                                .orElseThrow(() -> new UcpException(UcpErrorCode.INVALID_ARGUMENT,
-                                                "Address not found for user: " + addressId));
-                return new ShippingAddress(
-                                address.addressId(),
-                                address.contactName(),
-                                address.phone(),
-                                address.detailAddress(),
-                                address.wardCode(),
-                                address.districtCode(),
-                                address.provinceCode(),
-                                "VN");
-        }
+        return new com.aionn.ucp.application.port.out.OrderPlacementPort.PlacedOrder(
+                result.orderId(), result.totalAmountMinor(), result.currency());
+    }
 }

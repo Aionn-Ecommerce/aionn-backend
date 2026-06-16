@@ -24,6 +24,9 @@ public class UserPreferencePersistenceAdapter implements UserPreferencePersisten
     @Override
     public UserPreferenceResult save(UserPreferenceResult preference) {
         UserPreferenceEntity entity = mapper.toEntity(preference);
+        var user = userRepository.findById(preference.userId())
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.USER_NOT_FOUND));
+        entity.setUser(user);
         UserPreferenceEntity saved = preferenceRepository.save(entity);
         return mapper.toResult(saved);
     }

@@ -17,22 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Base class for per-module REST exception handlers.
- *
- * <p>
- * Concrete subclasses are annotated with
- * {@code @RestControllerAdvice(basePackages = "<module>.adapter.rest.controller")}
- * so each module owns its own scope. Subclasses register their domain error
- * codes via {@link #registerErrors(HttpStatus, String...)} in the constructor
- * and add a single {@code @ExceptionHandler(<X>Exception.class)} that delegates
- * to {@link #handleException(DomainException)}.
- *
- * <p>
- * Cross-cutting exceptions (validation, authentication, malformed body…)
- * are handled here once and inherited by every module advice, so the public
- * error envelope is consistent across the API.
- */
 public abstract class AbstractModuleExceptionHandler {
 
     private final Map<String, HttpStatus> codeToStatus = new HashMap<>();
@@ -50,11 +34,6 @@ public abstract class AbstractModuleExceptionHandler {
         this.defaultStatus = status;
     }
 
-    /**
-     * Domain label rendered into the {@code domain} response field for
-     * non-{@link DomainException} errors (validation, auth, etc.). Subclasses
-     * should override to return their module name (e.g. {@code "Catalog"}).
-     */
     protected String moduleDomain() {
         return "Unknown";
     }
@@ -74,8 +53,6 @@ public abstract class AbstractModuleExceptionHandler {
         }
         return codeToStatus.getOrDefault(errorCode, defaultStatus);
     }
-
-    // ─── Cross-cutting handlers shared by every module ─────────────────────
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleMethodArgumentNotValid(

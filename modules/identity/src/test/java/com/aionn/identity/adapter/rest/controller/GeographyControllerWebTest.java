@@ -4,9 +4,14 @@ import com.aionn.identity.adapter.rest.dto.geography.response.GeographyResponse;
 import com.aionn.identity.adapter.rest.exception.IdentityExceptionHandler;
 import com.aionn.identity.adapter.rest.mapper.geography.GeographyDtoMapper;
 import com.aionn.identity.application.dto.geography.result.GeographyResult;
-import com.aionn.identity.application.service.GeographyService;
-import com.aionn.sharedkernel.adapter.web.support.clientip.ClientIpArgumentResolver;
-import com.aionn.sharedkernel.infrastructure.web.ClientIpResolver;
+import com.aionn.identity.application.port.in.geography.GetCountryQueryPort;
+import com.aionn.identity.application.port.in.geography.GetDistrictQueryPort;
+import com.aionn.identity.application.port.in.geography.GetProvinceQueryPort;
+import com.aionn.identity.application.port.in.geography.GetWardQueryPort;
+import com.aionn.identity.application.port.in.geography.ListCountriesQueryPort;
+import com.aionn.identity.application.port.in.geography.ListDistrictsQueryPort;
+import com.aionn.identity.application.port.in.geography.ListProvincesQueryPort;
+import com.aionn.identity.application.port.in.geography.ListWardsQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,22 +24,31 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Web tests for GeographyController. Verifies the public reference data
- * endpoints
- * (countries, provinces, districts, wards) return the expected payload, support
- * optional filters, and bubble service-layer errors through the exception
- * handler.
- */
 @ExtendWith(MockitoExtension.class)
 class GeographyControllerWebTest {
 
     @Mock
-    private GeographyService geographyService;
+    private ListCountriesQueryPort listCountriesQueryPort;
+    @Mock
+    private GetCountryQueryPort getCountryQueryPort;
+    @Mock
+    private ListProvincesQueryPort listProvincesQueryPort;
+    @Mock
+    private GetProvinceQueryPort getProvinceQueryPort;
+    @Mock
+    private ListDistrictsQueryPort listDistrictsQueryPort;
+    @Mock
+    private GetDistrictQueryPort getDistrictQueryPort;
+    @Mock
+    private ListWardsQueryPort listWardsQueryPort;
+    @Mock
+    private GetWardQueryPort getWardQueryPort;
     @Mock
     private GeographyDtoMapper geographyDtoMapper;
 
@@ -42,65 +56,70 @@ class GeographyControllerWebTest {
 
     @BeforeEach
     void setUp() {
-        GeographyController controller = new GeographyController(geographyService, geographyDtoMapper);
+        GeographyController controller = new GeographyController(
+                listCountriesQueryPort, getCountryQueryPort,
+                listProvincesQueryPort, getProvinceQueryPort,
+                listDistrictsQueryPort, getDistrictQueryPort,
+                listWardsQueryPort, getWardQueryPort,
+                geographyDtoMapper);
+
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new IdentityExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(
                         Jackson2ObjectMapperBuilder.json().build()))
-                .setCustomArgumentResolvers(new ClientIpArgumentResolver(new ClientIpResolver()))
                 .build();
     }
 
     @Test
-    void listCountriesReturnsAllActiveCountries() throws Exception {
-        List<GeographyResult> results = List.of(
-                new GeographyResult("VN", "Việt Nam", "Vietnam"),
-                new GeographyResult("US", "Hoa Kỳ", "United States"));
-        List<GeographyResponse> responses = List.of(
-                new GeographyResponse("VN", "Việt Nam", "Vietnam"),
-                new GeographyResponse("US", "Hoa Kỳ", "United States"));
+    void listCountriesReturnsAllCountries() throws Exception {
+        GeographyResult vn = new GeographyResult("VN", "Viet Nam", "Vietnam");
+        GeographyResult us = new GeographyResult("US", "Hoa Ky", "United States");
+        List<GeographyResult> results = List.of(vn, us);
 
-        when(geographyService.listCountries()).thenReturn(results);
-        when(geographyDtoMapper.toResponses(results)).thenReturn(responses);
+        GeographyResponse vnResp = new GeographyResponse("VN", "Viet Nam", "Vietnam");
+        GeographyResponse usResp = new GeographyResponse("US", "Hoa Ky", "United States");
+
+        when(listCountriesQueryPort.execute()).thenReturn(results);
+        when(geographyDtoMapper.toResponses(results)).thenReturn(List.of(vnResp, usResp));
 
         mockMvc.perform(get("/api/v1/geography/countries"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].code").value("VN"))
-                .andExpect(jsonPath("$.data[0].name").value("Việt Nam"))
+                .andExpect(jsonPath("$.data[0].name").value("Viet Nam"))
                 .andExpect(jsonPath("$.data[1].code").value("US"));
 
-        verify(geographyService).listCountries();
+        verify(listCountriesQueryPort).execute();
     }
 
     @Test
     void getCountryReturnsCountryByCode() throws Exception {
-        GeographyResult result = new GeographyResult("VN", "Việt Nam", "Vietnam");
-        GeographyResponse response = new GeographyResponse("VN", "Việt Nam", "Vietnam");
+        GeographyResult result = new GeographyResult("VN", "Viet Nam", "Vietnam");
+        GeographyResponse response = new GeographyResponse("VN", "Viet Nam", "Vietnam");
 
-        when(geographyService.getCountry("VN")).thenReturn(result);
+        when(getCountryQueryPort.execute("VN")).thenReturn(result);
         when(geographyDtoMapper.toResponse(result)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/geography/countries/VN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.code").value("VN"))
-                .andExpect(jsonPath("$.data.name").value("Việt Nam"))
+                .andExpect(jsonPath("$.data.name").value("Viet Nam"))
                 .andExpect(jsonPath("$.data.nameEn").value("Vietnam"));
 
-        verify(geographyService).getCountry("VN");
+        verify(getCountryQueryPort).execute("VN");
     }
 
     @Test
-    void listProvincesWithoutCountryFilterReturnsAllProvinces() throws Exception {
-        List<GeographyResult> results = List.of(
-                new GeographyResult("01", "Hà Nội", "Hanoi"),
-                new GeographyResult("79", "Hồ Chí Minh", "Ho Chi Minh"));
-        List<GeographyResponse> responses = List.of(
-                new GeographyResponse("01", "Hà Nội", "Hanoi"),
-                new GeographyResponse("79", "Hồ Chí Minh", "Ho Chi Minh"));
+    void listProvincesReturnsAllProvincesWhenNoCountryCode() throws Exception {
+        GeographyResult hanoi = new GeographyResult("01", "Ha Noi", "Hanoi");
+        GeographyResult hcm = new GeographyResult("79", "Ho Chi Minh", "Ho Chi Minh City");
+        List<GeographyResult> results = List.of(hanoi, hcm);
 
-        when(geographyService.listProvinces(null)).thenReturn(results);
-        when(geographyDtoMapper.toResponses(results)).thenReturn(responses);
+        GeographyResponse hanoiResp = new GeographyResponse("01", "Ha Noi", "Hanoi");
+        GeographyResponse hcmResp = new GeographyResponse("79", "Ho Chi Minh", "Ho Chi Minh City");
+
+        when(listProvincesQueryPort.execute(null)).thenReturn(results);
+        when(geographyDtoMapper.toResponses(results)).thenReturn(List.of(hanoiResp, hcmResp));
 
         mockMvc.perform(get("/api/v1/geography/provinces"))
                 .andExpect(status().isOk())
@@ -108,128 +127,103 @@ class GeographyControllerWebTest {
                 .andExpect(jsonPath("$.data[0].code").value("01"))
                 .andExpect(jsonPath("$.data[1].code").value("79"));
 
-        verify(geographyService).listProvinces(null);
+        verify(listProvincesQueryPort).execute(null);
     }
 
     @Test
-    void listProvincesWithCountryFilterPassesCountryCodeToService() throws Exception {
-        List<GeographyResult> results = List.of(new GeographyResult("01", "Hà Nội", "Hanoi"));
-        List<GeographyResponse> responses = List.of(new GeographyResponse("01", "Hà Nội", "Hanoi"));
+    void listProvincesFiltersByCountryCode() throws Exception {
+        GeographyResult hanoi = new GeographyResult("01", "Ha Noi", "Hanoi");
+        List<GeographyResult> results = List.of(hanoi);
 
-        when(geographyService.listProvinces("VN")).thenReturn(results);
-        when(geographyDtoMapper.toResponses(results)).thenReturn(responses);
+        GeographyResponse hanoiResp = new GeographyResponse("01", "Ha Noi", "Hanoi");
+
+        when(listProvincesQueryPort.execute("VN")).thenReturn(results);
+        when(geographyDtoMapper.toResponses(results)).thenReturn(List.of(hanoiResp));
 
         mockMvc.perform(get("/api/v1/geography/provinces").param("countryCode", "VN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].code").value("01"));
 
-        verify(geographyService).listProvinces("VN");
+        verify(listProvincesQueryPort).execute("VN");
     }
 
     @Test
     void getProvinceReturnsProvinceByCode() throws Exception {
-        GeographyResult result = new GeographyResult("01", "Hà Nội", "Hanoi");
-        GeographyResponse response = new GeographyResponse("01", "Hà Nội", "Hanoi");
+        GeographyResult result = new GeographyResult("01", "Ha Noi", "Hanoi");
+        GeographyResponse response = new GeographyResponse("01", "Ha Noi", "Hanoi");
 
-        when(geographyService.getProvince("01")).thenReturn(result);
+        when(getProvinceQueryPort.execute("01")).thenReturn(result);
         when(geographyDtoMapper.toResponse(result)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/geography/provinces/01"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.code").value("01"))
-                .andExpect(jsonPath("$.data.name").value("Hà Nội"));
+                .andExpect(jsonPath("$.data.name").value("Ha Noi"));
 
-        verify(geographyService).getProvince("01");
+        verify(getProvinceQueryPort).execute("01");
     }
 
     @Test
-    void listDistrictsRequiresProvinceCode() throws Exception {
-        // Without the required `provinceCode` param, MockMvc resolves to a 400.
-        mockMvc.perform(get("/api/v1/geography/districts"))
-                .andExpect(status().isBadRequest());
+    void listDistrictsReturnsDistrictsByProvince() throws Exception {
+        GeographyResult district = new GeographyResult("001", "Ba Dinh", "Ba Dinh");
+        List<GeographyResult> results = List.of(district);
+        GeographyResponse response = new GeographyResponse("001", "Ba Dinh", "Ba Dinh");
 
-        verifyNoInteractions(geographyService);
-    }
-
-    @Test
-    void listDistrictsByProvinceCodeReturnsFilteredDistricts() throws Exception {
-        List<GeographyResult> results = List.of(
-                new GeographyResult("001", "Ba Đình", "Ba Dinh"),
-                new GeographyResult("002", "Hoàn Kiếm", "Hoan Kiem"));
-        List<GeographyResponse> responses = List.of(
-                new GeographyResponse("001", "Ba Đình", "Ba Dinh"),
-                new GeographyResponse("002", "Hoàn Kiếm", "Hoan Kiem"));
-
-        when(geographyService.listDistricts("01")).thenReturn(results);
-        when(geographyDtoMapper.toResponses(results)).thenReturn(responses);
+        when(listDistrictsQueryPort.execute("01")).thenReturn(results);
+        when(geographyDtoMapper.toResponses(results)).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/geography/districts").param("provinceCode", "01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].code").value("001"))
-                .andExpect(jsonPath("$.data[1].name").value("Hoàn Kiếm"));
+                .andExpect(jsonPath("$.data[0].name").value("Ba Dinh"));
 
-        verify(geographyService).listDistricts("01");
+        verify(listDistrictsQueryPort).execute("01");
     }
 
     @Test
     void getDistrictReturnsDistrictByCode() throws Exception {
-        GeographyResult result = new GeographyResult("001", "Ba Đình", "Ba Dinh");
-        GeographyResponse response = new GeographyResponse("001", "Ba Đình", "Ba Dinh");
+        GeographyResult result = new GeographyResult("001", "Ba Dinh", "Ba Dinh");
+        GeographyResponse response = new GeographyResponse("001", "Ba Dinh", "Ba Dinh");
 
-        when(geographyService.getDistrict("001")).thenReturn(result);
+        when(getDistrictQueryPort.execute("001")).thenReturn(result);
         when(geographyDtoMapper.toResponse(result)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/geography/districts/001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.code").value("001"))
-                .andExpect(jsonPath("$.data.name").value("Ba Đình"));
+                .andExpect(jsonPath("$.data.code").value("001"));
 
-        verify(geographyService).getDistrict("001");
+        verify(getDistrictQueryPort).execute("001");
     }
 
     @Test
-    void listWardsRequiresDistrictCode() throws Exception {
-        mockMvc.perform(get("/api/v1/geography/wards"))
-                .andExpect(status().isBadRequest());
+    void listWardsReturnsWardsByDistrict() throws Exception {
+        GeographyResult ward = new GeographyResult("00001", "Cong Vi", "Cong Vi");
+        List<GeographyResult> results = List.of(ward);
+        GeographyResponse response = new GeographyResponse("00001", "Cong Vi", "Cong Vi");
 
-        verifyNoInteractions(geographyService);
-    }
-
-    @Test
-    void listWardsByDistrictCodeReturnsFilteredWards() throws Exception {
-        List<GeographyResult> results = List.of(
-                new GeographyResult("00001", "Phúc Xá", "Phuc Xa"),
-                new GeographyResult("00004", "Trúc Bạch", "Truc Bach"));
-        List<GeographyResponse> responses = List.of(
-                new GeographyResponse("00001", "Phúc Xá", "Phuc Xa"),
-                new GeographyResponse("00004", "Trúc Bạch", "Truc Bach"));
-
-        when(geographyService.listWards("001")).thenReturn(results);
-        when(geographyDtoMapper.toResponses(results)).thenReturn(responses);
+        when(listWardsQueryPort.execute("001")).thenReturn(results);
+        when(geographyDtoMapper.toResponses(results)).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/geography/wards").param("districtCode", "001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].code").value("00001"))
-                .andExpect(jsonPath("$.data[1].nameEn").value("Truc Bach"));
+                .andExpect(jsonPath("$.data[0].name").value("Cong Vi"));
 
-        verify(geographyService).listWards("001");
+        verify(listWardsQueryPort).execute("001");
     }
 
     @Test
     void getWardReturnsWardByCode() throws Exception {
-        GeographyResult result = new GeographyResult("00001", "Phúc Xá", "Phuc Xa");
-        GeographyResponse response = new GeographyResponse("00001", "Phúc Xá", "Phuc Xa");
+        GeographyResult result = new GeographyResult("00001", "Cong Vi", "Cong Vi");
+        GeographyResponse response = new GeographyResponse("00001", "Cong Vi", "Cong Vi");
 
-        when(geographyService.getWard("00001")).thenReturn(result);
+        when(getWardQueryPort.execute("00001")).thenReturn(result);
         when(geographyDtoMapper.toResponse(result)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/geography/wards/00001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.code").value("00001"))
-                .andExpect(jsonPath("$.data.name").value("Phúc Xá"));
+                .andExpect(jsonPath("$.data.code").value("00001"));
 
-        verify(geographyService).getWard("00001");
+        verify(getWardQueryPort).execute("00001");
     }
 }

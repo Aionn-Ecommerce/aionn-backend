@@ -91,6 +91,51 @@ public class KycService {
         return getKycByUser(kycId, userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<KycProfile> adminListByStatus(KycStatus status, int limit) {
+        log.debug("Admin listing KYC profiles by status={}, limit={}", status, limit);
+        return kycPersistencePort.findByStatus(status, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public KycProfile adminGet(String kycId) {
+        return kycPersistencePort.findById(kycId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
+    }
+
+    public KycProfile adminApprove(String kycId, String adminId, String note) {
+        KycProfile kyc = kycPersistencePort.findById(kycId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
+        try {
+            kyc.adminApprove(adminId, note);
+        } catch (IllegalStateException ex) {
+            throw new IdentityException(IdentityErrorCode.KYC_INVALID_STATUS_TRANSITION, ex.getMessage());
+        }
+        return kycPersistencePort.save(kyc);
+    }
+
+    public KycProfile adminReject(String kycId, String adminId, String reason) {
+        KycProfile kyc = kycPersistencePort.findById(kycId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
+        try {
+            kyc.adminReject(adminId, reason);
+        } catch (IllegalStateException ex) {
+            throw new IdentityException(IdentityErrorCode.KYC_INVALID_STATUS_TRANSITION, ex.getMessage());
+        }
+        return kycPersistencePort.save(kyc);
+    }
+
+    public KycProfile adminMarkInReview(String kycId, String adminId, String note) {
+        KycProfile kyc = kycPersistencePort.findById(kycId)
+                .orElseThrow(() -> new IdentityException(IdentityErrorCode.KYC_NOT_FOUND));
+        try {
+            kyc.adminMarkInReview(adminId, note);
+        } catch (IllegalStateException ex) {
+            throw new IdentityException(IdentityErrorCode.KYC_INVALID_STATUS_TRANSITION, ex.getMessage());
+        }
+        return kycPersistencePort.save(kyc);
+    }
+
     public KycVerificationSessionResult generateVerificationSession(String userId, String kycId) {
         if (!kycPolicy.usesManagedProvider()) {
             throw new IdentityException(IdentityErrorCode.KYC_MANAGED_EXTERNALLY,

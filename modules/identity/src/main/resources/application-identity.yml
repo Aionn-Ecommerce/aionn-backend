@@ -4,7 +4,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db
 
 identity:
   registration:
@@ -66,13 +66,8 @@ identity:
   media:
     provider: ${IDENTITY_MEDIA_PROVIDER:cloudinary}
     cloudinary:
-      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-      api-key: ${CLOUDINARY_API_KEY:}
-      api-secret: ${CLOUDINARY_API_SECRET:}
-      avatar-folder: ${CLOUDINARY_AVATAR_FOLDER:aionn/avatars}
-      kyc-folder: ${CLOUDINARY_KYC_FOLDER:aionn/kyc}
-      signature-expiry-seconds: ${CLOUDINARY_SIGNATURE_EXPIRY_SECONDS:300}
-      upload-base-url: ${CLOUDINARY_UPLOAD_BASE_URL:https://api.cloudinary.com/v1_1}
+      avatar-folder: ${CLOUDINARY_AVATAR_FOLDER:identity/avatars}
+      kyc-folder: ${CLOUDINARY_KYC_FOLDER:identity/kyc}
   address:
     max-address-numbers: ${IDENTITY_ADDRESS_MAX_NUMBERS:5}
   cache:

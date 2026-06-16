@@ -12,5 +12,8 @@ public record FeedbackResponse(
         String contactEmail,
         String contactPhone,
         String status,
+        String handledBy,
+        LocalDateTime handledAt,
+        String adminReply,
         LocalDateTime createdAt) {
 }

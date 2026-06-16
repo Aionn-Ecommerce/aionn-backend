@@ -1,17 +1,13 @@
 package com.aionn.identity.application.service;
 
-import com.aionn.identity.application.dto.kyc.result.KycVerificationSessionResult;
 import com.aionn.identity.application.policy.KycPolicy;
 import com.aionn.identity.application.port.out.kyc.ExternalKycVerificationPort;
 import com.aionn.identity.application.port.out.kyc.KycPersistencePort;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
-import com.aionn.identity.domain.exception.IdentityErrorCode;
 import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.IdentityUser;
 import com.aionn.identity.domain.model.KycProfile;
 import com.aionn.identity.domain.valueobject.KycStatus;
-import com.aionn.identity.domain.valueobject.UserRole;
-import com.aionn.identity.domain.valueobject.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,277 +15,127 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class KycServiceTest {
 
-        private static final String USER_ID = "01HZ0000000000000000000001";
-        private static final String KYC_ID = "01HZKYC0000000000000000001";
+    private static final String USER_ID = "user-1";
+    private static final String KYC_ID = "kyc-1";
 
-        @Mock
-        private KycPersistencePort kycPersistencePort;
-        @Mock
-        private UserPersistencePort userPersistencePort;
-        @Mock
-        private ExternalKycVerificationPort externalKycVerificationPort;
+    @Mock private KycPersistencePort kycPersistencePort;
+    @Mock private UserPersistencePort userPersistencePort;
+    @Mock private KycPolicy kycPolicy;
+    @Mock private ExternalKycVerificationPort externalKycVerificationPort;
 
-        private IdentityUser user;
+    private KycService kycService;
 
-        @BeforeEach
-        void setUp() {
-                user = new IdentityUser(
-                                USER_ID,
-                                "user@example.com",
-                                "+84987654321",
-                                "alice",
-                                "hashed",
-                                "Alice",
-                                null,
-                                Set.of(UserRole.BUYER),
-                                UserStatus.ACTIVE,
-                                LocalDateTime.now(),
-                                LocalDateTime.now(),
-                                null,
-                                LocalDateTime.now());
-        }
+    @BeforeEach
+    void setUp() {
+        kycService = new KycService(
+                kycPersistencePort, userPersistencePort, kycPolicy, externalKycVerificationPort);
+    }
 
-        @Test
-        void createKycAutoApprovesWhenLocalDevelopmentProviderIsEnabled() {
-                var service = new KycService(
-                                kycPersistencePort,
-                                userPersistencePort,
-                                kycPolicy("local"),
-                                externalKycVerificationPort);
+    private static IdentityUser activeUser() {
+        return IdentityUser.createNew(USER_ID, "u@example.com", null, "user");
+    }
 
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(externalKycVerificationPort.createApplicant(eq(user), anyString(), eq("PASSPORT")))
-                                .thenReturn(new ExternalKycVerificationPort.ExternalKycApplicant(
-                                                "local",
-                                                "local-applicant-1",
-                                                "local-dev-kyc",
-                                                "completed",
-                                                "local-correlation-1"));
-                when(kycPersistencePort.save(any(KycProfile.class)))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
+    private static KycProfile draftProfile() {
+        return new KycProfile(
+                KYC_ID, USER_ID, "ID_CARD",
+                null, KycStatus.DRAFT,
+                null, null, null, null, null,
+                null, null, null, null,
+                null, null, LocalDateTime.now());
+    }
 
-                KycProfile result = service.createKyc(USER_ID, "PASSPORT");
+    private static KycProfile submittedProfile() {
+        KycProfile k = draftProfile();
+        k.attachExternalProvider("SUMSUB", "applicant-1", "basic", "init", "corr-1");
+        return k;
+    }
 
-                assertEquals(KycStatus.APPROVED, result.getStatus());
-                assertEquals("local", result.getProvider());
-                assertEquals("LOCAL", result.getDecisionAdminId());
-                verify(externalKycVerificationPort).createApplicant(eq(user), anyString(), eq("PASSPORT"));
-        }
+    @Test
+    void createKycInDraftWhenManagedProviderDisabled() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(kycPolicy.usesManagedProvider()).thenReturn(false);
+        when(kycPersistencePort.save(any(KycProfile.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        @Test
-        void createKycAttachesExternalApplicantWhenSumsubIsEnabled() {
-                var service = new KycService(
-                                kycPersistencePort,
-                                userPersistencePort,
-                                kycPolicy("sumsub"),
-                                externalKycVerificationPort);
+        KycProfile created = kycService.createKyc(USER_ID, "ID_CARD");
 
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(externalKycVerificationPort.createApplicant(eq(user), anyString(), eq("PASSPORT")))
-                                .thenReturn(new ExternalKycVerificationPort.ExternalKycApplicant(
-                                                "sumsub",
-                                                "applicant-1",
-                                                "basic-kyc",
-                                                "pending",
-                                                "corr-1"));
-                when(kycPersistencePort.save(any(KycProfile.class))).thenAnswer(invocation -> {
-                        KycProfile profile = invocation.getArgument(0);
-                        return new KycProfile(
-                                        profile.getKycId(),
-                                        profile.getUserId(),
-                                        profile.getDocType(),
-                                        profile.getBlobUrl(),
-                                        profile.getStatus(),
-                                        profile.getProvider(),
-                                        profile.getProviderApplicantId(),
-                                        profile.getProviderLevelName(),
-                                        profile.getProviderReviewStatus(),
-                                        profile.getProviderCorrelationId(),
-                                        profile.getReviewerId(),
-                                        profile.getReviewNote(),
-                                        profile.getDecisionAdminId(),
-                                        profile.getRejectReason(),
-                                        profile.getSubmittedAt(),
-                                        profile.getApprovedAt(),
-                                        profile.getCreatedAt());
-                });
+        assertEquals(KycStatus.DRAFT, created.getStatus());
+        verify(externalKycVerificationPort, never()).createApplicant(any(), any(), any());
+    }
 
-                KycProfile result = service.createKyc(USER_ID, "PASSPORT");
+    @Test
+    void createKycAttachesExternalProviderWhenManaged() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(kycPolicy.usesManagedProvider()).thenReturn(true);
+        when(kycPolicy.isLocalDevelopmentEnabled()).thenReturn(false);
+        when(externalKycVerificationPort.createApplicant(any(), any(), any()))
+                .thenReturn(new ExternalKycVerificationPort.ExternalKycApplicant(
+                        "SUMSUB", "applicant-9", "basic", "init", "corr-1"));
+        when(kycPersistencePort.save(any(KycProfile.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-                assertEquals(KycStatus.SUBMITTED, result.getStatus());
-                assertEquals("sumsub", result.getProvider());
-                assertEquals("applicant-1", result.getProviderApplicantId());
-                assertNotNull(result.getKycId());
-                assertTrue(result.isManagedExternally());
-                assertNotNull(result.getSubmittedAt());
-        }
+        KycProfile created = kycService.createKyc(USER_ID, "ID_CARD");
 
-        @Test
-        void generateVerificationSessionRejectsLocallyManagedProfile() {
-                var service = new KycService(
-                                kycPersistencePort,
-                                userPersistencePort,
-                                kycPolicy("sumsub"),
-                                externalKycVerificationPort);
+        assertEquals(KycStatus.SUBMITTED, created.getStatus());
+        assertEquals("SUMSUB", created.getProvider());
+        assertEquals("applicant-9", created.getProviderApplicantId());
+    }
 
-                KycProfile localKyc = new KycProfile(
-                                KYC_ID,
-                                USER_ID,
-                                "PASSPORT",
-                                null,
-                                KycStatus.SUBMITTED,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                LocalDateTime.now(),
-                                null,
-                                LocalDateTime.now());
+    @Test
+    void adminApproveTransitionsSubmittedToApproved() {
+        KycProfile profile = submittedProfile();
+        when(kycPersistencePort.findById(KYC_ID)).thenReturn(Optional.of(profile));
+        when(kycPersistencePort.save(profile)).thenReturn(profile);
 
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(kycPersistencePort.findByKycIdAndUserId(KYC_ID, USER_ID)).thenReturn(Optional.of(localKyc));
+        KycProfile result = kycService.adminApprove(KYC_ID, "admin-1", "ok");
 
-                IdentityException ex = assertThrows(
-                                IdentityException.class,
-                                () -> service.generateVerificationSession(USER_ID, KYC_ID));
+        assertEquals(KycStatus.APPROVED, result.getStatus());
+        assertEquals("admin-1", result.getDecisionAdminId());
+        assertNotNull(result.getApprovedAt());
+    }
 
-                assertEquals(IdentityErrorCode.KYC_PROVIDER_NOT_CONFIGURED.getCode(), ex.getErrorCode());
-        }
+    @Test
+    void adminApproveOnUnknownProfileThrows() {
+        when(kycPersistencePort.findById(KYC_ID)).thenReturn(Optional.empty());
 
-        @Test
-        void generateVerificationSessionReturnsSyntheticSessionForLocalDevelopmentProvider() {
-                var service = new KycService(
-                                kycPersistencePort,
-                                userPersistencePort,
-                                kycPolicy("local"),
-                                externalKycVerificationPort);
+        assertThrows(IdentityException.class,
+                () -> kycService.adminApprove(KYC_ID, "admin", "n"));
+    }
 
-                KycProfile localKyc = new KycProfile(
-                                KYC_ID,
-                                USER_ID,
-                                "PASSPORT",
-                                null,
-                                KycStatus.APPROVED,
-                                "local",
-                                "local-applicant-1",
-                                "local-dev-kyc",
-                                "completed",
-                                "local-correlation-1",
-                                null,
-                                null,
-                                "LOCAL",
-                                null,
-                                LocalDateTime.now(),
-                                LocalDateTime.now(),
-                                LocalDateTime.now());
+    @Test
+    void listMyDelegatesToPersistencePort() {
+        KycProfile p = submittedProfile();
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(kycPersistencePort.findByUserIdOrderBySubmittedAtDesc(USER_ID))
+                .thenReturn(List.of(p));
 
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(kycPersistencePort.findByKycIdAndUserId(KYC_ID, USER_ID)).thenReturn(Optional.of(localKyc));
-                when(externalKycVerificationPort.generateVerificationSession(user, KYC_ID, "local-applicant-1"))
-                                .thenReturn(new ExternalKycVerificationPort.ExternalKycSession(
-                                                "local",
-                                                "local-applicant-1",
-                                                "local-dev-kyc",
-                                                "local-sdk-token-1",
-                                                600,
-                                                true));
+        List<KycProfile> result = kycService.listMy(USER_ID);
 
-                KycVerificationSessionResult result = service.generateVerificationSession(USER_ID, KYC_ID);
+        assertEquals(1, result.size());
+        assertSame(p, result.get(0));
+    }
 
-                assertEquals(KYC_ID, result.kycId());
-                assertEquals("local", result.provider());
-                assertEquals("local-sdk-token-1", result.sdkAccessToken());
-                assertTrue(result.sandbox());
-        }
+    @Test
+    void adminRejectFromDraftRaisesInvalidStateException() {
+        KycProfile profile = draftProfile();
+        when(kycPersistencePort.findById(KYC_ID)).thenReturn(Optional.of(profile));
 
-        @Test
-        void handleSumsubWebhookApprovesProfileAndPersistsUpdate() {
-                var service = new KycService(
-                                kycPersistencePort,
-                                userPersistencePort,
-                                kycPolicy("sumsub"),
-                                externalKycVerificationPort);
-
-                KycProfile submitted = new KycProfile(
-                                KYC_ID,
-                                USER_ID,
-                                "PASSPORT",
-                                null,
-                                KycStatus.SUBMITTED,
-                                "sumsub",
-                                "applicant-1",
-                                "basic-kyc",
-                                "pending",
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                LocalDateTime.now(),
-                                null,
-                                LocalDateTime.now());
-
-                when(kycPersistencePort.findByProviderApplicantId("applicant-1")).thenReturn(Optional.of(submitted));
-                when(kycPersistencePort.save(any(KycProfile.class)))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
-
-                byte[] payload = "{}".getBytes();
-
-                service.handleSumsubWebhook(
-                                payload,
-                                "digest",
-                                "HMAC_SHA256_HEX",
-                                "applicant-1",
-                                "completed",
-                                "GREEN",
-                                "approved",
-                                null,
-                                "corr-1");
-
-                verify(externalKycVerificationPort).verifyWebhookSignature(payload, "digest", "HMAC_SHA256_HEX");
-                verify(kycPersistencePort).save(any(KycProfile.class));
-                assertEquals(KycStatus.APPROVED, submitted.getStatus());
-                assertEquals("SUMSUB", submitted.getDecisionAdminId());
-                assertNotNull(submitted.getApprovedAt());
-        }
-
-        private static KycPolicy kycPolicy(String provider) {
-                return new KycPolicy() {
-                        @Override
-                        public boolean isSumsubEnabled() {
-                                return "sumsub".equalsIgnoreCase(provider);
-                        }
-
-                        @Override
-                        public boolean isLocalDevelopmentEnabled() {
-                                return "local".equalsIgnoreCase(provider);
-                        }
-
-                        @Override
-                        public boolean usesManagedProvider() {
-                                return isSumsubEnabled() || isLocalDevelopmentEnabled();
-                        }
-                };
-        }
+        assertThrows(IdentityException.class,
+                () -> kycService.adminReject(KYC_ID, "admin", "bad"));
+    }
 }

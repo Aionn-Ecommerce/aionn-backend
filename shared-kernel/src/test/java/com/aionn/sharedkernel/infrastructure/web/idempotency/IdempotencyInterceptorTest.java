@@ -30,8 +30,8 @@ class IdempotencyInterceptorTest {
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private final RedisIdempotencyStore redisIdempotencyStore = mock(RedisIdempotencyStore.class);
     private final IdempotencyProperties properties = new IdempotencyProperties();
-    private final IdempotencyInterceptor interceptor = new IdempotencyInterceptor(objectMapper, redisIdempotencyStore,
-            properties);
+    private final IdempotencyInterceptor interceptor =
+            new IdempotencyInterceptor(objectMapper, redisIdempotencyStore, properties);
 
     @AfterEach
     void tearDown() {
