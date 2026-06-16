@@ -4,7 +4,7 @@ import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.integration.IdentityIntegrationEventPublisherPort;
 import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import com.aionn.identity.application.policy.AuthPolicy;
 import com.aionn.identity.application.port.out.security.PasswordHasherPort;
 import com.aionn.identity.application.port.out.security.PasswordResetPort;
@@ -45,7 +45,7 @@ class PasswordResetServiceTest {
         @Mock
         private RefreshTokenStorePort refreshTokenStore;
         @Mock
-        private IdentityNotificationDispatcherPort notificationDispatcher;
+        private IdentityNotificationPort notificationPort;
         @Mock
         private IdentityIntegrationEventPublisherPort integrationEventPublisher;
         @Mock
@@ -64,7 +64,7 @@ class PasswordResetServiceTest {
                                 passwordHasher,
                                 authSessionPersistencePort,
                                 refreshTokenStore,
-                                notificationDispatcher,
+                                notificationPort,
                                 integrationEventPublisher,
                                 identityMetrics,
                                 authPolicy);

@@ -6,7 +6,7 @@ import com.aionn.identity.application.policy.AccountManagementPolicy;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
@@ -46,7 +46,7 @@ class AccountManagementServiceTest {
         @Mock
         private UserPersistencePort userPersistencePort;
         @Mock
-        private IdentityNotificationDispatcherPort notificationDispatcher;
+        private IdentityNotificationPort notificationPort;
         @Mock
         private com.aionn.identity.infrastructure.integration.IdentityIntegrationEventPublisher integrationEventPublisher;
         @Mock
@@ -68,7 +68,7 @@ class AccountManagementServiceTest {
         void setUp() {
                 accountManagementService = new AccountManagementService(
                                 userPersistencePort,
-                                notificationDispatcher,
+                                notificationPort,
                                 integrationEventPublisher,
                                 userOtpChallengeStore,
                                 accountDeletionPort,
@@ -116,7 +116,7 @@ class AccountManagementServiceTest {
                 assertEquals("old@example.com", challenge.target());
                 assertNull(challenge.pendingValue());
                 assertNotNull(challenge.otpCode());
-                verify(notificationDispatcher).sendEmailOtp("old@example.com", challenge.otpCode());
+                verify(notificationPort).sendEmailOtp("old@example.com", challenge.otpCode());
         }
 
         @Test

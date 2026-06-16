@@ -14,7 +14,7 @@ import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
 import com.aionn.identity.application.port.out.registration.RegistrationLockManagerPort;
 import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
@@ -49,7 +49,7 @@ public class RegistrationService {
 
     private final UserPersistencePort userPersistencePort;
     private final AuthSessionPersistencePort authSessionPersistencePort;
-    private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final IdentityNotificationPort notificationPort;
     private final CaptchaTokenValidatorPort captchaTokenValidator;
     private final RegistrationRateLimiterPort registrationRateLimiter;
     private final RegistrationSessionStorePort registrationSessionStore;
@@ -93,7 +93,7 @@ public class RegistrationService {
                 null);
 
         registrationSessionStore.save(session);
-        notificationDispatcher.sendRegistrationOtp(phoneNumber.value(), otp.getCode());
+        notificationPort.sendRegistrationOtp(phoneNumber.value(), otp.getCode());
 
         String responseOtpCode = registrationPolicy.isExposeOtpInResponse() ? otp.getCode() : null;
         identityMetrics.registrationLifecycle("initiated");
@@ -127,7 +127,7 @@ public class RegistrationService {
 
         session.resend(newOtp.getCode(), newOtp.getResendAvailableAt(), newOtp.getExpiredAt());
         registrationSessionStore.save(session);
-        notificationDispatcher.sendRegistrationOtp(session.getPhoneNumber(), newOtp.getCode());
+        notificationPort.sendRegistrationOtp(session.getPhoneNumber(), newOtp.getCode());
 
         String responseOtpCode = registrationPolicy.isExposeOtpInResponse() ? newOtp.getCode() : null;
         return registrationResultMapper.toResendOtpResult(session, responseOtpCode);

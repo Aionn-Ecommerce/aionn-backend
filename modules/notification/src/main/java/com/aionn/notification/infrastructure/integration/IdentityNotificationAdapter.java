@@ -4,7 +4,7 @@ import com.aionn.notification.application.dto.notification.command.NotificationC
 import com.aionn.notification.application.service.NotificationDispatchService;
 import com.aionn.notification.domain.valueobject.NotificationCategory;
 import com.aionn.notification.domain.valueobject.NotificationChannel;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class IdentityNotificationDispatcherAdapter implements IdentityNotificationDispatcherPort {
+public class IdentityNotificationAdapter implements IdentityNotificationPort {
 
     private static final String EVENT_PASSWORD_RESET = "identity.password-reset-requested";
     private static final String EVENT_PASSWORD_CHANGED = "identity.password-changed";

@@ -10,7 +10,7 @@ import com.aionn.identity.application.port.out.auth.AccessTokenIssuerPort;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.observability.IdentityMetricsPort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import com.aionn.identity.application.port.out.registration.CaptchaTokenValidatorPort;
 import com.aionn.identity.application.port.out.registration.RegistrationLockManagerPort;
 import com.aionn.identity.application.port.out.registration.RegistrationRateLimiterPort;
@@ -59,7 +59,7 @@ class RegistrationServiceTest {
         @Mock
         private AuthSessionPersistencePort authSessionPersistencePort;
         @Mock
-        private IdentityNotificationDispatcherPort notificationDispatcher;
+        private IdentityNotificationPort notificationPort;
         @Mock
         private CaptchaTokenValidatorPort captchaTokenValidator;
         @Mock
@@ -88,7 +88,7 @@ class RegistrationServiceTest {
                 registrationService = new RegistrationService(
                                 userPersistencePort,
                                 authSessionPersistencePort,
-                                notificationDispatcher,
+                                notificationPort,
                                 captchaTokenValidator,
                                 registrationRateLimiter,
                                 registrationSessionStore,
@@ -131,7 +131,7 @@ class RegistrationServiceTest {
                 assertNotNull(savedSession.getRegId());
                 assertNotNull(savedSession.getOtpCode());
                 assertFalse(savedSession.isVerified());
-                verify(notificationDispatcher).sendRegistrationOtp(savedSession.getPhoneNumber(),
+                verify(notificationPort).sendRegistrationOtp(savedSession.getPhoneNumber(),
                                 savedSession.getOtpCode());
                 verify(registrationRateLimiter).check("IP", "203.0.113.10", 5, 60);
                 verify(registrationRateLimiter).check("PHONE", "+84912345678", 3, 300);
@@ -150,7 +150,7 @@ class RegistrationServiceTest {
 
                 assertEquals(IdentityErrorCode.CAPTCHA_INVALID.getCode(), ex.getErrorCode());
                 verifyNoInteractions(userPersistencePort, registrationRateLimiter, registrationSessionStore,
-                                notificationDispatcher);
+                                notificationPort);
         }
 
         @Test

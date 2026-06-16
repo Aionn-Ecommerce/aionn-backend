@@ -12,7 +12,7 @@ import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
 import com.aionn.identity.application.port.out.integration.IdentityIntegrationEventPublisherPort;
 import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationDispatcherPort;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import com.aionn.identity.domain.valueobject.UserOtpPurpose;
 import com.aionn.identity.application.port.out.user.UserPersistencePort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
@@ -39,7 +39,7 @@ import java.time.LocalDateTime;
 public class AccountManagementService {
 
     private final UserPersistencePort userPersistencePort;
-    private final IdentityNotificationDispatcherPort notificationDispatcher;
+    private final IdentityNotificationPort notificationPort;
     private final IdentityIntegrationEventPublisherPort integrationEventPublisher;
     private final UserOtpChallengeStorePort userOtpChallengeStore;
     private final AccountDeletionPort accountDeletionPort;
@@ -76,7 +76,7 @@ public class AccountManagementService {
                 null,
                 LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        notificationDispatcher.sendEmailOtp(user.getEmail(), otpCode);
+        notificationPort.sendEmailOtp(user.getEmail(), otpCode);
         log.info("Verification OTP sent to email for user: {}", userId);
     }
 
@@ -114,7 +114,7 @@ public class AccountManagementService {
                 newEmail,
                 LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        notificationDispatcher.sendEmailOtp(newEmail, otpCode);
+        notificationPort.sendEmailOtp(newEmail, otpCode);
         log.info("Email change OTP sent to new email for user: {}", userId);
     }
 
@@ -160,7 +160,7 @@ public class AccountManagementService {
                 newPhone,
                 LocalDateTime.now().plusSeconds(accountManagementPolicy.getOtpExpirySeconds()),
                 0));
-        notificationDispatcher.sendPhoneOtp(newPhone, otpCode);
+        notificationPort.sendPhoneOtp(newPhone, otpCode);
         log.info("Phone change OTP sent to new phone for user: {}", userId);
     }
 
