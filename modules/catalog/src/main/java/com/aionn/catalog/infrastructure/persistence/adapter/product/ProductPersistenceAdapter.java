@@ -58,11 +58,22 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public List<Product> searchPublished(String queryOrNull, int limit) {
+    public long countPublished() {
+        return jpa.countPublished();
+    }
+
+    @Override
+    public List<Product> searchPublished(String queryOrNull, int limit, int offset) {
         String q = (queryOrNull == null || queryOrNull.isBlank()) ? null : queryOrNull.trim();
-        return jpa.searchPublished(q, Math.max(1, limit)).stream()
+        return jpa.searchPublished(q, Math.max(1, limit), Math.max(0, offset)).stream()
                 .map(mapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public long countSearchPublished(String queryOrNull) {
+        String q = (queryOrNull == null || queryOrNull.isBlank()) ? null : queryOrNull.trim();
+        return jpa.countSearchPublished(q);
     }
 
     @Override

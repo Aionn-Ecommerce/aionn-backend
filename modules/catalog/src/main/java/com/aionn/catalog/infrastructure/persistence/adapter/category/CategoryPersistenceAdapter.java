@@ -31,6 +31,16 @@ public class CategoryPersistenceAdapter implements CategoryPersistencePort {
     }
 
     @Override
+    public List<Category> findAllByIds(java.util.Collection<String> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return List.of();
+        }
+        return jpa.findAllById(categoryIds).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public boolean existsByParentAndName(String parentId, String name) {
         return jpa.existsByParentIdAndNameIgnoreCase(parentId, name);
     }

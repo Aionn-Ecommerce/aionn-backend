@@ -7,5 +7,6 @@ public record UpdateMerchantProfileCommand(
                 String ownerId,
                 String name,
                 String logoUrl,
-                String description) implements Command {
+                String description,
+                String provinceCode) implements Command {
 }

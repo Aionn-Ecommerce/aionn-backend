@@ -4,7 +4,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db
     out-of-order: true
 
 catalog:
@@ -15,3 +15,7 @@ catalog:
       host: ${CATALOG_SEARCH_OPENSEARCH_HOST:localhost}
       port: ${CATALOG_SEARCH_OPENSEARCH_PORT:9200}
       scheme: ${CATALOG_SEARCH_OPENSEARCH_SCHEME:http}
+  media:
+    provider: ${CATALOG_MEDIA_PROVIDER:cloudinary}
+    cloudinary:
+      product-image-folder: ${CLOUDINARY_PRODUCT_IMAGE_FOLDER:aionn/catalog/products}

@@ -18,7 +18,8 @@ import java.time.Instant;
 @Entity
 @Table(name = "merchants", indexes = {
         @Index(name = "idx_merchants_owner", columnList = "owner_id"),
-        @Index(name = "idx_merchants_status", columnList = "status")
+        @Index(name = "idx_merchants_status", columnList = "status"),
+        @Index(name = "idx_merchants_province", columnList = "province_code")
 })
 @Getter
 @Setter
@@ -43,8 +44,26 @@ public class MerchantEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "province_code", length = 10)
+    private String provinceCode;
+
+    @Column(name = "province_name", length = 100)
+    private String provinceName;
+
     @Column(name = "status", length = 20, nullable = false)
     private String status;
+
+    @Column(name = "commission_rate", nullable = false, precision = 5, scale = 4)
+    private java.math.BigDecimal commissionRate;
+
+    @Column(name = "stripe_account_id", length = 100)
+    private String stripeAccountId;
+
+    @Column(name = "stripe_charges_enabled", nullable = false)
+    private boolean stripeChargesEnabled;
+
+    @Column(name = "stripe_payouts_enabled", nullable = false)
+    private boolean stripePayoutsEnabled;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

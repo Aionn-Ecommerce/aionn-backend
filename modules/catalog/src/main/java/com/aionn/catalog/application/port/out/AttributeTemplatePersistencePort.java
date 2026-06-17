@@ -11,5 +11,7 @@ public interface AttributeTemplatePersistencePort {
     Optional<AttributeTemplate> findById(String templateId);
 
     Optional<AttributeTemplate> findByCategoryId(String categoryId);
+
+    java.util.List<AttributeTemplate> findByCategoryIds(java.util.Collection<String> categoryIds);
 }
 

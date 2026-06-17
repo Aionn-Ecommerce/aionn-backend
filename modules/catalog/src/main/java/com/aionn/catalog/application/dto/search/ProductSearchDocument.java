@@ -10,6 +10,12 @@ import java.util.Map;
  * lexical+semantic search needs: {@code aiDescription} feeds NLP, {@code tags}
  * and filterable attributes power facet filters, {@code priceFrom} drives the
  * "cheapest matching" ranker.
+ *
+ * <p>{@code merchantProvinceCode} is the canonical VN GSO province code
+ * (snapshotted from the merchant on index time); {@code merchantProvinceName}
+ * is the matching display name kept here so the storefront sidebar can render
+ * counts without joining across modules. Catalog never owns province data —
+ * codes are validated against identity and stored denormalized.</p>
  */
 public record ProductSearchDocument(
         String productId,
@@ -30,6 +36,10 @@ public record ProductSearchDocument(
         Double rating,
         Boolean onSale,
         List<String> shipping,
-        String location) {
+        String merchantProvinceCode,
+        String merchantProvinceName,
+        Long soldCount,
+        Boolean flashSale,
+        BigDecimal flashSalePrice,
+        Instant flashSaleEndAt) {
 }
-

@@ -134,6 +134,11 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<CategoryTreeNode> getTree() {
+        return tree();
+    }
+
     private CategoryTreeNode buildNode(CategoryResult category, Map<String, List<CategoryResult>> byParent) {
         List<CategoryResult> children = byParent.getOrDefault(category.categoryId(), List.of());
         List<CategoryTreeNode> childNodes = children.stream()

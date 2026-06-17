@@ -9,11 +9,14 @@ import com.aionn.catalog.application.dto.merchant.result.MerchantResult;
 import com.aionn.catalog.application.mapper.MerchantResultMapper;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.catalog.application.port.out.MerchantPersistencePort;
+import com.aionn.sharedkernel.integration.port.identity.AddressLookupPort;
 import com.aionn.sharedkernel.integration.port.ordering.OrderQueryPort;
 import com.aionn.catalog.domain.exception.CatalogErrorCode;
 import com.aionn.catalog.domain.exception.CatalogException;
 import com.aionn.catalog.domain.model.Merchant;
 import com.aionn.sharedkernel.util.IdGenerator;
+import com.aionn.sharedkernel.domain.vo.OffsetPagination;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class MerchantService {
     private final MerchantResultMapper merchantResultMapper;
     private final EventPublisher eventPublisher;
     private final OrderQueryPort orderQueryPort;
+    private final AddressLookupPort addressLookupPort;
 
     public MerchantResult register(RegisterMerchantCommand command) {
         if (merchantRepository.existsByOwnerId(command.ownerId())) {
@@ -42,7 +46,21 @@ public class MerchantService {
 
     public MerchantResult updateProfile(UpdateMerchantProfileCommand command) {
         Merchant merchant = ownedBy(command.merchantId(), command.ownerId());
-        merchant.updateProfile(command.name(), command.logoUrl(), command.description());
+        String provinceCode = command.provinceCode();
+        String provinceName = null;
+        if (provinceCode != null && !provinceCode.isBlank()) {
+            // Validate against identity. Reject unknown codes so the catalog never
+            // stores a province that the storefront filter (which reads from
+            // /geography/provinces) cannot match.
+            provinceName = addressLookupPort.resolveProvince(provinceCode)
+                    .orElseThrow(() -> new CatalogException(CatalogErrorCode.INVALID_ARGUMENT,
+                            "Unknown province code: " + command.provinceCode()))
+                    .name();
+        } else {
+            provinceCode = null;
+        }
+        merchant.updateProfile(command.name(), command.logoUrl(), command.description(),
+                provinceCode, provinceName);
         Merchant saved = merchantRepository.save(merchant);
         eventPublisher.publish(merchant.pullEvents());
         return merchantResultMapper.toResult(saved);
@@ -78,6 +96,29 @@ public class MerchantService {
     @Transactional(readOnly = true)
     public MerchantResult get(String merchantId) {
         return merchantResultMapper.toResult(required(merchantId));
+    }
+
+    @Transactional(readOnly = true)
+    public MerchantResult getByOwner(String ownerId) {
+        Merchant merchant = merchantRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new CatalogException(CatalogErrorCode.MERCHANT_NOT_FOUND));
+        return merchantResultMapper.toResult(merchant);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MerchantResult> list(int page, int size) {
+        return merchantRepository.list(OffsetPagination.of(page, size)).stream()
+                .map(merchantResultMapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public com.aionn.catalog.application.dto.common.PageResult<MerchantResult> list(OffsetPagination pagination) {
+        List<MerchantResult> results = merchantRepository.list(pagination).stream()
+                .map(merchantResultMapper::toResult)
+                .toList();
+        return new com.aionn.catalog.application.dto.common.PageResult<>(
+                results, pagination.page(), pagination.size(), results.size());
     }
 
     private Merchant required(String merchantId) {

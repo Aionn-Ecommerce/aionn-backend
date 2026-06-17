@@ -49,7 +49,28 @@ public class MerchantSearchSyncListener {
     @EventListener
     public void onActivated(MerchantEvents.MerchantActivated event) {
         log.info("Reindexing products of activated merchant {}", event.merchantId());
-        forEachPage(event.merchantId(), products -> {
+        reindexAllPublished(event.merchantId());
+    }
+
+    /**
+     * Storefront's "Location" filter reads {@code merchantProvinceCode} off
+     * each search doc, which is denormalized from the merchant aggregate at
+     * index time. So when the seller edits their storefront province we have
+     * to rebuild every published doc for that merchant — otherwise the filter
+     * would keep showing them at the old province.
+     */
+    @EventListener
+    public void onProfileUpdated(MerchantEvents.MerchantProfileUpdated event) {
+        if (!event.provinceChanged()) {
+            return;
+        }
+        log.info("Reindexing products of merchant {} after province change to {}",
+                event.merchantId(), event.provinceCode());
+        reindexAllPublished(event.merchantId());
+    }
+
+    private void reindexAllPublished(String merchantId) {
+        forEachPage(merchantId, products -> {
             List<ProductSearchDocument> docs = products.stream()
                     .filter(p -> p.getStatus() == ProductStatus.PUBLISHED)
                     .map(p -> productResultMapper.toSearchDocument(p, Map.of()))

@@ -15,7 +15,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.catalog.application.port.out.ProductReviewPersistencePort;
+import com.aionn.catalog.application.port.out.ProductSoldCounterPersistencePort;
+import com.aionn.sharedkernel.integration.port.promotion.FlashSaleQueryPort;
 import org.mockito.Mockito;
 
 import java.time.Instant;
@@ -28,7 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class I18nMappingsTest {
 
     private final ProductReviewPersistencePort reviewRepository = Mockito.mock(ProductReviewPersistencePort.class);
-    private final ProductResultMapper productResultMapper = new ProductResultMapper(reviewRepository);
+    private final ProductSoldCounterPersistencePort soldCounterRepository = Mockito.mock(ProductSoldCounterPersistencePort.class);
+    private final FlashSaleQueryPort flashSaleQueryPort = Mockito.mock(FlashSaleQueryPort.class);
+    private final MerchantPersistencePort merchantRepository = Mockito.mock(MerchantPersistencePort.class);
+    private final ProductResultMapper productResultMapper = new ProductResultMapper(reviewRepository, soldCounterRepository, flashSaleQueryPort, merchantRepository);
     private final CategoryResultMapper categoryResultMapper = new CategoryResultMapper();
     private final BrandResultMapper brandResultMapper = new BrandResultMapper();
 

@@ -20,6 +20,9 @@ public final class MerchantEvents {
             String name,
             String logoUrl,
             String description,
+            String provinceCode,
+            String provinceName,
+            boolean provinceChanged,
             Instant occurredAt) implements CatalogEvent {
     }
 

@@ -13,5 +13,9 @@ public interface BrandPersistencePort {
     boolean existsByName(String name);
 
     boolean hasActiveProducts(String brandId);
+
+    java.util.List<Brand> findAll(int page, int size);
+
+    long count();
 }
 
