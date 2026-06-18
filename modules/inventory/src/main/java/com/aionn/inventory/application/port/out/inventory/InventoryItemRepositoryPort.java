@@ -1,4 +1,4 @@
-package com.aionn.inventory.application.port.out;
+package com.aionn.inventory.application.port.out.inventory;
 
 import com.aionn.inventory.domain.model.InventoryItem;
 import com.aionn.inventory.domain.valueobject.InventoryItemKey;
@@ -6,7 +6,7 @@ import com.aionn.inventory.domain.valueobject.InventoryItemKey;
 import java.util.List;
 import java.util.Optional;
 
-public interface InventoryItemPersistencePort {
+public interface InventoryItemRepositoryPort {
 
     InventoryItem save(InventoryItem item);
 
@@ -17,4 +17,8 @@ public interface InventoryItemPersistencePort {
     List<InventoryItem> findBySkuAcrossWarehouses(String skuId, List<String> warehouseIds);
 
     List<InventoryItem> findBySku(String skuId);
+
+    List<InventoryItem> findByWarehouse(String warehouseId, int page, int size);
+
+    List<InventoryItem> findLowStock(String merchantId, int page, int size);
 }

@@ -4,6 +4,7 @@ import com.aionn.inventory.adapter.rest.dto.warehouse.AdjustPriorityRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.AdminReasonRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.ChangeWarehouseStatusRequest;
 import com.aionn.inventory.adapter.rest.dto.warehouse.CreateWarehouseRequest;
+import com.aionn.inventory.adapter.rest.support.session.CurrentAdminId;
 import com.aionn.inventory.application.dto.warehouse.command.AdjustPriorityCommand;
 import com.aionn.inventory.application.dto.warehouse.command.ChangeStatusCommand;
 import com.aionn.inventory.application.dto.warehouse.command.CreateWarehouseCommand;
@@ -76,11 +77,11 @@ public class WarehouseController {
     @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
     @Operation(summary = "Suspend warehouse")
     public ResponseEntity<ApiResponse<WarehouseResult>> suspend(
-            Authentication authentication,
+            @CurrentAdminId String adminId,
             @PathVariable String warehouseId,
             @Valid @RequestBody AdminReasonRequest request) {
         WarehouseResult result = warehouseService.suspend(new SuspendWarehouseCommand(
-                warehouseId, authentication.getName(), request.reason()));
+                warehouseId, adminId, request.reason()));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse suspended"));
     }
 
@@ -88,10 +89,10 @@ public class WarehouseController {
     @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
     @Operation(summary = "Lift suspension", description = "Admin reactivates a suspended warehouse")
     public ResponseEntity<ApiResponse<WarehouseResult>> liftSuspension(
-            Authentication authentication,
+            @CurrentAdminId String adminId,
             @PathVariable String warehouseId) {
         WarehouseResult result = warehouseService.liftSuspension(new LiftSuspensionCommand(
-                warehouseId, authentication.getName()));
+                warehouseId, adminId));
         return ResponseEntity.ok(ApiResponse.success(result, "Warehouse suspension lifted"));
     }
 

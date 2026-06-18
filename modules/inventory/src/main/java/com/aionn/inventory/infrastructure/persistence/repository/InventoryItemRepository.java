@@ -24,5 +24,7 @@ public interface InventoryItemRepository
     Optional<InventoryItemEntity> findForUpdate(@Param("skuId") String skuId, @Param("warehouseId") String warehouseId);
 
     List<InventoryItemEntity> findByIdSkuIdAndIdWarehouseIdIn(String skuId, List<String> warehouseIds);
+
+    List<InventoryItemEntity> findByIdSkuId(String skuId);
 }
 
