@@ -7,12 +7,14 @@ import com.aionn.payment.application.port.out.PaymentProviderClient;
 import com.aionn.payment.application.port.out.PaymentProviderRouter;
 import com.aionn.payment.application.service.PaymentService;
 import com.aionn.payment.domain.valueobject.PaymentGatewayKind;
+import com.aionn.payment.infrastructure.provider.config.VnpayProperties;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.net.URI;
 
 @Slf4j
 @RestController
@@ -30,11 +33,22 @@ public class VnpayReturnController {
 
     private final PaymentProviderRouter providerRouter;
     private final PaymentService paymentService;
+    private final VnpayProperties vnpayProperties;
 
     @GetMapping("/return")
     @Operation(summary = "VNPay redirect callback")
-    public ResponseEntity<Map<String, Object>> handleReturn(HttpServletRequest request) {
-        return finalisePayment(request.getQueryString());
+    public ResponseEntity<?> handleReturn(HttpServletRequest request) {
+        ResponseEntity<Map<String, Object>> result = finalisePayment(request.getQueryString());
+        Map<String, Object> body = result.getBody();
+        if (body == null || body.get("paymentId") == null) {
+            return result;
+        }
+        String paymentId = String.valueOf(body.get("paymentId"));
+        PaymentResult payment = paymentService.get(paymentId);
+        String separator = vnpayProperties.frontendReturnUrl().contains("?") ? "&" : "?";
+        URI redirect = URI.create(vnpayProperties.frontendReturnUrl() + separator
+                + "paymentId=" + paymentId + "&orderId=" + payment.orderId());
+        return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
     }
 
     @PostMapping("/ipn")
