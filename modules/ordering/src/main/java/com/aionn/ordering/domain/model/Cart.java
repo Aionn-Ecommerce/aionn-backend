@@ -77,6 +77,20 @@ public class Cart extends AggregateRoot {
         record(new CartEvents.CartItemRemoved(cartId, skuId, updatedAt));
     }
 
+    /**
+     * Idempotent variant of {@link #removeItem(String)}: silently no-ops when
+     * the SKU is not in the cart. Used by post-place-order cleanup where the
+     * cart may have been mutated concurrently or the order was placed via a
+     * "buy now" flow that bypasses the cart.
+     */
+    public void removeItemIfPresent(String skuId) {
+        if (items.remove(skuId) == null) {
+            return;
+        }
+        touch();
+        record(new CartEvents.CartItemRemoved(cartId, skuId, updatedAt));
+    }
+
     public void clear(String reason) {
         if (items.isEmpty() && voucherCode == null) {
             return;

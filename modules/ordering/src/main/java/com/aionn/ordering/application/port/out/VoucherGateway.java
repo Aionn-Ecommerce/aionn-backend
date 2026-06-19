@@ -5,7 +5,10 @@ import java.math.BigDecimal;
 /** Outbound port for voucher discount preview at order placement. */
 public interface VoucherGateway {
 
-    Discount apply(String userId, String voucherCode, BigDecimal lineSubtotal, String currency);
+    Discount apply(String userId, String merchantId, String voucherCode, String orderId,
+            BigDecimal lineSubtotal, String currency);
+
+    void release(String userId, String orderId, String reason);
 
     record Discount(BigDecimal amount, String currency, boolean valid, String reason) {
     }

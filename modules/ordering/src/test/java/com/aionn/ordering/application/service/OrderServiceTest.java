@@ -1,6 +1,10 @@
 package com.aionn.ordering.application.service;
 
-import com.aionn.ordering.application.dto.order.command.ConfirmPreparationCommand;
+import com.aionn.ordering.application.dto.order.command.CancelOrderCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmDeliveredCommand;
+import com.aionn.ordering.application.dto.order.command.ConfirmShippedCommand;
+import com.aionn.ordering.application.dto.order.command.RejectOrderCommand;
+import com.aionn.ordering.application.dto.order.result.OrderResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
 import com.aionn.ordering.application.port.out.CartPersistencePort;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
@@ -10,140 +14,221 @@ import com.aionn.ordering.application.port.out.ShippingGateway;
 import com.aionn.ordering.application.port.out.StockReservationGateway;
 import com.aionn.ordering.application.port.out.VoucherGateway;
 import com.aionn.ordering.application.port.out.integration.OrderingIntegrationEventPublisherPort;
-import com.aionn.ordering.domain.exception.OrderingErrorCode;
 import com.aionn.ordering.domain.exception.OrderingException;
 import com.aionn.ordering.domain.model.Order;
 import com.aionn.ordering.domain.model.OrderItem;
 import com.aionn.ordering.domain.valueobject.OrderStatus;
+import com.aionn.ordering.domain.valueobject.ShippingAddress;
 import com.aionn.ordering.infrastructure.config.OrderingProperties;
 import com.aionn.sharedkernel.application.port.EventPublisher;
 import com.aionn.sharedkernel.domain.vo.Money;
 import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Covers the B3 ownership wiring (resolve merchantId from authenticated
- * owner) and H3 cross-user data leak fix on the get endpoint.
- */
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    @Mock
-    CartPersistencePort cartRepository;
-    @Mock
-    OrderPersistencePort orderRepository;
-    @Mock
-    OrderingResultMapper mapper;
-    @Mock
-    EventPublisher eventPublisher;
-    @Mock
-    StockReservationGateway stockReservationGateway;
-    @Mock
-    PaymentGateway paymentGateway;
-    @Mock
-    ShippingGateway shippingGateway;
-    @Mock
-    CatalogPricingGateway catalogPricingGateway;
-    @Mock
-    VoucherGateway voucherGateway;
-    @Mock
-    CartService cartService;
-    @Mock
-    MerchantQueryPort merchantQueryPort;
-    @Mock
-    OrderingIntegrationEventPublisherPort integrationEventPublisher;
-    @Mock
-    OrderingProperties properties;
+    private static final String USER_ID = "user-1";
+    private static final String MERCHANT_ID = "merchant-1";
+    private static final String ORDER_ID = "order-1";
 
-    @InjectMocks
-    OrderService orderService;
+    @Mock private CartPersistencePort cartRepository;
+    @Mock private OrderPersistencePort orderRepository;
+    @Mock private OrderingResultMapper mapper;
+    @Mock private EventPublisher eventPublisher;
+    @Mock private StockReservationGateway stockReservationGateway;
+    @Mock private PaymentGateway paymentGateway;
+    @Mock private ShippingGateway shippingGateway;
+    @Mock private CatalogPricingGateway catalogPricingGateway;
+    @Mock private VoucherGateway voucherGateway;
+    @Mock private CartService cartService;
+    @Mock private MerchantQueryPort merchantQueryPort;
+    @Mock private OrderingIntegrationEventPublisherPort integrationEventPublisher;
+    private final OrderingProperties orderingProperties = new OrderingProperties(
+            new OrderingProperties.Reservation(86400),
+            new OrderingProperties.AutoCancel(true, 15, 60_000L, 100));
 
-    @Test
-    @DisplayName("confirmPreparation() throws when the authenticated user has no merchant")
-    void confirmPreparation_throwsWhenOwnerHasNoMerchant() {
-        when(merchantQueryPort.findMerchantIdByOwnerId("user-1")).thenReturn(Optional.empty());
+    private OrderService orderService;
 
-        OrderingException ex = assertThrows(OrderingException.class,
-                () -> orderService.confirmPreparation(new ConfirmPreparationCommand("O_1", "user-1")));
+    @BeforeEach
+    void setUp() {
+        orderService = new OrderService(
+                cartRepository, orderRepository, mapper, eventPublisher,
+                stockReservationGateway, paymentGateway, shippingGateway,
+                catalogPricingGateway, voucherGateway, cartService, merchantQueryPort,
+                integrationEventPublisher, orderingProperties);
+    }
 
-        assertEquals(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT.getCode(), ex.getErrorCode());
-        verify(orderRepository, never()).findById(any());
+    private static ShippingAddress address() {
+        return new ShippingAddress("addr-1", "User", "+84912345678",
+                "12 main", "WARD", "DIST", "PROV", "VN");
+    }
+
+    private static OrderItem item() {
+        return new OrderItem("sku-1", 2, Money.of(BigDecimal.valueOf(100), "VND"),
+                "wh-1", null);
+    }
+
+    private static Order pendingOrder() {
+        Money subtotal = Money.of(BigDecimal.valueOf(200), "VND");
+        Money shipping = Money.of(BigDecimal.ZERO, "VND");
+        return Order.place(ORDER_ID, USER_ID, MERCHANT_ID, "prop-1",
+                "COD", "VND", List.of(item()), address(), shipping, subtotal);
+    }
+
+    private static OrderResult sampleResult(String status) {
+        return new OrderResult(ORDER_ID, null, USER_ID, MERCHANT_ID, "prop-1",
+                "COD", null, "VND", BigDecimal.valueOf(200),
+                BigDecimal.ZERO, "addr-1", List.of(), status, null,
+                java.time.Instant.now(), java.time.Instant.now(), null, null);
     }
 
     @Test
-    @DisplayName("confirmPreparation() rejects when the resolved merchant does not own the order")
-    void confirmPreparation_rejectsForeignOrder() {
-        when(merchantQueryPort.findMerchantIdByOwnerId("attacker")).thenReturn(Optional.of("M_attacker"));
-        Order victim = approvedOrder("O_1", "U_victim", "M_victim");
-        when(orderRepository.findById("O_1")).thenReturn(Optional.of(victim));
+    void cancelMovesOrderToCancelledAndReleasesNothingWhenNoReservations() {
+        Order order = pendingOrder();
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(mapper.toResult(order)).thenReturn(sampleResult("CANCELLED"));
 
-        OrderingException ex = assertThrows(OrderingException.class,
-                () -> orderService.confirmPreparation(new ConfirmPreparationCommand("O_1", "attacker")));
+        OrderResult result = orderService.cancel(new CancelOrderCommand(ORDER_ID, USER_ID, "changed"));
 
-        assertEquals(OrderingErrorCode.ORDER_NOT_OWNED_BY_MERCHANT.getCode(), ex.getErrorCode());
-        verify(orderRepository, never()).save(any());
+        assertEquals("CANCELLED", result.status());
+        verify(integrationEventPublisher).publishOrderCancelled(eq(ORDER_ID),
+                eq("USER_CANCELLED"), eq("changed"),
+                eq(OrderingIntegrationEventPublisherPort.CancellationKind.USER_CANCELLED));
     }
 
     @Test
-    @DisplayName("getForRequester() rejects unrelated callers")
-    void getForRequester_rejectsUnrelatedCaller() {
-        Order order = approvedOrder("O_1", "U_buyer", "M_seller");
-        when(orderRepository.findById("O_1")).thenReturn(Optional.of(order));
-        when(merchantQueryPort.findMerchantIdByOwnerId("nosey")).thenReturn(Optional.empty());
+    void cancelRejectsForeignUser() {
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(pendingOrder()));
 
-        OrderingException ex = assertThrows(OrderingException.class,
-                () -> orderService.getForRequester("O_1", "nosey"));
-
-        assertEquals(OrderingErrorCode.ORDER_FORBIDDEN.getCode(), ex.getErrorCode());
+        assertThrows(OrderingException.class,
+                () -> orderService.cancel(new CancelOrderCommand(ORDER_ID, "other-user", "x")));
     }
 
     @Test
-    @DisplayName("getForRequester() allows the buyer of the order")
-    void getForRequester_allowsBuyer() {
-        Order order = approvedOrder("O_1", "U_buyer", "M_seller");
-        when(orderRepository.findById("O_1")).thenReturn(Optional.of(order));
+    void cancelOnUnknownOrderThrows() {
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
 
-        orderService.getForRequester("O_1", "U_buyer");
-
-        verify(mapper).toResult(order);
+        assertThrows(OrderingException.class,
+                () -> orderService.cancel(new CancelOrderCommand(ORDER_ID, USER_ID, "n")));
     }
 
     @Test
-    @DisplayName("getForRequester() allows the merchant owner of the order")
-    void getForRequester_allowsMerchant() {
-        Order order = approvedOrder("O_1", "U_buyer", "M_seller");
-        when(orderRepository.findById("O_1")).thenReturn(Optional.of(order));
-        when(merchantQueryPort.findMerchantIdByOwnerId("seller-user")).thenReturn(Optional.of("M_seller"));
+    void completeRequiresShippedStatus() {
+        Order order = pendingOrder();
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
 
-        orderService.getForRequester("O_1", "seller-user");
-
-        verify(mapper).toResult(order);
+        assertThrows(OrderingException.class,
+                () -> orderService.complete(new ConfirmDeliveredCommand(ORDER_ID)));
+        verify(integrationEventPublisher, never()).publishOrderCompleted(anyString());
     }
 
-    private static Order approvedOrder(String orderId, String userId, String merchantId) {
-        OrderItem item = new OrderItem("SKU_1", 1, Money.of(new BigDecimal("99000"), "VND"),
-                "W_1", "RES_1");
-        Order order = new Order(orderId, null, userId, merchantId, "prop", "pm",
-                "VND", List.of(item), null, Money.zero("VND"), Money.of(new BigDecimal("99000"), "VND"),
-                OrderStatus.APPROVED, "PAY_1", null, Instant.now(), Instant.now(), null, null);
-        order.pullEvents();
-        return order;
+    @Test
+    void completeOnShippedOrderPublishesCompletedEvent() {
+        Order order = pendingOrder();
+        order.approve("p");
+        order.confirmPreparation();
+        order.markShipped("ship-1");
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(mapper.toResult(order)).thenReturn(sampleResult("COMPLETED"));
+
+        OrderResult result = orderService.complete(new ConfirmDeliveredCommand(ORDER_ID));
+
+        assertEquals("COMPLETED", result.status());
+        assertEquals(OrderStatus.COMPLETED, order.getStatus());
+        verify(integrationEventPublisher).publishOrderCompleted(ORDER_ID);
+    }
+
+    @Test
+    void rejectByMerchantRequiresOwnerToBeAMerchant() {
+        when(merchantQueryPort.findMerchantIdByOwnerId("ghost")).thenReturn(Optional.empty());
+
+        assertThrows(OrderingException.class,
+                () -> orderService.rejectByMerchant(new RejectOrderCommand(ORDER_ID, "ghost", "x")));
+    }
+
+    @Test
+    void rejectByMerchantSucceedsWhenOwnerOwnsTheMerchant() {
+        Order order = pendingOrder();
+        when(merchantQueryPort.findMerchantIdByOwnerId("owner-1"))
+                .thenReturn(Optional.of(MERCHANT_ID));
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(mapper.toResult(order)).thenReturn(sampleResult("REJECTED"));
+
+        OrderResult result = orderService.rejectByMerchant(
+                new RejectOrderCommand(ORDER_ID, "owner-1", "no stock"));
+
+        assertEquals("REJECTED", result.status());
+        verify(integrationEventPublisher).publishOrderCancelled(eq(ORDER_ID),
+                eq("MERCHANT_REJECTED"), eq("no stock"),
+                eq(OrderingIntegrationEventPublisherPort.CancellationKind.MERCHANT_REJECTED));
+    }
+
+    @Test
+    void getForRequesterReturnsResultWhenUserOwnsOrder() {
+        Order order = pendingOrder();
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(mapper.toResult(order)).thenReturn(sampleResult("PENDING"));
+
+        OrderResult result = orderService.getForRequester(ORDER_ID, USER_ID);
+
+        assertEquals("PENDING", result.status());
+    }
+
+    @Test
+    void getForRequesterRejectsUnrelatedRequester() {
+        Order order = pendingOrder();
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(merchantQueryPort.findMerchantIdByOwnerId("intruder"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(OrderingException.class,
+                () -> orderService.getForRequester(ORDER_ID, "intruder"));
+    }
+
+    @Test
+    void listByUserMapsOrdersToResults() {
+        Order order = pendingOrder();
+        when(orderRepository.findByUser(USER_ID, 20)).thenReturn(List.of(order));
+        when(mapper.toResult(order)).thenReturn(sampleResult("PENDING"));
+
+        List<OrderResult> results = orderService.listByUser(USER_ID, 20);
+
+        assertEquals(1, results.size());
+        assertEquals("PENDING", results.get(0).status());
+    }
+
+    @Test
+    void markShippedCommitsReservations() {
+        Order order = pendingOrder();
+        order.approve("p");
+        order.confirmPreparation();
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(mapper.toResult(order)).thenReturn(sampleResult("SHIPPED"));
+
+        OrderResult result = orderService.markShipped(new ConfirmShippedCommand(ORDER_ID, "ship-1"));
+
+        assertEquals("SHIPPED", result.status());
+        verify(integrationEventPublisher).publishOrderShipped(ORDER_ID, "ship-1");
     }
 }

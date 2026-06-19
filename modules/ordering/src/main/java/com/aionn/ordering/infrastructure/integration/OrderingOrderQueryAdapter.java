@@ -47,4 +47,18 @@ public class OrderingOrderQueryAdapter implements OrderQueryPort {
         }
         return orderJpaRepository.findCompletedOrderIdForSkus(userId, skuIds);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<OrderSummary> findOrderSummary(String orderId) {
+        if (orderId == null || orderId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return orderJpaRepository.findById(orderId)
+                .map(e -> new OrderSummary(
+                        e.getOrderId(),
+                        e.getMerchantId(),
+                        e.getTotalAmount(),
+                        e.getCurrency()));
+    }
 }

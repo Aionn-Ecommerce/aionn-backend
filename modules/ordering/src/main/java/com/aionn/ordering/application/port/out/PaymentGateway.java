@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 public interface PaymentGateway {
 
     PaymentAuthorization authorize(String orderId, String userId, String paymentMethodId,
-            BigDecimal amount, String currency);
+            BigDecimal amount, String currency, String gateway);
 
     void refund(String paymentId, BigDecimal amount, String currency, String reason);
 

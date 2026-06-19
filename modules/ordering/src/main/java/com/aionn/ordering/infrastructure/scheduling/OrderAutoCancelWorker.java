@@ -32,6 +32,9 @@ public class OrderAutoCancelWorker {
                 .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_FOUND));
         order.autoCancel("PAYMENT_TIMEOUT");
         for (OrderItem item : order.items()) {
+            if (item.reservationId() == null) {
+                continue;
+            }
             try {
                 stockReservationGateway.release(item.reservationId(), "auto-cancel");
             } catch (RuntimeException ex) {
