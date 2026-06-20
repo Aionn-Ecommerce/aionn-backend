@@ -1,23 +1,28 @@
 package com.aionn.shipping.adapter.rest.controller;
 
 import com.aionn.shipping.adapter.rest.dto.shipment.CancelShipmentRequest;
+import com.aionn.shipping.adapter.rest.dto.shipment.CreateShipmentRequest;
 import com.aionn.shipping.adapter.rest.dto.shipment.QuoteShippingRequest;
 import com.aionn.shipping.adapter.rest.dto.shipment.ResolveIssueRequest;
+import com.aionn.shipping.adapter.rest.support.session.CurrentUserId;
 import com.aionn.shipping.application.dto.rate.result.ShippingQuoteResult;
 import com.aionn.shipping.application.dto.shipment.command.CancelShipmentCommand;
+import com.aionn.shipping.application.dto.shipment.command.CreateShipmentCommand;
 import com.aionn.shipping.application.dto.shipment.command.FetchLabelCommand;
 import com.aionn.shipping.application.dto.shipment.command.QuoteShippingCommand;
 import com.aionn.shipping.application.dto.shipment.command.ResolveIssueCommand;
 import com.aionn.shipping.application.dto.shipment.result.ShipmentResult;
 import com.aionn.shipping.application.service.ShipmentService;
+import com.aionn.shipping.domain.exception.ShippingErrorCode;
+import com.aionn.shipping.domain.exception.ShippingException;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,6 +39,7 @@ import java.util.List;
 public class ShipmentController {
 
         private final ShipmentService shipmentService;
+        private final MerchantQueryPort merchantQueryPort;
 
         @PostMapping("/quote")
         @PreAuthorize("isAuthenticated()")
@@ -45,14 +51,38 @@ public class ShipmentController {
                 return ResponseEntity.ok(ApiResponse.success(result, "Quote computed"));
         }
 
+        @PostMapping
+        @PreAuthorize("hasAuthority('ROLE_MERCHANT')")
+        @Operation(summary = "Create shipment")
+        public ResponseEntity<ApiResponse<ShipmentResult>> create(
+                        @CurrentUserId String ownerId,
+                        @Valid @RequestBody CreateShipmentRequest request) {
+                String merchantId = merchantQueryPort.findMerchantIdByOwnerId(ownerId)
+                                .orElseThrow(() -> new ShippingException(ShippingErrorCode.SHIPMENT_FORBIDDEN));
+                ShipmentResult result = shipmentService.createShipment(new CreateShipmentCommand(
+                                request.orderId(), merchantId, request.userId(), request.address(),
+                                request.dimensions(), request.codAmount(), request.shippingFee(),
+                                request.currency()));
+                return ApiResponse.createdResponse("Shipment created", result);
+        }
+
+        @PostMapping("/{shipmentId}/register")
+        @PreAuthorize("hasAuthority('ROLE_MERCHANT')")
+        @Operation(summary = "Register shipment with carrier")
+        public ResponseEntity<ApiResponse<ShipmentResult>> register(@PathVariable String shipmentId) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                shipmentService.registerWithCarrier(shipmentId),
+                                "Shipment registered with carrier"));
+        }
+
         @PostMapping("/{shipmentId}/label")
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Fetch shipping label")
         public ResponseEntity<ApiResponse<ShipmentResult>> fetchLabel(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String shipmentId) {
                 return ResponseEntity.ok(ApiResponse.success(
-                                shipmentService.fetchLabel(new FetchLabelCommand(shipmentId, authentication.getName())),
+                                shipmentService.fetchLabel(new FetchLabelCommand(shipmentId, userId)),
                                 "Label fetched"));
         }
 
@@ -60,12 +90,12 @@ public class ShipmentController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Cancel shipment (merchant-only)")
         public ResponseEntity<ApiResponse<ShipmentResult>> cancel(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String shipmentId,
                         @Valid @RequestBody CancelShipmentRequest request) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 shipmentService.cancel(new CancelShipmentCommand(shipmentId, request.reason(),
-                                                authentication.getName())),
+                                                userId)),
                                 "Shipment cancelled"));
         }
 
@@ -85,10 +115,10 @@ public class ShipmentController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Get shipment for the authenticated viewer (buyer or seller)")
         public ResponseEntity<ApiResponse<ShipmentResult>> get(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String shipmentId) {
                 return ResponseEntity.ok(ApiResponse.success(
-                                shipmentService.get(shipmentId, authentication.getName()),
+                                shipmentService.get(shipmentId, userId),
                                 "Shipment fetched"));
         }
 
@@ -96,10 +126,10 @@ public class ShipmentController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "List shipments for an order, filtered by viewer ownership")
         public ResponseEntity<ApiResponse<List<ShipmentResult>>> listByOrder(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String orderId) {
                 return ResponseEntity.ok(ApiResponse.success(
-                                shipmentService.findByOrderId(orderId, authentication.getName()),
+                                shipmentService.findByOrderId(orderId, userId),
                                 "Shipments fetched"));
         }
 }

@@ -155,7 +155,7 @@ public class Shipment extends AggregateRoot {
         this.expectedDeliveryDate = expectedDate;
         this.status = ShipmentStatus.REGISTERED;
         touch();
-        record(new ShipmentEvents.ShipmentRegistered(shipmentId, trackingCode, carrierOrderId, expectedDate,
+        record(new ShipmentEvents.ShipmentRegistered(shipmentId, orderId, trackingCode, carrierOrderId, expectedDate,
                 updatedAt));
     }
 
@@ -205,7 +205,7 @@ public class Shipment extends AggregateRoot {
         this.shipperPhone = shipperPhone;
         this.status = ShipmentStatus.OUT_FOR_DELIVERY;
         touch();
-        record(new ShipmentEvents.ShipmentOutForDelivery(shipmentId, shipperName, shipperPhone, updatedAt));
+        record(new ShipmentEvents.ShipmentOutForDelivery(shipmentId, orderId, shipperName, shipperPhone, updatedAt));
     }
 
     public void markDelivered(String signatureUrl) {
@@ -266,7 +266,16 @@ public class Shipment extends AggregateRoot {
         this.status = ShipmentStatus.CANCELLED;
         this.cancelledAt = now;
         this.updatedAt = now;
-        record(new ShipmentEvents.ShipmentCancelled(shipmentId, reason, cancelledAt, now));
+        record(new ShipmentEvents.ShipmentCancelled(shipmentId, orderId, reason, cancelledAt, now));
+    }
+
+    /**
+     * Whether this shipment can still be cancelled by an upstream event
+     * (e.g. order cancellation). False once it has been picked up or already
+     * reached a terminal state.
+     */
+    public boolean isCancellable() {
+        return status.canTransitionTo(ShipmentStatus.CANCELLED);
     }
 
     public void resolveIssue(String issueType, String resolution) {

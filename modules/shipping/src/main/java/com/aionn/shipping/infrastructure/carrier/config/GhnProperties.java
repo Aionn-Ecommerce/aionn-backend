@@ -9,6 +9,7 @@ public record GhnProperties(
         String shopId,
         Integer fromDistrictId,
         String fromWardCode,
+        Integer serviceId,
         Integer serviceTypeId,
         Integer paymentTypeId,
         String requiredNote,

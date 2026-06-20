@@ -20,6 +20,7 @@ public final class ShipmentEvents {
 
     public record ShipmentRegistered(
             String shipmentId,
+            String orderId,
             String trackingCode,
             String carrierOrderId,
             Instant expectedDate,
@@ -50,6 +51,7 @@ public final class ShipmentEvents {
 
     public record ShipmentOutForDelivery(
             String shipmentId,
+            String orderId,
             String shipperName,
             String shipperPhone,
             Instant occurredAt) implements ShippingEvent {
@@ -79,6 +81,7 @@ public final class ShipmentEvents {
 
     public record ShipmentCancelled(
             String shipmentId,
+            String orderId,
             String reason,
             Instant cancelledAt,
             Instant occurredAt) implements ShippingEvent {
