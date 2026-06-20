@@ -4,7 +4,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db
 
 chat:
   attachment:
@@ -19,3 +19,8 @@ chat:
 
   presence:
     provider: ${CHAT_PRESENCE_PROVIDER:redis}
+
+  media:
+    provider: ${CHAT_MEDIA_PROVIDER:cloudinary}
+    cloudinary:
+      chat-image-folder: ${CLOUDINARY_CHAT_IMAGE_FOLDER:aionn/chat/images}

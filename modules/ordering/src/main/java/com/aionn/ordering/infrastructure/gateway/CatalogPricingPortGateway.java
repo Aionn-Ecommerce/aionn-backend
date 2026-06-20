@@ -1,11 +1,8 @@
 package com.aionn.ordering.infrastructure.gateway;
 
-import com.aionn.inventory.application.port.out.InventoryItemPersistencePort;
-import com.aionn.inventory.application.port.out.WarehousePersistencePort;
-import com.aionn.inventory.domain.model.InventoryItem;
-import com.aionn.inventory.domain.model.Warehouse;
 import com.aionn.ordering.application.port.out.CatalogPricingGateway;
 import com.aionn.sharedkernel.integration.port.catalog.PricingQueryPort;
+import com.aionn.sharedkernel.integration.port.inventory.WarehouseSelectorPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,8 +15,7 @@ import java.util.Map;
 public class CatalogPricingPortGateway implements CatalogPricingGateway {
 
     private final PricingQueryPort pricingQueryPort;
-    private final WarehousePersistencePort warehouseRepository;
-    private final InventoryItemPersistencePort inventoryItemRepository;
+    private final WarehouseSelectorPort warehouseSelector;
 
     @Override
     public Map<String, SkuPricing> resolve(List<String> skuIds) {
@@ -27,27 +23,12 @@ public class CatalogPricingPortGateway implements CatalogPricingGateway {
         Map<String, SkuPricing> result = new LinkedHashMap<>();
         for (Map.Entry<String, PricingQueryPort.SkuPricing> entry : pricing.entrySet()) {
             PricingQueryPort.SkuPricing p = entry.getValue();
-            String warehouseId = pickWarehouseWithStock(p.merchantId(), p.skuId());
+            String warehouseId = warehouseSelector
+                    .selectWarehouseForSku(p.merchantId(), p.skuId())
+                    .orElse(null);
             result.put(entry.getKey(), new SkuPricing(
                     p.skuId(), p.merchantId(), warehouseId, p.price(), p.currency(), p.active()));
         }
         return result;
-    }
-
-    private String pickWarehouseWithStock(String merchantId, String skuId) {
-        List<Warehouse> warehouses = warehouseRepository.findByMerchantOrderByPriority(merchantId);
-        if (warehouses.isEmpty()) {
-            return null;
-        }
-        List<String> warehouseIds = warehouses.stream().map(Warehouse::getWarehouseId).toList();
-        List<InventoryItem> items = inventoryItemRepository.findBySkuAcrossWarehouses(skuId, warehouseIds);
-        for (Warehouse w : warehouses) {
-            for (InventoryItem item : items) {
-                if (item.getKey().warehouseId().equals(w.getWarehouseId()) && item.getAvailableQty() > 0) {
-                    return w.getWarehouseId();
-                }
-            }
-        }
-        return warehouses.get(0).getWarehouseId();
     }
 }

@@ -1,6 +1,7 @@
 package com.aionn.notification.adapter.rest.controller;
 
 import com.aionn.notification.adapter.rest.dto.notification.SendNotificationRequest;
+import com.aionn.notification.adapter.rest.support.session.CurrentUserId;
 import com.aionn.notification.application.dto.notification.command.NotificationCommands;
 import com.aionn.notification.application.dto.notification.result.NotificationResult;
 import com.aionn.notification.application.service.NotificationDispatchService;
@@ -11,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,11 +46,11 @@ public class NotificationController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Mark read", description = "UC8.4")
         public ResponseEntity<ApiResponse<NotificationResult>> markRead(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String notiId) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 dispatchService.markRead(
-                                                new NotificationCommands.MarkRead(authentication.getName(), notiId)),
+                                                new NotificationCommands.MarkRead(userId, notiId)),
                                 "Notification marked read"));
         }
 
@@ -58,11 +58,11 @@ public class NotificationController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Delete", description = "UC8.5 soft delete")
         public ResponseEntity<ApiResponse<NotificationResult>> delete(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String notiId) {
                 return ResponseEntity.ok(ApiResponse.success(
                                 dispatchService.delete(
-                                                new NotificationCommands.MarkDeleted(authentication.getName(), notiId)),
+                                                new NotificationCommands.MarkDeleted(userId, notiId)),
                                 "Notification deleted"));
         }
 
@@ -70,21 +70,21 @@ public class NotificationController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Get notification")
         public ResponseEntity<ApiResponse<NotificationResult>> get(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @PathVariable String notiId) {
                 return ResponseEntity.ok(ApiResponse.success(
-                                dispatchService.get(authentication.getName(), notiId), "Notification fetched"));
+                                dispatchService.get(userId, notiId), "Notification fetched"));
         }
 
         @GetMapping
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "List my notifications")
         public ResponseEntity<ApiResponse<List<NotificationResult>>> listMine(
-                        Authentication authentication,
+                        @CurrentUserId String userId,
                         @RequestParam(defaultValue = "50") int limit) {
                 int safeLimit = Math.min(Math.max(limit, 1), 100);
                 return ResponseEntity.ok(ApiResponse.success(
-                                dispatchService.listMine(authentication.getName(), safeLimit),
+                                dispatchService.listMine(userId, safeLimit),
                                 "Notifications fetched"));
         }
 }

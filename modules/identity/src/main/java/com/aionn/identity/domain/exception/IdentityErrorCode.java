@@ -72,7 +72,9 @@ public enum IdentityErrorCode {
 	AGENT_CREATION_NOT_ALLOWED("IDENTITY_502", "User is not allowed to create agents"),
 
 	CONSENT_NOT_FOUND("IDENTITY_601", "Consent record not found"),
-	INVALID_IP_ADDRESS("IDENTITY_602", "Invalid IP address format");
+	INVALID_IP_ADDRESS("IDENTITY_602", "Invalid IP address format"),
+
+	FEEDBACK_NOT_FOUND("IDENTITY_701", "Feedback not found");
 
 	private final String code;
 	private final String defaultMessage;

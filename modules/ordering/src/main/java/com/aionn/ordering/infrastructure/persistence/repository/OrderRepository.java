@@ -20,6 +20,28 @@ public interface OrderRepository extends JpaRepository<OrderEntity, String> {
   @EntityGraph(attributePaths = "items")
   List<OrderEntity> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
+  @EntityGraph(attributePaths = "items")
+  List<OrderEntity> findByUserIdAndStatusInOrderByCreatedAtDesc(String userId, Collection<String> statuses, Pageable pageable);
+
+  @EntityGraph(attributePaths = "items")
+  List<OrderEntity> findByMerchantIdOrderByCreatedAtDesc(String merchantId, Pageable pageable);
+
+  @EntityGraph(attributePaths = "items")
+  List<OrderEntity> findByMerchantIdAndStatusInOrderByCreatedAtDesc(String merchantId, Collection<String> statuses, Pageable pageable);
+
+  @Query("""
+      SELECT o.status AS status,
+             o.totalAmount AS totalAmount,
+             o.currency AS currency,
+             o.createdAt AS createdAt
+        FROM OrderEntity o
+       WHERE o.merchantId = :merchantId
+         AND o.createdAt >= :from
+         AND o.createdAt < :to
+       ORDER BY o.createdAt ASC
+      """)
+  List<OrderAnalyticsProjection> findMerchantAnalyticsRows(String merchantId, Instant from, Instant to);
+
   /**
    * Auto-cancel sweep returns ids only; the worker re-loads each one in its own
    * tx.
@@ -52,4 +74,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, String> {
         LIMIT 1
       """, nativeQuery = true)
   String findCompletedOrderIdForSkus(String userId, Collection<String> skuIds);
+
+  interface OrderAnalyticsProjection {
+    String getStatus();
+
+    java.math.BigDecimal getTotalAmount();
+
+    String getCurrency();
+
+    Instant getCreatedAt();
+  }
 }

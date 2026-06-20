@@ -38,8 +38,8 @@ public class CategoryController {
     }
 
     @PutMapping("/{categoryId}")
-    @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Update category")
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
+    @Operation(summary = "Update category", description = "Edit category content (name, icon, active flag). CS agents may correct content; structural changes (create/move/delete) remain SYSTEM_ADMIN only.")
     public ResponseEntity<ApiResponse<CategoryResult>> update(
             @PathVariable String categoryId,
             @Valid @RequestBody UpdateCategoryRequest request) {

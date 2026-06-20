@@ -38,5 +38,17 @@ public class BrandPersistenceAdapter implements BrandPersistencePort {
     public boolean hasActiveProducts(String brandId) {
         return productJpa.existsByBrandIdAndStatus(brandId, ProductStatus.PUBLISHED.name());
     }
+
+    @Override
+    public java.util.List<Brand> findAll(int page, int size) {
+        return jpa.findAll(org.springframework.data.domain.PageRequest.of(page, size)).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public long count() {
+        return jpa.count();
+    }
 }
 

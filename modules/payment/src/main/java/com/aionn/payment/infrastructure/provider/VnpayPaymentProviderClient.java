@@ -91,6 +91,8 @@ public class VnpayPaymentProviderClient implements PaymentProviderClient {
 
         log.info("VNPay authorize: txnRef={} amount={} payUrl={}",
                 txnRef, vnpAmount, properties.payUrl());
+        log.debug("VNPay sign data: {}", hashData);
+        log.debug("VNPay signature: {}", secureHash);
 
         return new Authorization(false, txnRef, paymentUrl, null, null);
     }

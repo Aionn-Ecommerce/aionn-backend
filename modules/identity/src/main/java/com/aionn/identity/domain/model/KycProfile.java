@@ -85,6 +85,43 @@ public class KycProfile {
         return provider != null && !provider.isBlank();
     }
 
+    public void adminApprove(String adminId, String note) {
+        if (this.status != KycStatus.SUBMITTED && this.status != KycStatus.IN_REVIEW) {
+            throw new IllegalStateException(
+                    "KYC can only be approved from SUBMITTED or IN_REVIEW (current=" + this.status + ")");
+        }
+        this.status = KycStatus.APPROVED;
+        this.decisionAdminId = adminId;
+        this.reviewerId = adminId;
+        this.reviewNote = note;
+        this.rejectReason = null;
+        this.approvedAt = LocalDateTime.now();
+    }
+
+    public void adminReject(String adminId, String reason) {
+        if (this.status != KycStatus.SUBMITTED && this.status != KycStatus.IN_REVIEW) {
+            throw new IllegalStateException(
+                    "KYC can only be rejected from SUBMITTED or IN_REVIEW (current=" + this.status + ")");
+        }
+        this.status = KycStatus.REJECTED;
+        this.decisionAdminId = adminId;
+        this.reviewerId = adminId;
+        this.rejectReason = reason;
+        this.approvedAt = null;
+    }
+
+    public void adminMarkInReview(String adminId, String note) {
+        if (this.status != KycStatus.SUBMITTED) {
+            throw new IllegalStateException(
+                    "KYC can only enter IN_REVIEW from SUBMITTED (current=" + this.status + ")");
+        }
+        this.status = KycStatus.IN_REVIEW;
+        this.reviewerId = adminId;
+        if (note != null && !note.isBlank()) {
+            this.reviewNote = note;
+        }
+    }
+
     private String providerDecisionSource() {
         return provider == null || provider.isBlank()
                 ? "SYSTEM"

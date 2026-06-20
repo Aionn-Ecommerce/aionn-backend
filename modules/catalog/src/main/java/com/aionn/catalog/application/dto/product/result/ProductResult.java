@@ -21,7 +21,11 @@ public record ProductResult(
         Instant createdAt,
         Instant updatedAt,
         Double rating,
-        Long reviewCount) {
+        Long reviewCount,
+        Long soldCount,
+        FlashSaleInfo flashSale,
+        String provinceCode,
+        String provinceName) {
 
     public record VariantResult(
             String skuId,
@@ -30,5 +34,28 @@ public record ProductResult(
             BigDecimal originalPrice,
             String currency) {
     }
-}
 
+    /**
+     * Active flash-sale snapshot for the product. Null when no flash sale is
+     * currently running. Carries the campaign end-time for the storefront
+     * countdown and the per-SKU sale offers so the cart can resolve a sale
+     * price for the picked variant.
+     */
+    public record FlashSaleInfo(
+            String campaignId,
+            Instant endAt,
+            BigDecimal salePrice,
+            String currency,
+            Integer saleStock,
+            Integer soldCount,
+            List<SkuOffer> skuOffers) {
+
+        public record SkuOffer(
+                String skuId,
+                BigDecimal salePrice,
+                String currency,
+                int saleStock,
+                int soldCount) {
+        }
+    }
+}

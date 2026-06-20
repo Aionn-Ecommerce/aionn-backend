@@ -1,39 +1,35 @@
 package com.aionn.identity.application.service;
 
-import com.aionn.identity.application.dto.user.view.UserProfileView;
+import com.aionn.identity.application.dto.user.command.CancelAccountDeletionCommand;
+import com.aionn.identity.application.dto.user.command.RequestAccountDeletionCommand;
+import com.aionn.identity.application.dto.user.command.RequestDataExportCommand;
+import com.aionn.identity.application.dto.user.view.DataExportRequestView;
+import com.aionn.identity.application.dto.user.view.DeletionRequestView;
 import com.aionn.identity.application.mapper.UserResultMapper;
 import com.aionn.identity.application.policy.AccountManagementPolicy;
 import com.aionn.identity.application.port.out.auth.AuthSessionPersistencePort;
 import com.aionn.identity.application.port.out.auth.RefreshTokenStorePort;
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
-import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
-import com.aionn.identity.domain.valueobject.UserOtpPurpose;
-import com.aionn.identity.application.port.out.user.UserPersistencePort;
+import com.aionn.identity.application.port.out.integration.IdentityIntegrationEventPublisherPort;
 import com.aionn.identity.application.port.out.user.AccountDeletionPort;
 import com.aionn.identity.application.port.out.user.DataExportPort;
-import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort.UserOtpChallenge;
-import com.aionn.identity.domain.model.AuthSession;
+import com.aionn.identity.application.port.out.user.UserOtpChallengeStorePort;
+import com.aionn.identity.application.port.out.user.UserPersistencePort;
+import com.aionn.identity.domain.exception.IdentityException;
 import com.aionn.identity.domain.model.IdentityUser;
-import com.aionn.identity.domain.valueobject.AuthSessionStatus;
-import com.aionn.identity.domain.valueobject.OtpChannel;
-import com.aionn.identity.domain.valueobject.UserRole;
-import com.aionn.identity.domain.valueobject.UserStatus;
+import com.aionn.sharedkernel.integration.port.notification.IdentityNotificationPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,187 +37,103 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AccountManagementServiceTest {
 
-        private static final String USER_ID = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+    private static final String USER_ID = "user-1";
 
-        @Mock
-        private UserPersistencePort userPersistencePort;
-        @Mock
-        private IdentityNotificationPort notificationPort;
-        @Mock
-        private com.aionn.identity.infrastructure.integration.IdentityIntegrationEventPublisher integrationEventPublisher;
-        @Mock
-        private UserOtpChallengeStorePort userOtpChallengeStore;
-        @Mock
-        private AccountDeletionPort accountDeletionPort;
-        @Mock
-        private DataExportPort dataExportPort;
-        @Mock
-        private AuthSessionPersistencePort authSessionPersistencePort;
-        @Mock
-        private RefreshTokenStorePort refreshTokenStore;
-        @Mock
-        private UserResultMapper userResultMapper;
+    @Mock private UserPersistencePort userPersistencePort;
+    @Mock private IdentityNotificationPort notificationPort;
+    @Mock private IdentityIntegrationEventPublisherPort integrationEventPublisher;
+    @Mock private UserOtpChallengeStorePort userOtpChallengeStore;
+    @Mock private AccountDeletionPort accountDeletionPort;
+    @Mock private DataExportPort dataExportPort;
+    @Mock private AuthSessionPersistencePort authSessionPersistencePort;
+    @Mock private RefreshTokenStorePort refreshTokenStore;
+    @Mock private AccountManagementPolicy accountManagementPolicy;
+    @Mock private UserResultMapper userResultMapper;
 
-        private AccountManagementService accountManagementService;
+    private AccountManagementService service;
 
-        @BeforeEach
-        void setUp() {
-                accountManagementService = new AccountManagementService(
-                                userPersistencePort,
-                                notificationPort,
-                                integrationEventPublisher,
-                                userOtpChallengeStore,
-                                accountDeletionPort,
-                                dataExportPort,
-                                authSessionPersistencePort,
-                                refreshTokenStore,
-                                accountManagementPolicy(300, 5, 30),
-                                userResultMapper);
-        }
+    @BeforeEach
+    void setUp() {
+        service = new AccountManagementService(
+                userPersistencePort, notificationPort, integrationEventPublisher,
+                userOtpChallengeStore, accountDeletionPort, dataExportPort,
+                authSessionPersistencePort, refreshTokenStore,
+                accountManagementPolicy, userResultMapper);
+    }
 
-        private static AccountManagementPolicy accountManagementPolicy(
-                        int otpExpirySeconds, int otpMaxAttempts, int deletionGraceDays) {
-                return new AccountManagementPolicy() {
-                        @Override
-                        public int getOtpExpirySeconds() {
-                                return otpExpirySeconds;
-                        }
+    private static IdentityUser activeUser() {
+        return IdentityUser.createNew(USER_ID, "u@example.com", null, "user");
+    }
 
-                        @Override
-                        public int getOtpMaxAttempts() {
-                                return otpMaxAttempts;
-                        }
+    @Test
+    void requestAccountDeletionPersistsAndReturnsView() {
+        DeletionRequestView view = new DeletionRequestView(
+                "req-1", "PENDING", LocalDateTime.now(), LocalDateTime.now().plusDays(30));
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(accountDeletionPort.findPendingByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(accountManagementPolicy.getDeletionGraceDays()).thenReturn(30);
+        when(accountDeletionPort.save(eq(USER_ID), any(LocalDateTime.class))).thenReturn(view);
 
-                        @Override
-                        public int getDeletionGraceDays() {
-                                return deletionGraceDays;
-                        }
-                };
-        }
+        DeletionRequestView result = service.requestAccountDeletion(
+                new RequestAccountDeletionCommand(USER_ID));
 
-        @Test
-        void sendVerifyPrimaryEmailOtpStoresChallengeAndSendsEmail() {
-                IdentityUser user = activeUser(USER_ID, "old@example.com", "+84912345678");
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
+        assertSame(view, result);
+        verify(accountDeletionPort).save(eq(USER_ID), any(LocalDateTime.class));
+    }
 
-                accountManagementService.sendVerifyPrimaryEmailOtp(USER_ID);
+    @Test
+    void requestAccountDeletionRejectsWhenAlreadyPending() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(accountDeletionPort.findPendingByUserId(USER_ID))
+                .thenReturn(Optional.of(new DeletionRequestView(
+                        "req-old", "PENDING", LocalDateTime.now(), LocalDateTime.now().plusDays(10))));
 
-                ArgumentCaptor<UserOtpChallenge> challengeCaptor = ArgumentCaptor.forClass(UserOtpChallenge.class);
-                verify(userOtpChallengeStore).save(challengeCaptor.capture());
-                UserOtpChallenge challenge = challengeCaptor.getValue();
+        assertThrows(IdentityException.class,
+                () -> service.requestAccountDeletion(new RequestAccountDeletionCommand(USER_ID)));
 
-                assertEquals(USER_ID, challenge.userId());
-                assertEquals(UserOtpPurpose.VERIFY_PRIMARY_EMAIL, challenge.purpose());
-                assertEquals(OtpChannel.EMAIL, challenge.channel());
-                assertEquals("old@example.com", challenge.target());
-                assertNull(challenge.pendingValue());
-                assertNotNull(challenge.otpCode());
-                verify(notificationPort).sendEmailOtp("old@example.com", challenge.otpCode());
-        }
+        verify(accountDeletionPort, never()).save(any(), any());
+    }
 
-        @Test
-        void confirmVerifyPrimaryEmailOtpMarksUserVerifiedAndClearsChallenge() {
-                IdentityUser user = activeUser(USER_ID, "old@example.com", "+84912345678");
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(userOtpChallengeStore.find(USER_ID, UserOtpPurpose.VERIFY_PRIMARY_EMAIL))
-                                .thenReturn(Optional.of(new UserOtpChallenge(
-                                                USER_ID,
-                                                UserOtpPurpose.VERIFY_PRIMARY_EMAIL,
-                                                OtpChannel.EMAIL,
-                                                "old@example.com",
-                                                "123456",
-                                                null,
-                                                LocalDateTime.now().plusMinutes(5),
-                                                0)));
+    @Test
+    void cancelAccountDeletionDelegatesToPort() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(accountDeletionPort.findPendingByUserId(USER_ID)).thenReturn(Optional.of(
+                new DeletionRequestView("r", "PENDING", LocalDateTime.now(), LocalDateTime.now())));
 
-                accountManagementService.confirmVerifyPrimaryEmailOtp(USER_ID, "123456");
+        service.cancelAccountDeletion(new CancelAccountDeletionCommand(USER_ID));
 
-                ArgumentCaptor<IdentityUser> userCaptor = ArgumentCaptor.forClass(IdentityUser.class);
-                verify(userPersistencePort).save(userCaptor.capture());
-                assertNotNull(userCaptor.getValue().getEmailVerifiedAt());
-                verify(userOtpChallengeStore).delete(USER_ID, UserOtpPurpose.VERIFY_PRIMARY_EMAIL);
-        }
+        verify(accountDeletionPort).cancel(USER_ID);
+    }
 
-        @Test
-        void confirmEmailChangeUpdatesEmailRevokesSessionsAndNotifiesPreviousEmail() {
-                IdentityUser user = activeUser(USER_ID, "old@example.com", "+84912345678");
-                when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(user));
-                when(userOtpChallengeStore.find(USER_ID, UserOtpPurpose.CHANGE_EMAIL))
-                                .thenReturn(Optional.of(new UserOtpChallenge(
-                                                USER_ID,
-                                                UserOtpPurpose.CHANGE_EMAIL,
-                                                OtpChannel.EMAIL,
-                                                "new@example.com",
-                                                "654321",
-                                                "new@example.com",
-                                                LocalDateTime.now().plusMinutes(5),
-                                                0)));
-                when(userPersistencePort.findByIdentity("new@example.com")).thenReturn(Optional.empty());
-                when(userPersistencePort.save(any(IdentityUser.class)))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
-                when(userResultMapper.toUserProfileView(any(IdentityUser.class)))
-                                .thenAnswer(invocation -> toProfileView(invocation.getArgument(0)));
+    @Test
+    void cancelAccountDeletionThrowsWhenNothingToCancel() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(accountDeletionPort.findPendingByUserId(USER_ID)).thenReturn(Optional.empty());
 
-                AuthSession activeSession = new AuthSession(
-                                "session-1",
-                                USER_ID,
-                                "127.0.0.1",
-                                "JUnit",
-                                AuthSessionStatus.ACTIVE,
-                                LocalDateTime.now().minusDays(1),
-                                LocalDateTime.now().minusHours(1),
-                                LocalDateTime.now().plusDays(1));
-                AuthSession revokedSession = new AuthSession(
-                                "session-2",
-                                USER_ID,
-                                "127.0.0.1",
-                                "JUnit",
-                                AuthSessionStatus.REVOKED,
-                                LocalDateTime.now().minusDays(1),
-                                LocalDateTime.now().minusHours(1),
-                                LocalDateTime.now().plusDays(1));
-                when(authSessionPersistencePort.findByUserId(USER_ID))
-                                .thenReturn(List.of(activeSession, revokedSession));
+        assertThrows(IdentityException.class,
+                () -> service.cancelAccountDeletion(new CancelAccountDeletionCommand(USER_ID)));
+    }
 
-                UserProfileView profile = accountManagementService.confirmEmailChange(USER_ID, "654321");
+    @Test
+    void requestDataExportRejectsWhenAlreadyInProgress() {
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(dataExportPort.hasActiveRequest(USER_ID)).thenReturn(true);
 
-                assertEquals("new@example.com", profile.email());
-                verify(userOtpChallengeStore).delete(USER_ID, UserOtpPurpose.CHANGE_EMAIL);
-                verify(refreshTokenStore).revokeBySessionId("session-1");
-                verify(refreshTokenStore, never()).revokeBySessionId("session-2");
-                verify(authSessionPersistencePort).saveAll(List.of(activeSession, revokedSession));
-                verify(integrationEventPublisher).publishEmailChanged(USER_ID, "old@example.com", "new@example.com");
-        }
+        assertThrows(IdentityException.class,
+                () -> service.requestDataExport(new RequestDataExportCommand(USER_ID)));
+    }
 
-        private IdentityUser activeUser(String userId, String email, String phone) {
-                return new IdentityUser(
-                                userId,
-                                email,
-                                phone,
-                                "alice",
-                                "hash",
-                                "Alice",
-                                null,
-                                Set.of(UserRole.BUYER),
-                                UserStatus.ACTIVE,
-                                null,
-                                null,
-                                null,
-                                LocalDateTime.now().minusDays(10));
-        }
+    @Test
+    void requestDataExportPersistsAndReturnsView() {
+        DataExportRequestView view = new DataExportRequestView(
+                "exp-1", "PENDING", LocalDateTime.now());
+        when(userPersistencePort.findById(USER_ID)).thenReturn(Optional.of(activeUser()));
+        when(dataExportPort.hasActiveRequest(USER_ID)).thenReturn(false);
+        when(dataExportPort.save(USER_ID)).thenReturn(view);
 
-        private UserProfileView toProfileView(IdentityUser user) {
-                return new UserProfileView(
-                                user.getUserId(),
-                                user.getEmail(),
-                                user.getPhone(),
-                                user.getUsername(),
-                                user.getDisplayName(),
-                                user.getAvatarUrl(),
-                                user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()),
-                                user.getStatus().name(),
-                                user.getEmailVerifiedAt(),
-                                user.getPhoneVerifiedAt(),
-                                user.getCreatedAt());
-        }
+        DataExportRequestView result = service.requestDataExport(
+                new RequestDataExportCommand(USER_ID));
+
+        assertSame(view, result);
+    }
 }

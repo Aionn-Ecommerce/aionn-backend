@@ -2,14 +2,17 @@ package com.aionn.catalog.application.mapper;
 
 import com.aionn.catalog.application.dto.product.result.ProductResult;
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
+import com.aionn.catalog.application.port.out.MerchantPersistencePort;
 import com.aionn.catalog.application.port.out.ProductReviewPersistencePort;
+import com.aionn.catalog.application.port.out.ProductSoldCounterPersistencePort;
+import com.aionn.catalog.domain.model.Merchant;
 import com.aionn.catalog.domain.model.Product;
 import com.aionn.catalog.domain.model.ProductVariant;
+import com.aionn.sharedkernel.integration.port.promotion.FlashSaleQueryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +21,9 @@ import java.util.Map;
 public class ProductResultMapper {
 
         private final ProductReviewPersistencePort reviewRepository;
+        private final ProductSoldCounterPersistencePort soldCounterRepository;
+        private final FlashSaleQueryPort flashSaleQueryPort;
+        private final MerchantPersistencePort merchantRepository;
 
         public ProductResult toResult(Product product) {
                 List<ProductResult.VariantResult> variants = product.variants().stream()
@@ -45,6 +51,19 @@ public class ProductResultMapper {
                 Double avgRating = reviewRepository.getAverageRating(product.getProductId());
                 double rating = avgRating == null ? 0.0 : avgRating;
                 long reviewCount = reviewRepository.countVisibleReviews(product.getProductId());
+                long soldCount = soldCounterRepository.getSoldCount(product.getProductId());
+
+                ProductResult.FlashSaleInfo flashSale = buildFlashSale(product.getProductId());
+
+                String provinceCode = null;
+                String provinceName = null;
+                if (product.getMerchantId() != null) {
+                        Merchant merchant = merchantRepository.findById(product.getMerchantId()).orElse(null);
+                        if (merchant != null) {
+                                provinceCode = merchant.getProvinceCode();
+                                provinceName = merchant.getProvinceName();
+                        }
+                }
 
                 return new ProductResult(
                                 product.getProductId(),
@@ -62,7 +81,34 @@ public class ProductResultMapper {
                                 product.getCreatedAt(),
                                 product.getUpdatedAt(),
                                 rating,
-                                reviewCount);
+                                reviewCount,
+                                soldCount,
+                                flashSale,
+                                provinceCode,
+                                provinceName);
+        }
+
+        private ProductResult.FlashSaleInfo buildFlashSale(String productId) {
+                Map<String, FlashSaleQueryPort.ProductFlashSale> active = flashSaleQueryPort
+                                .findActiveByProductIds(List.of(productId));
+                FlashSaleQueryPort.ProductFlashSale info = active.get(productId);
+                if (info == null || info.skuOffers().isEmpty()) {
+                        return null;
+                }
+                List<ProductResult.FlashSaleInfo.SkuOffer> offers = info.skuOffers().stream()
+                                .map(o -> new ProductResult.FlashSaleInfo.SkuOffer(
+                                                o.skuId(), o.salePrice(), o.currency(),
+                                                o.saleStock(), o.soldCount()))
+                                .toList();
+                String currency = info.skuOffers().get(0).currency();
+                return new ProductResult.FlashSaleInfo(
+                                info.campaignId(),
+                                info.endAt(),
+                                info.lowestSalePrice(),
+                                currency,
+                                info.totalSaleStock(),
+                                info.totalSoldCount(),
+                                offers);
         }
 
         public ProductSearchDocument toSearchDocument(Product product, Map<String, String> filterableAttributes) {
@@ -96,46 +142,43 @@ public class ProductResultMapper {
 
                 Double avgRating = reviewRepository.getAverageRating(product.getProductId());
                 double rating = avgRating == null ? 0.0 : avgRating;
+                long soldCount = soldCounterRepository.getSoldCount(product.getProductId());
 
-                boolean onSale = product.variants().stream()
+                Map<String, FlashSaleQueryPort.ProductFlashSale> activeFlash = flashSaleQueryPort
+                                .findActiveByProductIds(List.of(product.getProductId()));
+                FlashSaleQueryPort.ProductFlashSale fs = activeFlash.get(product.getProductId());
+                boolean flashSale = fs != null;
+                BigDecimal flashSalePrice = fs == null ? null : fs.lowestSalePrice();
+                java.time.Instant flashSaleEndAt = fs == null ? null : fs.endAt();
+
+                // If there is an active flash sale, the customer sees the flash sale price —
+                // so priceFrom must reflect that effective lowest price to keep price filters accurate.
+                if (flashSalePrice != null && (priceFrom == null || flashSalePrice.compareTo(priceFrom) < 0)) {
+                        priceFrom = flashSalePrice;
+                }
+
+                // Storefront "onSale" is satisfied by either a variant-level discount
+                // (originalPrice > price) OR an active flash sale registration.
+                boolean onSale = flashSale || product.variants().stream()
                                 .anyMatch(v -> v.originalPrice() != null && v.price() != null
                                                 && v.originalPrice().amount().compareTo(v.price().amount()) > 0);
 
-                String location = "Đà Nẵng";
+                // Province is sourced from the merchant aggregate (set by the seller in
+                // their profile, validated against identity at write time). The code is
+                // canonical VN GSO; the name is a denormalized snapshot for display.
+                String provinceCode = null;
+                String provinceName = null;
                 if (product.getMerchantId() != null) {
-                        switch (product.getMerchantId()) {
-                                case "MER_001":
-                                case "MER_002":
-                                case "MER_003":
-                                case "MER_004":
-                                case "MER_005":
-                                        location = "Hà Nội";
-                                        break;
-                                case "MER_006":
-                                case "MER_007":
-                                case "MER_008":
-                                case "MER_009":
-                                case "MER_010":
-                                        location = "TP. Hồ Chí Minh";
-                                        break;
+                        Merchant merchant = merchantRepository.findById(product.getMerchantId()).orElse(null);
+                        if (merchant != null) {
+                                provinceCode = merchant.getProvinceCode();
+                                provinceName = merchant.getProvinceName();
                         }
                 }
 
-                List<String> shipping = new ArrayList<>();
-                shipping.add("GHN");
-                int idVal = 0;
-                if (product.getMerchantId() != null) {
-                        try {
-                                idVal = Integer.parseInt(product.getMerchantId().replaceAll("\\D+", ""));
-                        } catch (Exception e) {
-                        }
-                }
-                if (idVal <= 8) {
-                        shipping.add("GHTK");
-                }
-                if (idVal >= 5) {
-                        shipping.add("J&T");
-                }
+                // Shipping carrier is no longer modelled at the product level; the
+                // storefront-level filter was misleading and BE has no real data.
+                List<String> shipping = List.of();
 
                 return new ProductSearchDocument(
                                 product.getProductId(),
@@ -156,6 +199,11 @@ public class ProductResultMapper {
                                 rating,
                                 onSale,
                                 shipping,
-                                location);
+                                provinceCode,
+                                provinceName,
+                                soldCount,
+                                flashSale,
+                                flashSalePrice,
+                                flashSaleEndAt);
         }
 }

@@ -77,11 +77,24 @@ public class ShipmentService {
      */
     public ShipmentResult createAndRegister(CreateShipmentCommand command) {
         ShipmentResult created = self.createShipment(command);
-        return registerWithCarrier(created.shipmentId());
+        try {
+            return registerWithCarrier(created.shipmentId());
+        } catch (RuntimeException ex) {
+            try {
+                self.applyCancel(created.shipmentId(), "carrier-registration-failed");
+            } catch (RuntimeException compensateEx) {
+                log.error("Failed to compensate orphan shipment {} after carrier registration failed",
+                        created.shipmentId(), compensateEx);
+            }
+            throw ex;
+        }
     }
 
     public ShipmentResult registerWithCarrier(String shipmentId) {
         Shipment shipment = self.loadShipment(shipmentId);
+        if (shipment.getTrackingCode() != null) {
+            return mapper.toResult(shipment);
+        }
         CarrierClient.Registration reg;
         try {
             reg = carrierClient.register(
@@ -103,6 +116,9 @@ public class ShipmentService {
     @Transactional
     public ShipmentResult applyRegistration(String shipmentId, CarrierClient.Registration reg) {
         Shipment shipment = required(shipmentId);
+        if (shipment.getTrackingCode() != null) {
+            return mapper.toResult(shipment);
+        }
         shipment.registerWithCarrier(reg.trackingCode(), reg.carrierOrderId(), reg.expectedDate());
         Shipment saved = shipmentRepository.save(shipment);
         eventPublisher.publish(shipment.pullEvents());
@@ -203,10 +219,11 @@ public class ShipmentService {
         var rate = rateRepository.findByZoneCode(command.address().provinceCode());
         if (rate.isPresent()) {
             return new ShippingQuoteResult(rate.get().getBaseFee(), rate.get().getCurrency(),
-                    rate.get().getZoneCode(), "configured-rate", rate.get().getCondition());
+                    rate.get().getZoneCode(), "configured-rate", rate.get().getCondition(), null, null);
         }
         CarrierClient.Quote q = carrierClient.quote(command.address(), command.dimensions(), currency);
-        return new ShippingQuoteResult(q.fee(), q.currency(), q.zoneCode(), "carrier", q.detail());
+        return new ShippingQuoteResult(q.fee(), q.currency(), q.zoneCode(), "carrier", q.detail(),
+                q.expectedDeliveryDate(), q.orderDate());
     }
 
     @Transactional(readOnly = true)

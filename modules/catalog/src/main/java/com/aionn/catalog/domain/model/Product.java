@@ -170,6 +170,13 @@ public class Product extends AggregateRoot {
         record(new ProductEvents.ProductPublished(productId, adminId, updatedAt, updatedAt));
     }
 
+    public void submitForReview(String ownerId) {
+        ensureTransitionAllowed(ProductStatus.PENDING_REVIEW);
+        this.status = ProductStatus.PENDING_REVIEW;
+        touch();
+        record(new ProductEvents.ProductSubmittedForReview(productId, ownerId, updatedAt));
+    }
+
     public void reject(String adminId, String reasonCode, String feedback) {
         ensureTransitionAllowed(ProductStatus.REJECTED);
         this.status = ProductStatus.REJECTED;

@@ -8,6 +8,7 @@ import com.aionn.ordering.application.dto.order.command.ConfirmShippedCommand;
 import com.aionn.ordering.application.dto.order.command.PlaceOrderCommand;
 import com.aionn.ordering.application.dto.order.command.PlaceOrderHeadlessCommand;
 import com.aionn.ordering.application.dto.order.command.RejectOrderCommand;
+import com.aionn.ordering.application.dto.order.result.MerchantOrderAnalyticsResult;
 import com.aionn.ordering.application.dto.order.result.OrderResult;
 import com.aionn.ordering.application.mapper.OrderingResultMapper;
 import com.aionn.ordering.application.port.out.CartPersistencePort;
@@ -35,9 +36,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -65,9 +71,28 @@ public class OrderService {
             throw new OrderingException(OrderingErrorCode.CART_EMPTY);
         }
 
-        List<PlaceOrderHeadlessCommand.Line> lines = cart.snapshot().stream()
-                .map(e -> new PlaceOrderHeadlessCommand.Line(e.getKey(), e.getValue()))
-                .toList();
+        List<Map.Entry<String, Integer>> cartLines = cart.snapshot();
+        List<PlaceOrderHeadlessCommand.Line> lines;
+        boolean hasExplicitSelection = command.selectedSkuIds() != null && !command.selectedSkuIds().isEmpty();
+        if (hasExplicitSelection) {
+            Set<String> selectedSkuIds = new HashSet<>(command.selectedSkuIds());
+            lines = cartLines.stream()
+                    .filter(e -> selectedSkuIds.contains(e.getKey()))
+                    .map(e -> new PlaceOrderHeadlessCommand.Line(e.getKey(), e.getValue()))
+                    .toList();
+            if (lines.size() != selectedSkuIds.size()) {
+                throw new OrderingException(OrderingErrorCode.CART_ITEM_NOT_FOUND,
+                        "One or more selected cart items are no longer available in the cart");
+            }
+        } else {
+            lines = cartLines.stream()
+                    .map(e -> new PlaceOrderHeadlessCommand.Line(e.getKey(), e.getValue()))
+                    .toList();
+        }
+        if (lines.isEmpty()) {
+            throw new OrderingException(OrderingErrorCode.CART_EMPTY);
+        }
+
         OrderResult result = placeFromLines(
                 command.userId(),
                 lines,
@@ -77,11 +102,11 @@ public class OrderService {
                 command.shippingFee(),
                 command.shippingAddressSnapshot());
 
-        // Clear the user's cart only after the cart-driven placement succeeds.
-        Cart freshCart = cartService.loadOwned(command.userId());
-        freshCart.clear("order-placed");
-        cartRepository.save(freshCart);
-        eventPublisher.publish(freshCart.pullEvents());
+        // Online payments stay pending until the gateway confirms them; keep
+        // cart lines in that case so a failed payment can be retried.
+        if (OrderStatus.APPROVED.name().equals(result.status())) {
+            removePurchasedItemsFromCart(command.userId(), lines);
+        }
 
         return result;
     }
@@ -174,9 +199,11 @@ public class OrderService {
             lineSubtotal = lineSubtotal.add(unit.multiply(r.qty()));
         }
 
+        String orderId = IdGenerator.ulid();
+
         if (voucherCode != null) {
             VoucherGateway.Discount discount = voucherGateway.apply(
-                    userId, voucherCode, lineSubtotal.amount(), currency);
+                    userId, merchantId, voucherCode, orderId, lineSubtotal.amount(), currency);
             if (!discount.valid()) {
                 releaseReservations(reservations, "voucher-invalid");
                 throw new OrderingException(OrderingErrorCode.ORDER_INVALID_STATE,
@@ -189,35 +216,48 @@ public class OrderService {
         Money shippingFee = shippingFeeAmount == null
                 ? Money.zero(currency)
                 : Money.of(shippingFeeAmount, currency);
-        Money totalAmount = lineSubtotal.add(shippingFee);
-
-        PaymentGateway.PaymentAuthorization auth;
-        try {
-            auth = paymentGateway.authorize(IdGenerator.ulid(), userId,
-                    paymentMethodId, totalAmount.amount(), currency);
-        } catch (Exception ex) {
-            releaseReservations(reservations, "payment-error");
-            throw new OrderingException(OrderingErrorCode.ORDER_PAYMENT_FAILED,
-                    "Payment authorization error: " + ex.getMessage());
-        }
-        if (!auth.approved()) {
-            releaseReservations(reservations, "payment-declined");
-            throw new OrderingException(OrderingErrorCode.ORDER_PAYMENT_FAILED,
-                    "Payment declined: " + auth.declineReason());
-        }
-
-        String orderId = IdGenerator.ulid();
         String proposalId = "prop-" + System.nanoTime();
         Order order = Order.place(orderId, userId, merchantId, proposalId,
-                paymentMethodId, currency, items, shippingAddress, shippingFee);
-        order.approve(auth.paymentId());
-
+                paymentMethodId, currency, items, shippingAddress, shippingFee, lineSubtotal);
         Order saved = orderRepository.save(order);
         eventPublisher.publish(order.pullEvents());
         integrationEventPublisher.publishOrderPlaced(saved);
-        integrationEventPublisher.publishOrderApproved(saved.getOrderId(), auth.paymentId());
-
+        if (paymentMethodId == null || "COD".equalsIgnoreCase(paymentMethodId)) {
+            return approvePayment(saved.getOrderId(), null);
+        }
         return mapper.toResult(saved);
+    }
+
+    public OrderResult approvePayment(String orderId, String paymentId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderingException(OrderingErrorCode.ORDER_NOT_FOUND));
+        if (order.getStatus() == OrderStatus.APPROVED) {
+            return mapper.toResult(order);
+        }
+        order.approve(paymentId);
+        Order saved = orderRepository.save(order);
+        eventPublisher.publish(saved.pullEvents());
+        integrationEventPublisher.publishOrderApproved(saved.getOrderId(), paymentId);
+
+        List<PlaceOrderHeadlessCommand.Line> lines = saved.getItems().stream()
+                .map(item -> new PlaceOrderHeadlessCommand.Line(item.skuId(), item.qty()))
+                .toList();
+        removePurchasedItemsFromCart(saved.getUserId(), lines);
+        return mapper.toResult(saved);
+    }
+
+    private void removePurchasedItemsFromCart(String userId, List<PlaceOrderHeadlessCommand.Line> lines) {
+        Cart freshCart = cartService.loadOwned(userId);
+        for (PlaceOrderHeadlessCommand.Line line : lines) {
+            freshCart.removeItemIfPresent(line.skuId());
+        }
+        if (freshCart.isEmpty()) {
+            freshCart.clear("order-placed");
+        } else if (freshCart.getVoucherCode() != null) {
+            freshCart.removeVoucher();
+        }
+        cartRepository.save(freshCart);
+        eventPublisher.publish(freshCart.pullEvents());
     }
 
     public OrderResult confirmPreparation(ConfirmPreparationCommand command) {
@@ -252,9 +292,8 @@ public class OrderService {
             throw new OrderingException(OrderingErrorCode.ORDER_ALREADY_PICKED_UP);
         }
         order.cancel("USER_CANCELLED", command.reason());
-        for (OrderItem item : order.items()) {
-            stockReservationGateway.release(item.reservationId(), "order-cancelled");
-        }
+        releaseReservationsBestEffort(order, "order-cancelled");
+        releaseVoucherBestEffort(order, "order-cancelled");
         if (order.getPaymentId() != null) {
             paymentGateway.refund(order.getPaymentId(), order.getTotalAmount().amount(),
                     order.getCurrency(), "user cancellation");
@@ -266,13 +305,34 @@ public class OrderService {
         return mapper.toResult(saved);
     }
 
+    /**
+     * Cancel a PENDING order whose online payment failed. Idempotent: if the
+     * order is already cancelled or approved (race with capture event), no-op.
+     */
+    public OrderResult cancelOnPaymentFailure(String orderId, String errorCode, String reason) {
+        Order order = required(orderId);
+        if (order.getStatus() != OrderStatus.PENDING) {
+            log.info("Skipping payment-failure cancel for order {}: status is {}",
+                    orderId, order.getStatus());
+            return mapper.toResult(order);
+        }
+        order.autoCancel("PAYMENT_FAILED");
+        releaseReservationsBestEffort(order, "payment-failed");
+        releaseVoucherBestEffort(order, "payment-failed");
+        Order saved = orderRepository.save(order);
+        eventPublisher.publish(order.pullEvents());
+        integrationEventPublisher.publishOrderCancelled(saved.getOrderId(), "PAYMENT_FAILED",
+                reason == null ? errorCode : reason,
+                OrderingIntegrationEventPublisherPort.CancellationKind.AUTO_CANCELLED);
+        return mapper.toResult(saved);
+    }
+
     public OrderResult rejectByMerchant(RejectOrderCommand command) {
         String merchantId = requireMerchantIdForOwner(command.ownerId());
         Order order = ownedByMerchant(command.orderId(), merchantId);
         order.rejectByMerchant(merchantId, command.reason());
-        for (OrderItem item : order.items()) {
-            stockReservationGateway.release(item.reservationId(), "merchant-rejected");
-        }
+        releaseReservationsBestEffort(order, "merchant-rejected");
+        releaseVoucherBestEffort(order, "merchant-rejected");
         if (order.getPaymentId() != null) {
             paymentGateway.refund(order.getPaymentId(), order.getTotalAmount().amount(),
                     order.getCurrency(), "merchant rejected");
@@ -282,6 +342,29 @@ public class OrderService {
         integrationEventPublisher.publishOrderCancelled(saved.getOrderId(), "MERCHANT_REJECTED",
                 command.reason(), OrderingIntegrationEventPublisherPort.CancellationKind.MERCHANT_REJECTED);
         return mapper.toResult(saved);
+    }
+
+    private void releaseVoucherBestEffort(Order order, String reason) {
+        try {
+            voucherGateway.release(order.getUserId(), order.getOrderId(), reason);
+        } catch (RuntimeException ex) {
+            log.warn("Voucher release for order {} ({}) failed: {}",
+                    order.getOrderId(), reason, ex.getMessage());
+        }
+    }
+
+    private void releaseReservationsBestEffort(Order order, String reason) {
+        for (OrderItem item : order.items()) {
+            if (item.reservationId() == null) {
+                continue;
+            }
+            try {
+                stockReservationGateway.release(item.reservationId(), reason);
+            } catch (RuntimeException ex) {
+                log.warn("Release of reservation {} ({}) failed: {}",
+                        item.reservationId(), reason, ex.getMessage());
+            }
+        }
     }
 
     public OrderResult changeShippingInfo(ChangeShippingInfoCommand command) {
@@ -305,6 +388,9 @@ public class OrderService {
         Order order = required(command.orderId());
         order.markShipped(command.shipmentId());
         for (OrderItem item : order.items()) {
+            if (item.reservationId() == null) {
+                continue;
+            }
             stockReservationGateway.commit(item.reservationId());
         }
         Order saved = orderRepository.save(order);
@@ -338,6 +424,123 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderResult> listByUser(String userId, int limit) {
         return orderRepository.findByUser(userId, limit).stream().map(mapper::toResult).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResult> listByUser(String userId, String statusFilter, int limit) {
+        List<String> statuses = parseStatusFilter(statusFilter);
+        if (statuses.isEmpty()) {
+            return listByUser(userId, limit);
+        }
+        return orderRepository.findByUserAndStatuses(userId, statuses, limit).stream()
+                .map(mapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResult> listByMerchantOwner(String ownerId, String statusFilter, int limit) {
+        String merchantId = requireMerchantIdForOwner(ownerId);
+        List<String> statuses = parseStatusFilter(statusFilter);
+        if (statuses.isEmpty()) {
+            return orderRepository.findByMerchant(merchantId, limit).stream()
+                    .map(mapper::toResult)
+                    .toList();
+        }
+        return orderRepository.findByMerchantAndStatuses(merchantId, statuses, limit).stream()
+                .map(mapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public MerchantOrderAnalyticsResult getMerchantAnalytics(String ownerId, LocalDate from, LocalDate to) {
+        String merchantId = requireMerchantIdForOwner(ownerId);
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDate safeTo = to == null ? LocalDate.now(zone) : to;
+        LocalDate safeFrom = from == null ? safeTo.minusDays(6) : from;
+        if (safeFrom.isAfter(safeTo)) {
+            throw new OrderingException(OrderingErrorCode.INVALID_ARGUMENT);
+        }
+
+        var start = safeFrom.atStartOfDay(zone).toInstant();
+        var endExclusive = safeTo.plusDays(1).atStartOfDay(zone).toInstant();
+        List<OrderPersistencePort.OrderAnalyticsRow> rows =
+                orderRepository.findMerchantAnalyticsRows(merchantId, start, endExclusive);
+
+        Map<LocalDate, DailyRevenueAccumulator> revenueByDate = new LinkedHashMap<>();
+        for (LocalDate day = safeFrom; !day.isAfter(safeTo); day = day.plusDays(1)) {
+            revenueByDate.put(day, new DailyRevenueAccumulator());
+        }
+
+        Map<String, Long> statusCounts = new LinkedHashMap<>();
+        for (OrderStatus status : OrderStatus.values()) {
+            statusCounts.put(status.name(), 0L);
+        }
+
+        String currency = "VND";
+        long completedOrders = 0;
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+
+        for (OrderPersistencePort.OrderAnalyticsRow row : rows) {
+            if (row.currency() != null && !row.currency().isBlank()) {
+                currency = row.currency();
+            }
+            String status = row.status();
+            statusCounts.merge(status, 1L, Long::sum);
+            if (!OrderStatus.COMPLETED.name().equals(status)) {
+                continue;
+            }
+
+            LocalDate orderDate = row.createdAt().atZone(zone).toLocalDate();
+            DailyRevenueAccumulator accumulator = revenueByDate.get(orderDate);
+            if (accumulator == null) {
+                continue;
+            }
+            BigDecimal amount = row.totalAmount() == null ? BigDecimal.ZERO : row.totalAmount();
+            accumulator.add(amount);
+            totalRevenue = totalRevenue.add(amount);
+            completedOrders++;
+        }
+
+        List<MerchantOrderAnalyticsResult.RevenuePoint> revenueTrend = revenueByDate.entrySet().stream()
+                .map(entry -> new MerchantOrderAnalyticsResult.RevenuePoint(
+                        entry.getKey(),
+                        entry.getValue().revenue(),
+                        entry.getValue().orders()))
+                .toList();
+        List<MerchantOrderAnalyticsResult.StatusCount> statusBreakdown = statusCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .map(entry -> new MerchantOrderAnalyticsResult.StatusCount(entry.getKey(), entry.getValue()))
+                .toList();
+
+        return new MerchantOrderAnalyticsResult(
+                safeFrom,
+                safeTo,
+                currency,
+                totalRevenue,
+                rows.size(),
+                completedOrders,
+                revenueTrend,
+                statusBreakdown);
+    }
+
+    private List<String> parseStatusFilter(String statusFilter) {
+        if (statusFilter == null || statusFilter.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(statusFilter.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(this::parseOrderStatus)
+                .distinct()
+                .toList();
+    }
+
+    private String parseOrderStatus(String status) {
+        try {
+            return OrderStatus.valueOf(status).name();
+        } catch (IllegalArgumentException ex) {
+            throw new OrderingException(OrderingErrorCode.INVALID_ARGUMENT);
+        }
     }
 
     Order required(String orderId) {
@@ -380,5 +583,23 @@ public class OrderService {
 
     public OrderStatus statusOf(String orderId) {
         return required(orderId).getStatus();
+    }
+
+    private static final class DailyRevenueAccumulator {
+        private BigDecimal revenue = BigDecimal.ZERO;
+        private long orders;
+
+        void add(BigDecimal amount) {
+            revenue = revenue.add(amount);
+            orders++;
+        }
+
+        BigDecimal revenue() {
+            return revenue;
+        }
+
+        long orders() {
+            return orders;
+        }
     }
 }

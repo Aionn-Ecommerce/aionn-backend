@@ -12,6 +12,8 @@ public class VoucherDomainMapper {
         return new Voucher(
                 e.getVoucherCode(),
                 e.getCampaignId(),
+                e.getScope(),
+                e.getMerchantId(),
                 Money.of(e.getDiscountAmount(), e.getCurrency()),
                 e.getUsageLimit(),
                 e.getUsedCount(),
@@ -27,6 +29,8 @@ public class VoucherDomainMapper {
                 : VoucherEntity.builder()
                         .voucherCode(v.getVoucherCode())
                         .campaignId(v.getCampaignId())
+                        .scope(v.getScope())
+                        .merchantId(v.getMerchantId())
                         .discountAmount(v.getDiscountAmount().amount())
                         .currency(v.getDiscountAmount().currency())
                         .usageLimit(v.getUsageLimit())

@@ -6,6 +6,7 @@ import com.aionn.inventory.adapter.rest.dto.inventory.EmergencyLockRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.InitializeStockRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.ManualAdjustmentRequest;
 import com.aionn.inventory.adapter.rest.dto.inventory.TrackBatchAndExpiryRequest;
+import com.aionn.inventory.adapter.rest.support.session.CurrentAdminId;
 import com.aionn.inventory.application.dto.inventory.command.AuditInventoryCommand;
 import com.aionn.inventory.application.dto.inventory.command.ConfigureSafetyStockCommand;
 import com.aionn.inventory.application.dto.inventory.command.EmergencyLockCommand;
@@ -95,12 +96,12 @@ public class InventoryItemController {
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Emergency lock")
         public ResponseEntity<ApiResponse<InventoryItemResult>> emergencyLock(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @PathVariable String skuId,
                         @PathVariable String warehouseId,
                         @Valid @RequestBody EmergencyLockRequest request) {
                 InventoryItemResult result = service.emergencyLock(new EmergencyLockCommand(
-                                authentication.getName(), skuId, warehouseId, request.reason()));
+                                adminId, skuId, warehouseId, request.reason()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Inventory item locked"));
         }
 
@@ -108,11 +109,11 @@ public class InventoryItemController {
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Emergency unlock", description = "Lifts an emergency lock")
         public ResponseEntity<ApiResponse<InventoryItemResult>> emergencyUnlock(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @PathVariable String skuId,
                         @PathVariable String warehouseId) {
                 InventoryItemResult result = service.emergencyUnlock(new EmergencyUnlockCommand(
-                                authentication.getName(), skuId, warehouseId));
+                                adminId, skuId, warehouseId));
                 return ResponseEntity.ok(ApiResponse.success(result, "Inventory item unlocked"));
         }
 
@@ -129,7 +130,16 @@ public class InventoryItemController {
                 return ResponseEntity.ok(ApiResponse.success(result, "Audit recorded"));
         }
 
+        @GetMapping
+        @Operation(summary = "List inventory items by SKU", description = "Public read for product detail stock summary")
+        public ResponseEntity<ApiResponse<java.util.List<InventoryItemResult>>> listBySku(
+                        @org.springframework.web.bind.annotation.RequestParam("skuId") String skuId) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(service.listBySku(skuId), "Inventory items fetched"));
+        }
+
         @GetMapping("/{skuId}/{warehouseId}")
+        @PreAuthorize("hasAnyAuthority('ROLE_MERCHANT','ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Get inventory item")
         public ResponseEntity<ApiResponse<InventoryItemResult>> get(
                         @PathVariable String skuId,

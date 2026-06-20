@@ -15,6 +15,8 @@ public enum PromotionErrorCode {
     VOUCHER_EXPIRED("PRM_102", "Voucher has expired"),
     VOUCHER_NO_USAGE_LEFT("PRM_103", "Voucher usage limit reached"),
     VOUCHER_DUPLICATE_CODE("PRM_104", "Voucher code already exists"),
+    VOUCHER_WRONG_SHOP("PRM_105", "Shop voucher is not valid for this merchant"),
+    MERCHANT_NOT_FOUND("PRM_106", "Merchant profile not found for the current user"),
 
     USER_VOUCHER_ALREADY_CLAIMED("PRM_201", "User has already claimed this voucher"),
     USER_VOUCHER_LIMIT_REACHED("PRM_202", "User claim limit reached"),
@@ -25,9 +27,15 @@ public enum PromotionErrorCode {
     CONDITION_NOT_MET("PRM_301", "Promotion conditions are not met"),
     CONDITION_INVALID("PRM_302", "Invalid promotion condition"),
 
+    FLASH_SALE_NOT_FOUND("PRM_401", "Flash-sale registration not found"),
+    FLASH_SALE_DUPLICATE("PRM_402", "SKU already registered in this campaign"),
+    FLASH_SALE_INVALID_CAMPAIGN("PRM_403", "Campaign is not a FLASH_SALE type"),
+    FLASH_SALE_FORBIDDEN("PRM_404", "Caller is not allowed to act on this registration"),
+
+    BANNER_NOT_FOUND("PRM_501", "Promotion banner not found"),
+
     INVALID_ARGUMENT("PRM_900", "Invalid argument");
 
     private final String code;
     private final String defaultMessage;
 }
-

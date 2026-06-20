@@ -53,13 +53,26 @@ public interface ProductRepository extends JpaRepository<ProductEntity, String> 
   List<ProductEntity> findPublished(int limit, int offset);
 
   @Query(value = """
+      SELECT COUNT(*) FROM products p
+        WHERE p.status = 'PUBLISHED'
+      """, nativeQuery = true)
+  long countPublished();
+
+  @Query(value = """
       SELECT p.* FROM products p
         WHERE p.status = 'PUBLISHED'
           AND (:q IS NULL OR p.name ILIKE CONCAT('%', :q, '%'))
         ORDER BY p.updated_at DESC
-        LIMIT :limit
+        LIMIT :limit OFFSET :offset
       """, nativeQuery = true)
-  List<ProductEntity> searchPublished(String q, int limit);
+  List<ProductEntity> searchPublished(String q, int limit, int offset);
+
+  @Query(value = """
+      SELECT COUNT(*) FROM products p
+        WHERE p.status = 'PUBLISHED'
+          AND (:q IS NULL OR p.name ILIKE CONCAT('%', :q, '%'))
+      """, nativeQuery = true)
+  long countSearchPublished(String q);
 
   @Query(value = """
       SELECT DISTINCT p.* FROM products p

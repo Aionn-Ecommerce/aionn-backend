@@ -8,7 +8,9 @@ import com.aionn.promotion.infrastructure.persistence.repository.VoucherReposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
 
 @Repository
 @RequiredArgsConstructor
@@ -31,6 +33,20 @@ public class VoucherPersistenceAdapter implements VoucherPersistencePort {
     @Override
     public Optional<Voucher> lockByCode(String voucherCode) {
         return jpa.findForUpdate(voucherCode).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Voucher> findByCampaignId(String campaignId, int limit) {
+        return jpa.findByCampaignId(campaignId, PageRequest.of(0, Math.max(1, limit))).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Voucher> findByMerchantId(String merchantId, int limit) {
+        return jpa.findByMerchantIdOrderByCreatedAtDesc(merchantId, PageRequest.of(0, Math.max(1, limit))).stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }
 

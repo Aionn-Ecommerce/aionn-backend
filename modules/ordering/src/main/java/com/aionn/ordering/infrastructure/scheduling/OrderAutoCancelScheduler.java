@@ -34,6 +34,8 @@ public class OrderAutoCancelScheduler {
                 try {
                     worker.cancelOneExpired(orderId);
                     cancelled++;
+                } catch (org.springframework.dao.OptimisticLockingFailureException ex) {
+                    log.debug("Skip auto-cancel for {}: concurrent state change", orderId);
                 } catch (RuntimeException ex) {
                     log.warn("Skip auto-cancel for {}: {}", orderId, ex.getMessage());
                 }

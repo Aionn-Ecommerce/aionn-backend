@@ -37,6 +37,11 @@ public class UserVoucherPersistenceAdapter implements UserVoucherPersistencePort
     }
 
     @Override
+    public Optional<UserVoucher> findByReservedOrderId(String orderId) {
+        return jpa.findByReservedOrderId(orderId).map(mapper::toDomain);
+    }
+
+    @Override
     public long countByUserAndCampaign(String userId, String campaignId) {
         return jpa.countByUserAndCampaign(userId, campaignId);
     }

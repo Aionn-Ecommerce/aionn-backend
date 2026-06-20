@@ -5,6 +5,7 @@ import com.aionn.payment.domain.exception.PaymentErrorCode;
 import com.aionn.payment.domain.exception.PaymentException;
 import com.aionn.payment.domain.valueobject.PaymentGatewayKind;
 import com.aionn.payment.infrastructure.provider.config.StripeProperties;
+import com.aionn.sharedkernel.integration.port.catalog.MerchantQueryPort;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -34,6 +35,7 @@ public class StripePaymentProviderClient implements PaymentProviderClient {
             "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF");
 
     private final StripeProperties properties;
+    private final MerchantQueryPort merchantQueryPort;
 
     @PostConstruct
     void init() {
@@ -62,6 +64,22 @@ public class StripePaymentProviderClient implements PaymentProviderClient {
                     .putMetadata("userId", request.userId())
                     .putMetadata("paymentId", request.paymentId());
 
+            if (request.merchantId() != null) {
+                merchantQueryPort.findStripeConnectInfo(request.merchantId())
+                        .filter(info -> info.chargesEnabled())
+                        .ifPresent(info -> {
+                            BigDecimal rate = merchantQueryPort.findCommissionRate(request.merchantId())
+                                    .orElse(new BigDecimal("0.0500"));
+                            long fee = toMinorUnits(
+                                    request.amount().multiply(rate).setScale(2, RoundingMode.HALF_UP),
+                                    request.currency());
+                            params.setApplicationFeeAmount(fee);
+                            params.setTransferData(
+                                    PaymentIntentCreateParams.TransferData.builder()
+                                            .setDestination(info.stripeAccountId())
+                                            .build());
+                        });
+            }
             if (request.paymentMethodToken() != null && !request.paymentMethodToken().isBlank()) {
                 params.setPaymentMethod(request.paymentMethodToken());
             }

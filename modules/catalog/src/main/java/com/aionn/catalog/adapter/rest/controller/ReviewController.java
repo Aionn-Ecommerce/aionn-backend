@@ -3,6 +3,8 @@ package com.aionn.catalog.adapter.rest.controller;
 import com.aionn.catalog.adapter.rest.dto.review.MerchantReplyRequest;
 import com.aionn.catalog.adapter.rest.dto.review.SubmitReviewRequest;
 import com.aionn.catalog.adapter.rest.dto.review.UpdateReviewRequest;
+import com.aionn.catalog.adapter.rest.support.session.CurrentAdminId;
+import com.aionn.catalog.adapter.rest.support.session.CurrentOwnerId;
 import com.aionn.catalog.application.dto.common.PageResult;
 import com.aionn.catalog.application.dto.review.command.HideReviewCommand;
 import com.aionn.catalog.application.dto.review.command.MerchantReplyCommand;
@@ -18,7 +20,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,12 +42,12 @@ public class ReviewController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit product review", description = "Submit a rating (1-5) and review for a purchased product")
     public ResponseEntity<ApiResponse<ReviewResult>> submitReview(
-            Authentication authentication,
+            @CurrentOwnerId String userId,
             @PathVariable String productId,
             @Valid @RequestBody SubmitReviewRequest request) {
         ReviewResult result = reviewService.submitReview(new SubmitReviewCommand(
                 productId,
-                authentication.getName(),
+                userId,
                 request.rating(),
                 request.title(),
                 request.content(),
@@ -59,12 +60,12 @@ public class ReviewController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update review", description = "Update rating, title, content or images of a review owned by current user")
     public ResponseEntity<ApiResponse<ReviewResult>> updateReview(
-            Authentication authentication,
+            @CurrentOwnerId String userId,
             @PathVariable String reviewId,
             @Valid @RequestBody UpdateReviewRequest request) {
         ReviewResult result = reviewService.updateReview(new UpdateReviewCommand(
                 reviewId,
-                authentication.getName(),
+                userId,
                 request.rating(),
                 request.title(),
                 request.content(),
@@ -77,9 +78,9 @@ public class ReviewController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete review", description = "Delete a review owned by current user")
     public ResponseEntity<ApiResponse<Void>> deleteReview(
-            Authentication authentication,
+            @CurrentOwnerId String userId,
             @PathVariable String reviewId) {
-        reviewService.deleteReview(authentication.getName(), reviewId);
+        reviewService.deleteReview(userId, reviewId);
         return ResponseEntity.ok(ApiResponse.success("Review deleted successfully"));
     }
 
@@ -105,10 +106,10 @@ public class ReviewController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user reviews", description = "Retrieve reviews submitted by the authenticated user")
     public ResponseEntity<ApiResponse<PageResult<ReviewResult>>> getMyReviews(
-            Authentication authentication,
+            @CurrentOwnerId String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        PageResult<ReviewResult> result = reviewService.getMyReviews(authentication.getName(), page, size);
+        PageResult<ReviewResult> result = reviewService.getMyReviews(userId, page, size);
         return ResponseEntity.ok(ApiResponse.success(result, "My reviews fetched successfully"));
     }
 
@@ -116,26 +117,37 @@ public class ReviewController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Merchant reply to review", description = "Submit merchant response to a product review")
     public ResponseEntity<ApiResponse<ReviewResult>> merchantReply(
-            Authentication authentication,
+            @CurrentOwnerId String ownerId,
             @PathVariable String reviewId,
             @Valid @RequestBody MerchantReplyRequest request) {
         ReviewResult result = reviewService.merchantReply(new MerchantReplyCommand(
                 reviewId,
-                authentication.getName(),
+                ownerId,
                 request.content()
         ));
         return ResponseEntity.ok(ApiResponse.success(result, "Reply submitted successfully"));
     }
 
+    @GetMapping("/products/{productId}/reviews/eligibility")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Check review eligibility", description = "Check whether the authenticated user can submit a review for this product")
+    public ResponseEntity<ApiResponse<ReviewService.ReviewEligibility>> checkEligibility(
+            @CurrentOwnerId String userId,
+            @PathVariable String productId) {
+        ReviewService.ReviewEligibility result = reviewService.checkEligibility(
+                userId, productId);
+        return ResponseEntity.ok(ApiResponse.success(result, "Eligibility checked"));
+    }
+
     @PostMapping("/reviews/{reviewId}/hide")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
     @Operation(summary = "Hide review (Admin)", description = "Admin can moderate and hide a review")
     public ResponseEntity<ApiResponse<ReviewResult>> hideReview(
-            Authentication authentication,
+            @CurrentAdminId String adminId,
             @PathVariable String reviewId) {
         ReviewResult result = reviewService.hideReview(new HideReviewCommand(
                 reviewId,
-                authentication.getName()
+                adminId
         ));
         return ResponseEntity.ok(ApiResponse.success(result, "Review hidden successfully"));
     }

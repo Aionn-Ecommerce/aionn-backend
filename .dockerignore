@@ -1,0 +1,16 @@
+.git
+.gradle
+.idea
+.vscode
+.kiro
+.github
+**/build
+**/bin
+**/.gradle
+.env
+.env.*
+!.env.example
+*.log
+docker-compose*.yml
+**/*.md
+LICENSE

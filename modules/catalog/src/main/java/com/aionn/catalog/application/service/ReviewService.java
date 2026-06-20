@@ -155,6 +155,24 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
+    public ReviewEligibility checkEligibility(String userId, String productId) {
+        if (reviewRepository.existsByUserIdAndProductId(userId, productId)) {
+            return new ReviewEligibility(false, "ALREADY_REVIEWED");
+        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CatalogException(CatalogErrorCode.PRODUCT_NOT_FOUND));
+        List<String> skuIds = product.variants().stream().map(ProductVariant::skuId).toList();
+        String orderId = orderQueryPort.findCompletedOrderIdForSkus(userId, skuIds);
+        if (orderId == null) {
+            return new ReviewEligibility(false, "NOT_PURCHASED");
+        }
+        return new ReviewEligibility(true, null);
+    }
+
+    public record ReviewEligibility(boolean canReview, String reason) {
+    }
+
+    @Transactional(readOnly = true)
     public RatingSummary getProductRatingSummary(String productId) {
         // verify product exists
         productRepository.findById(productId)

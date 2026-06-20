@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -42,6 +43,7 @@ public class PaymentService {
     private final PaymentResultMapper mapper;
     private final EventPublisher eventPublisher;
     private final PaymentIntegrationEventPublisherPort integrationEventPublisher;
+    private final com.aionn.sharedkernel.integration.port.ordering.OrderQueryPort orderQueryPort;
 
     public PaymentResult initiate(InitiatePaymentCommand command) {
         var existing = paymentRepository.findByIdempotencyKey(command.idempotencyKey());
@@ -66,9 +68,12 @@ public class PaymentService {
         eventPublisher.publish(payment.pullEvents());
 
         PaymentProviderClient client = providerRouter.route(command.gateway());
+        String merchantId = orderQueryPort.findOrderSummary(command.orderId())
+                .map(s -> s.merchantId()).orElse(null);
         PaymentProviderClient.Authorization auth = client.authorize(
                 new PaymentProviderClient.AuthorizationRequest(
                         saved.getPaymentId(), command.orderId(), command.userId(),
+                        merchantId,
                         method == null ? null : method.getGatewayToken(),
                         command.amount(), command.currency(), command.idempotencyKey(), null));
 
@@ -98,18 +103,28 @@ public class PaymentService {
         ledgerRepository.save(entry);
         eventPublisher.publish(entry.pullEvents());
 
-        String invoiceUrl = invoiceStorage.storeInvoiceUrl(saved.getPaymentId(), saved.getOrderId());
-        saved.attachInvoice(invoiceUrl);
-        Payment withInvoice = paymentRepository.save(saved);
-        eventPublisher.publish(saved.pullEvents());
+        Payment current = saved;
+        try {
+            String invoiceUrl = invoiceStorage.storeInvoiceUrl(saved.getPaymentId(), saved.getOrderId());
+            saved.attachInvoice(invoiceUrl);
+            current = paymentRepository.save(saved);
+            eventPublisher.publish(saved.pullEvents());
+        } catch (RuntimeException ex) {
+            log.warn("Invoice attachment failed for payment {}: {}. Order capture will still be published.",
+                    saved.getPaymentId(), ex.getMessage());
+        }
 
-        integrationEventPublisher.publishPaymentCaptured(withInvoice.getPaymentId(), withInvoice.getOrderId(),
-                command.transactionNo(), withInvoice.getAmount().amount(), withInvoice.getAmount().currency());
-        return mapper.toResult(withInvoice);
+        integrationEventPublisher.publishPaymentCaptured(current.getPaymentId(), current.getOrderId(),
+                command.transactionNo(), current.getAmount().amount(), current.getAmount().currency());
+        return mapper.toResult(current);
     }
 
     public PaymentResult fail(FailPaymentCommand command) {
         Payment payment = required(command.paymentId());
+        if (payment.getStatus().name().equals("FAILED") || payment.getStatus().name().equals("PAID")
+                || payment.getStatus().name().equals("REFUNDED")) {
+            return mapper.toResult(payment);
+        }
         payment.markFailed(command.errorCode(), command.reason());
         Payment saved = paymentRepository.save(payment);
         eventPublisher.publish(payment.pullEvents());
@@ -152,6 +167,22 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentResult get(String paymentId) {
         return mapper.toResult(required(paymentId));
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResult getForUser(String paymentId, String userId) {
+        Payment payment = required(paymentId);
+        if (!payment.getUserId().equals(userId)) {
+            throw new PaymentException(PaymentErrorCode.PAYMENT_NOT_FOUND);
+        }
+        return mapper.toResult(payment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResult> listByOrderId(String orderId) {
+        return paymentRepository.findByOrderId(orderId).stream()
+                .map(mapper::toResult)
+                .toList();
     }
 
     Payment required(String paymentId) {

@@ -77,11 +77,7 @@ public class GhnAddressResolver {
     }
 
     private Optional<JsonNode> matchProvince(AddressLookupPort.ResolvedAddress vn) {
-        List<JsonNode> all = provinces();
-        String normalized = normalize(vn.provinceName());
-        return all.stream()
-                .filter(p -> matchesByName(p, "ProvinceName", normalized))
-                .findFirst();
+        return matchByPrimaryThenAlias(provinces(), "ProvinceName", normalize(vn.provinceName()));
     }
 
     private Optional<JsonNode> matchDistrict(int provinceId, AddressLookupPort.ResolvedAddress vn) {
@@ -92,10 +88,7 @@ public class GhnAddressResolver {
         if (byCode.isPresent()) {
             return byCode;
         }
-        String normalized = normalize(vn.districtName());
-        return all.stream()
-                .filter(d -> matchesByName(d, "DistrictName", normalized))
-                .findFirst();
+        return matchByPrimaryThenAlias(all, "DistrictName", normalize(vn.districtName()));
     }
 
     private Optional<JsonNode> matchWard(int districtId, AddressLookupPort.ResolvedAddress vn) {
@@ -106,9 +99,21 @@ public class GhnAddressResolver {
         if (byCode.isPresent()) {
             return byCode;
         }
-        String normalized = normalize(vn.wardName());
-        return all.stream()
-                .filter(w -> matchesByName(w, "WardName", normalized))
+        return matchByPrimaryThenAlias(all, "WardName", normalize(vn.wardName()));
+    }
+
+    private static Optional<JsonNode> matchByPrimaryThenAlias(List<JsonNode> nodes, String nameField, String normalizedTarget) {
+        if (normalizedTarget.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<JsonNode> byPrimary = nodes.stream()
+                .filter(n -> matchesPrimary(n, nameField, normalizedTarget))
+                .findFirst();
+        if (byPrimary.isPresent()) {
+            return byPrimary;
+        }
+        return nodes.stream()
+                .filter(n -> matchesAlias(n, normalizedTarget))
                 .findFirst();
     }
 
@@ -125,20 +130,19 @@ public class GhnAddressResolver {
         return code != null && !code.isNull() && trimmed.equals(code.asText());
     }
 
-    private static boolean matchesByName(JsonNode node, String nameField, String normalizedTarget) {
-        if (normalizedTarget.isEmpty()) {
+    private static boolean matchesPrimary(JsonNode node, String nameField, String normalizedTarget) {
+        JsonNode primary = node.get(nameField);
+        return primary != null && !primary.isNull() && normalize(primary.asText()).equals(normalizedTarget);
+    }
+
+    private static boolean matchesAlias(JsonNode node, String normalizedTarget) {
+        JsonNode aliases = node.get("NameExtension");
+        if (aliases == null || !aliases.isArray()) {
             return false;
         }
-        JsonNode primary = node.get(nameField);
-        if (primary != null && !primary.isNull() && normalize(primary.asText()).equals(normalizedTarget)) {
-            return true;
-        }
-        JsonNode aliases = node.get("NameExtension");
-        if (aliases != null && aliases.isArray()) {
-            for (JsonNode alias : aliases) {
-                if (normalize(alias.asText()).equals(normalizedTarget)) {
-                    return true;
-                }
+        for (JsonNode alias : aliases) {
+            if (normalize(alias.asText()).equals(normalizedTarget)) {
+                return true;
             }
         }
         return false;

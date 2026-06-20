@@ -1,6 +1,7 @@
 package com.aionn.identity.adapter.rest.controller;
 
-import com.aionn.identity.application.service.KycService;
+import com.aionn.identity.application.dto.kyc.command.SumsubWebhookCommand;
+import com.aionn.identity.application.port.in.kyc.HandleSumsubWebhookInputPort;
 import com.aionn.sharedkernel.adapter.web.response.ApiResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SumsubWebhookController {
 
     private final ObjectMapper objectMapper;
-    private final KycService kycService;
+    private final HandleSumsubWebhookInputPort handleSumsubWebhookInputPort;
 
     @PostMapping("/sumsub")
     public ResponseEntity<ApiResponse<Void>> handleSumsubWebhook(
@@ -30,7 +31,7 @@ public class SumsubWebhookController {
         JsonNode payload = objectMapper.readTree(rawBody);
         JsonNode reviewResult = payload.path("reviewResult");
 
-        kycService.handleSumsubWebhook(
+        handleSumsubWebhookInputPort.execute(new SumsubWebhookCommand(
                 rawBody,
                 payloadDigest,
                 payloadDigestAlg,
@@ -39,7 +40,7 @@ public class SumsubWebhookController {
                 text(reviewResult, "reviewAnswer"),
                 text(reviewResult, "moderationComment"),
                 text(reviewResult, "clientComment"),
-                text(payload, "correlationId"));
+                text(payload, "correlationId")));
 
         return ResponseEntity.ok(ApiResponse.success("Sumsub webhook processed"));
     }

@@ -40,6 +40,7 @@ public final class PaymentEvents {
 
     public record PaymentRefunded(
             String paymentId,
+            String orderId,
             String refundId,
             BigDecimal amount,
             String currency,

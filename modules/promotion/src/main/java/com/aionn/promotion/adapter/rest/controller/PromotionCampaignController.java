@@ -4,6 +4,7 @@ import com.aionn.promotion.adapter.rest.dto.campaign.CancelCampaignRequest;
 import com.aionn.promotion.adapter.rest.dto.campaign.ConfigureConditionRequest;
 import com.aionn.promotion.adapter.rest.dto.campaign.CreateCampaignRequest;
 import com.aionn.promotion.adapter.rest.dto.voucher.IssueVoucherRequest;
+import com.aionn.promotion.adapter.rest.support.session.CurrentAdminId;
 import com.aionn.promotion.application.dto.campaign.command.CampaignCommands;
 import com.aionn.promotion.application.dto.campaign.result.CampaignResult;
 import com.aionn.promotion.application.dto.voucher.result.VoucherResult;
@@ -15,14 +16,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/promotions/campaigns")
@@ -36,12 +38,12 @@ public class PromotionCampaignController {
         @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
         @Operation(summary = "Create campaign", description = "UC9.1")
         public ResponseEntity<ApiResponse<CampaignResult>> create(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @Valid @RequestBody CreateCampaignRequest request) {
                 return ApiResponse.createdResponse("Campaign created",
                                 campaignService.create(new CampaignCommands.CreateCampaign(
                                                 request.name(), request.type(), request.budget(), request.currency(),
-                                                request.startDate(), request.endDate(), authentication.getName())));
+                                                request.startDate(), request.endDate(), adminId)));
         }
 
         @PostMapping("/{campaignId}/activate")
@@ -101,9 +103,28 @@ public class PromotionCampaignController {
         }
 
         @GetMapping("/{campaignId}")
-        @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Get campaign")
         public ResponseEntity<ApiResponse<CampaignResult>> get(@PathVariable String campaignId) {
                 return ResponseEntity.ok(ApiResponse.success(campaignService.get(campaignId), "Campaign fetched"));
+        }
+
+        @GetMapping
+        @Operation(summary = "List campaigns", description = "Public list of promotion campaigns by status")
+        public ResponseEntity<ApiResponse<List<CampaignResult>>> list(
+                        @RequestParam(defaultValue = "RUNNING") String status,
+                        @RequestParam(defaultValue = "50") int limit) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                campaignService.listByStatus(status, limit),
+                                "Campaigns fetched"));
+        }
+
+        @GetMapping("/{campaignId}/vouchers")
+        @Operation(summary = "List campaign vouchers", description = "Get claimable vouchers of a specific campaign")
+        public ResponseEntity<ApiResponse<List<VoucherResult>>> listVouchers(
+                        @PathVariable String campaignId,
+                        @RequestParam(defaultValue = "50") int limit) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                campaignService.listVouchersByCampaignId(campaignId, limit),
+                                "Vouchers fetched"));
         }
 }

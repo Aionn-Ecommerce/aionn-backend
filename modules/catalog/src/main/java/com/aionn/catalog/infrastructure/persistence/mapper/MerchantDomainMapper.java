@@ -15,7 +15,13 @@ public class MerchantDomainMapper {
                 .name(merchant.getName())
                 .logoUrl(merchant.getLogoUrl())
                 .description(merchant.getDescription())
+                .provinceCode(merchant.getProvinceCode())
+                .provinceName(merchant.getProvinceName())
                 .status(merchant.getStatus().name())
+                .commissionRate(merchant.getCommissionRate())
+                .stripeAccountId(merchant.getStripeAccountId())
+                .stripeChargesEnabled(merchant.isStripeChargesEnabled())
+                .stripePayoutsEnabled(merchant.isStripePayoutsEnabled())
                 .build();
     }
 
@@ -26,9 +32,14 @@ public class MerchantDomainMapper {
                 entity.getName(),
                 entity.getLogoUrl(),
                 entity.getDescription(),
+                entity.getProvinceCode(),
+                entity.getProvinceName(),
                 MerchantStatus.valueOf(entity.getStatus()),
+                entity.getCommissionRate(),
+                entity.getStripeAccountId(),
+                entity.isStripeChargesEnabled(),
+                entity.isStripePayoutsEnabled(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt());
     }
 }
-

@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/notifications/templates")
@@ -55,5 +58,13 @@ public class NotificationTemplateController {
     @Operation(summary = "Get template")
     public ResponseEntity<ApiResponse<TemplateResult>> get(@PathVariable String templateId) {
         return ResponseEntity.ok(ApiResponse.success(templateService.get(templateId), "Template fetched"));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
+    @Operation(summary = "List templates")
+    public ResponseEntity<ApiResponse<List<TemplateResult>>> list(
+            @RequestParam(defaultValue = "100") int limit) {
+        return ResponseEntity.ok(ApiResponse.success(templateService.list(limit), "Templates fetched"));
     }
 }

@@ -6,18 +6,25 @@ import com.aionn.catalog.application.dto.product.command.AssignCollectionsComman
 import com.aionn.catalog.application.dto.product.command.BulkPriceUpdateCommand;
 import com.aionn.catalog.application.dto.product.command.ChangeVariantPriceCommand;
 import com.aionn.catalog.application.dto.product.command.CloneCommand;
+import com.aionn.catalog.application.dto.product.command.CloneProductCommand;
 import com.aionn.catalog.application.dto.product.command.CreateProductCommand;
 import com.aionn.catalog.application.dto.product.command.DeactivateCommand;
+import com.aionn.catalog.application.dto.product.command.DeactivateProductCommand;
 import com.aionn.catalog.application.dto.product.command.DefineAttributesCommand;
 import com.aionn.catalog.application.dto.product.command.DefineVariantCommand;
 import com.aionn.catalog.application.dto.product.command.EmergencyTakedownCommand;
 import com.aionn.catalog.application.dto.product.command.PublishCommand;
+import com.aionn.catalog.application.dto.product.command.PublishProductCommand;
 import com.aionn.catalog.application.dto.product.command.RejectCommand;
+import com.aionn.catalog.application.dto.product.command.RejectProductCommand;
 import com.aionn.catalog.application.dto.product.command.RemoveVariantCommand;
 import com.aionn.catalog.application.dto.product.command.RestoreCommand;
+import com.aionn.catalog.application.dto.product.command.RestoreProductCommand;
+import com.aionn.catalog.application.dto.product.command.SubmitForReviewCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateAiMetadataCommand;
 import com.aionn.catalog.application.dto.product.command.UpdateMediaCommand;
 import com.aionn.catalog.application.dto.common.PageResult;
+import com.aionn.catalog.application.dto.product.query.SearchProductsQuery;
 import com.aionn.catalog.application.dto.product.result.ProductResult;
 import com.aionn.catalog.application.dto.search.ProductSearchCriteria;
 import com.aionn.catalog.application.dto.search.ProductSearchDocument;
@@ -50,6 +57,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +110,10 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
+    public ProductResult clone(CloneProductCommand command) {
+        return clone(new CloneCommand(command.sourceId(), command.merchantId()));
+    }
+
     public ProductResult defineVariant(DefineVariantCommand command) {
         Product product = ownedProduct(command.productId(), command.ownerId());
         Money price = command.price() == null
@@ -148,10 +160,18 @@ public class ProductService {
 
     public ProductResult categorize(AssignCategoriesCommand command) {
         Product product = ownedProduct(command.productId(), command.ownerId());
-        for (String categoryId : command.categoryIds()) {
-            categoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new CatalogException(CatalogErrorCode.CATEGORY_NOT_FOUND,
-                            "Unknown category: " + categoryId));
+        java.util.List<com.aionn.catalog.domain.model.Category> found =
+                categoryRepository.findAllByIds(command.categoryIds());
+        if (found.size() != command.categoryIds().size()) {
+            java.util.Set<String> foundIds = found.stream()
+                    .map(com.aionn.catalog.domain.model.Category::getCategoryId)
+                    .collect(java.util.stream.Collectors.toSet());
+            String missing = command.categoryIds().stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .findFirst()
+                    .orElse("?");
+            throw new CatalogException(CatalogErrorCode.CATEGORY_NOT_FOUND,
+                    "Unknown category: " + missing);
         }
         product.categorize(command.categoryIds());
         Product saved = productRepository.save(product);
@@ -181,15 +201,15 @@ public class ProductService {
     public ProductResult defineAttributes(DefineAttributesCommand command) {
         Product product = ownedProduct(command.productId(), command.ownerId());
         if (!product.categoryIds().isEmpty()) {
-            for (String categoryId : product.categoryIds()) {
-                attributeTemplateRepository.findByCategoryId(categoryId).ifPresent(template -> {
-                    for (String key : command.attributes().keySet()) {
-                        if (!template.snapshot().containsKey(key)) {
-                            throw new CatalogException(CatalogErrorCode.ATTRIBUTE_KEY_NOT_FOUND,
-                                    "Attribute '" + key + "' is not declared on the category template");
-                        }
+            java.util.List<AttributeTemplate> templates =
+                    attributeTemplateRepository.findByCategoryIds(product.categoryIds());
+            for (AttributeTemplate template : templates) {
+                for (String key : command.attributes().keySet()) {
+                    if (!template.snapshot().containsKey(key)) {
+                        throw new CatalogException(CatalogErrorCode.ATTRIBUTE_KEY_NOT_FOUND,
+                                "Attribute '" + key + "' is not declared on the category template");
                     }
-                });
+                }
             }
         }
         product.defineAttributes(command.attributes());
@@ -208,6 +228,10 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
+    public ProductResult publish(PublishProductCommand command) {
+        return publish(new PublishCommand(command.productId(), command.adminId()));
+    }
+
     public ProductResult reject(RejectCommand command) {
         Product product = required(command.productId());
         product.reject(command.adminId(), command.reasonCode(), command.feedback());
@@ -215,6 +239,11 @@ public class ProductService {
         publish(product);
         searchIndex.remove(saved.getProductId());
         return productResultMapper.toResult(saved);
+    }
+
+    public ProductResult reject(RejectProductCommand command) {
+        return reject(new RejectCommand(
+                command.productId(), command.adminId(), command.reasonCode(), command.feedback()));
     }
 
     public ProductResult deactivate(DeactivateCommand command) {
@@ -226,12 +255,28 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
+    public ProductResult deactivate(DeactivateProductCommand command) {
+        return deactivate(new DeactivateCommand(command.productId(), command.merchantId(), command.reason()));
+    }
+
     public ProductResult restore(RestoreCommand command) {
         Product product = ownedProduct(command.productId(), command.ownerId());
         product.restore();
         Product saved = productRepository.save(product);
         publish(product);
         searchIndex.index(buildSearchDocument(saved));
+        return productResultMapper.toResult(saved);
+    }
+
+    public ProductResult restore(RestoreProductCommand command) {
+        return restore(new RestoreCommand(command.productId(), command.merchantId()));
+    }
+
+    public ProductResult submitForReview(SubmitForReviewCommand command) {
+        Product product = ownedProduct(command.productId(), command.ownerId());
+        product.submitForReview(command.ownerId());
+        Product saved = productRepository.save(product);
+        publish(product);
         return productResultMapper.toResult(saved);
     }
 
@@ -254,7 +299,8 @@ public class ProductService {
         return productResultMapper.toResult(saved);
     }
 
-    public void bulkPriceUpdate(BulkPriceUpdateCommand command) {
+    public com.aionn.catalog.application.dto.product.result.BulkPriceUpdateResult bulkPriceUpdate(
+            BulkPriceUpdateCommand command) {
         if (command.skuIds() == null || command.skuIds().isEmpty()) {
             throw new CatalogException(CatalogErrorCode.INVALID_ARGUMENT, "skuIds must not be empty");
         }
@@ -269,13 +315,16 @@ public class ProductService {
         if (affected.isEmpty()) {
             log.warn("Bulk price update by owner={} matched 0 products for {} skuIds (none owned by merchant {})",
                     command.ownerId(), command.skuIds().size(), merchantId);
-            return;
+            return new com.aionn.catalog.application.dto.product.result.BulkPriceUpdateResult(List.of(), 0);
         }
+        java.util.Set<String> affectedProductIds = new LinkedHashSet<>();
+        int affectedSkuCount = 0;
         for (Product product : affected) {
             for (ProductVariant variant : product.variants()) {
                 if (!command.skuIds().contains(variant.skuId())) {
                     continue;
                 }
+                affectedSkuCount++;
                 BigDecimal oldAmount = variant.price() == null ? BigDecimal.ZERO : variant.price().amount();
                 BigDecimal newAmount = applyChange(oldAmount, command);
                 String currency = command.currency() != null
@@ -286,12 +335,25 @@ public class ProductService {
             productRepository.save(product);
             publish(product);
             reindexIfSearchable(product);
+            affectedProductIds.add(product.getProductId());
         }
+        return new com.aionn.catalog.application.dto.product.result.BulkPriceUpdateResult(
+                List.copyOf(affectedProductIds), affectedSkuCount);
     }
 
     @Transactional(readOnly = true)
     public ProductResult get(String productId) {
         return productResultMapper.toResult(required(productId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResult> getBySkuIds(List<String> skuIds) {
+        if (skuIds == null || skuIds.isEmpty()) {
+            return List.of();
+        }
+        return productRepository.findBySkuIds(skuIds).stream()
+                .map(productResultMapper::toResult)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -302,6 +364,16 @@ public class ProductService {
                 .map(productResultMapper::toResult)
                 .toList();
         return new PageResult<>(results, page, size, results.size());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<ProductResult> listByMerchant(String merchantId, OffsetPagination pagination) {
+        return listByMerchant(merchantId, pagination.page(), pagination.size());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<ProductResult> listByStatus(ProductStatus status, OffsetPagination pagination) {
+        return search(null, status, pagination.page(), pagination.size());
     }
 
     @Transactional(readOnly = true)
@@ -338,6 +410,11 @@ public class ProductService {
         return ProductSearchResult.of(jpaSearchFallback(criteria));
     }
 
+    @Transactional(readOnly = true)
+    public PageResult<ProductResult> search(SearchProductsQuery query) {
+        return search(query.merchantId(), query.status(), query.pagination().page(), query.pagination().size());
+    }
+
     /** Pure JPA path used when OpenSearch is offline or the index is empty. */
     private PageResult<ProductResult> jpaSearchFallback(ProductSearchCriteria criteria) {
         var pagination = OffsetPagination.safe(criteria.page(), criteria.size());
@@ -351,14 +428,22 @@ public class ProductService {
                         .toList();
             }
         } else if (criteria.hasText()) {
-            products = productRepository.searchPublished(criteria.q(), pagination.size());
+            products = productRepository.searchPublished(criteria.q(), pagination.size(), pagination.offset());
         } else {
             products = productRepository.findPublished(pagination.size(), pagination.offset());
+        }
+        long totalElements;
+        if (criteria.merchantId() != null && !criteria.merchantId().isBlank()) {
+            totalElements = products.size();
+        } else if (criteria.hasText()) {
+            totalElements = productRepository.countSearchPublished(criteria.q());
+        } else {
+            totalElements = productRepository.countPublished();
         }
         List<ProductResult> results = products.stream()
                 .map(productResultMapper::toResult)
                 .toList();
-        return new PageResult<>(results, criteria.page(), criteria.size(), results.size());
+        return new PageResult<>(results, criteria.page(), criteria.size(), totalElements);
     }
 
     private static BigDecimal applyChange(BigDecimal oldAmount, BulkPriceUpdateCommand command) {
@@ -381,18 +466,18 @@ public class ProductService {
     private ProductSearchDocument buildSearchDocument(Product product) {
         Map<String, String> filterable = new LinkedHashMap<>();
         if (!product.attributes().isEmpty()) {
-            for (String categoryId : product.categoryIds()) {
-                attributeTemplateRepository.findByCategoryId(categoryId).ifPresent(template -> {
-                    for (Map.Entry<String, AttributeTemplate.AttributeDefinition> def : template.snapshot()
-                            .entrySet()) {
-                        if (def.getValue().filterable()) {
-                            String value = product.attributes().get(def.getKey());
-                            if (value != null) {
-                                filterable.put(def.getKey(), value);
-                            }
+            java.util.List<AttributeTemplate> templates =
+                    attributeTemplateRepository.findByCategoryIds(product.categoryIds());
+            for (AttributeTemplate template : templates) {
+                for (Map.Entry<String, AttributeTemplate.AttributeDefinition> def : template.snapshot()
+                        .entrySet()) {
+                    if (def.getValue().filterable()) {
+                        String value = product.attributes().get(def.getKey());
+                        if (value != null) {
+                            filterable.put(def.getKey(), value);
                         }
                     }
-                });
+                }
             }
         }
         return productResultMapper.toSearchDocument(product, filterable);
@@ -496,6 +581,7 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void trackProductView(String productId, String userId) {
         if (userId == null || userId.isBlank() || userId.equals("anonymousUser")) {
             return;

@@ -87,12 +87,14 @@ public class Order extends AggregateRoot {
             String currency,
             List<OrderItem> items,
             ShippingAddress address,
-            Money shippingFee) {
+            Money shippingFee,
+            Money merchandiseSubtotal) {
         Guard.require(items != null && !items.isEmpty(),
                 () -> new OrderingException(OrderingErrorCode.CART_EMPTY));
-        Money lineSubtotal = items.stream()
+        Money originalLineSubtotal = items.stream()
                 .map(OrderItem::lineTotal)
                 .reduce(Money.zero(currency), Money::add);
+        Money lineSubtotal = merchandiseSubtotal == null ? originalLineSubtotal : merchandiseSubtotal;
         Money totalAmount = shippingFee == null ? lineSubtotal : lineSubtotal.add(shippingFee);
 
         Instant now = Instant.now();

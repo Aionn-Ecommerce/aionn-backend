@@ -20,7 +20,11 @@ public interface ProductPersistencePort {
 
     List<Product> findPublished(int limit, int offset);
 
-    List<Product> searchPublished(String queryOrNull, int limit);
+    long countPublished();
+
+    List<Product> searchPublished(String queryOrNull, int limit, int offset);
+
+    long countSearchPublished(String queryOrNull);
 
     List<Product> findRelatedProducts(String productId, String brandId, List<String> categoryIds, int limit);
 

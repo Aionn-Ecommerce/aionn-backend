@@ -10,8 +10,11 @@ import java.util.Map;
  * Read-side filter for {@code GET /catalog/products/search}. Backed by OpenSearch.
  *
  * <p>{@code attributes} carries category-template facet selections (e.g. color=red,
- * size=M). When OpenSearch is unreachable or the index is empty the service falls
- * back to a JPA-only path that only honours {@code merchantId}/{@code status}.
+ * size=M). {@code provinceCodes} carries canonical VN GSO codes (e.g. {@code "01"}
+ * for Hà Nội) so the FE filter can stay decoupled from the human-readable name
+ * stored in identity. When OpenSearch is unreachable or the index is empty the
+ * service falls back to a JPA-only path that only honours {@code merchantId}/
+ * {@code status}.</p>
  */
 public record ProductSearchCriteria(
         String q,
@@ -28,13 +31,14 @@ public record ProductSearchCriteria(
         Double ratingMin,
         Boolean onSale,
         List<String> shipping,
-        List<String> locations) {
+        List<String> provinceCodes) {
 
     public enum Sort {
         RELEVANCE,
         NEWEST,
         PRICE_ASC,
-        PRICE_DESC
+        PRICE_DESC,
+        BEST_SELLER
     }
 
     public ProductSearchCriteria {
@@ -42,7 +46,7 @@ public record ProductSearchCriteria(
         brandIds = brandIds == null ? List.of() : List.copyOf(brandIds);
         attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
         shipping = shipping == null ? List.of() : List.copyOf(shipping);
-        locations = locations == null ? List.of() : List.copyOf(locations);
+        provinceCodes = provinceCodes == null ? List.of() : List.copyOf(provinceCodes);
         if (sort == null) {
             sort = Sort.RELEVANCE;
         }

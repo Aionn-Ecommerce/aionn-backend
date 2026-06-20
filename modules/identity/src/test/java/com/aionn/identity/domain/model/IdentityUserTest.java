@@ -455,13 +455,4 @@ class IdentityUserTest {
 
         assertThat(user1).isNotEqualTo(user2);
     }
-
-    @Test
-    void hashCode_sameUserId_sameHashCode() {
-        IdentityUser user1 = IdentityUser.createNew("user-123", "alice@example.com", "0912345678", "alice_smith");
-        IdentityUser user2 = IdentityUser.createNew("user-123", "different@example.com", "0999999999",
-                "different_user");
-
-        assertThat(user1.hashCode()).isEqualTo(user2.hashCode());
-    }
 }

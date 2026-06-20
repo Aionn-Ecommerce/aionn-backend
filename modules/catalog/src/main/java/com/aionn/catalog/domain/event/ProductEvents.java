@@ -49,6 +49,12 @@ public final class ProductEvents {
             Instant occurredAt) implements CatalogEvent {
     }
 
+    public record ProductSubmittedForReview(
+            String productId,
+            String ownerId,
+            Instant occurredAt) implements CatalogEvent {
+    }
+
     public record ProductRejected(
             String productId,
             String adminId,

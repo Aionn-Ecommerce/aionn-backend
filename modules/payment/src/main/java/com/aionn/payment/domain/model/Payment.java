@@ -126,7 +126,7 @@ public class Payment extends AggregateRoot {
                         this.status = PaymentStatus.REFUNDED;
                 }
                 this.updatedAt = now;
-                record(new PaymentEvents.PaymentRefunded(paymentId, refundId, refundAmount.amount(),
+                record(new PaymentEvents.PaymentRefunded(paymentId, orderId, refundId, refundAmount.amount(),
                                 refundAmount.currency(), reason, now));
         }
 

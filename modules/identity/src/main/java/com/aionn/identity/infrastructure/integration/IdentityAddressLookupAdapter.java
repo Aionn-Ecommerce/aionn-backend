@@ -1,5 +1,6 @@
 package com.aionn.identity.infrastructure.integration;
 
+import com.aionn.identity.application.dto.geography.result.GeographyResult;
 import com.aionn.identity.application.dto.geography.result.ResolvedLocation;
 import com.aionn.identity.application.service.GeographyService;
 import com.aionn.sharedkernel.integration.port.identity.AddressLookupPort;
@@ -30,6 +31,20 @@ public class IdentityAddressLookupAdapter implements AddressLookupPort {
         } catch (RuntimeException ex) {
             log.warn("AddressLookup failed for province={} district={} ward={}: {}",
                     provinceCode, districtCode, wardCode, ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<ResolvedProvince> resolveProvince(String provinceCode) {
+        if (provinceCode == null || provinceCode.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            GeographyResult province = geographyService.getProvince(provinceCode);
+            return Optional.of(new ResolvedProvince(province.code(), province.name()));
+        } catch (RuntimeException ex) {
+            log.warn("Province lookup failed for code={}: {}", provinceCode, ex.getMessage());
             return Optional.empty();
         }
     }

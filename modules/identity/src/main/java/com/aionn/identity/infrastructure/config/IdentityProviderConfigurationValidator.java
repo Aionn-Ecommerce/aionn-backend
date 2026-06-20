@@ -1,9 +1,9 @@
 package com.aionn.identity.infrastructure.config;
 
-import com.aionn.identity.infrastructure.config.properties.CloudinaryProperties;
 import com.aionn.identity.infrastructure.config.properties.KycProperties;
 import com.aionn.identity.infrastructure.config.properties.RegistrationProperties;
 import com.aionn.identity.infrastructure.config.properties.SocialAuthProperties;
+import com.aionn.sharedkernel.media.CloudinaryCredentialsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +16,7 @@ public class IdentityProviderConfigurationValidator implements SmartInitializing
     @Value("${identity.media.provider:cloudinary}")
     private String mediaProvider;
 
-    private final CloudinaryProperties cloudinaryProperties;
+    private final CloudinaryCredentialsProperties cloudinaryProperties;
     private final KycProperties kycProperties;
     private final SocialAuthProperties socialAuthProperties;
     private final RegistrationProperties registrationProperties;

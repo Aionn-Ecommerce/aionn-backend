@@ -29,17 +29,19 @@ public class UcpOrderingEventListener {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onOrderApproved(OrderApprovedIntegrationEvent event) {
-        enqueueIfUcpOrder(event.orderId(), "order.confirmed", buildPayload(event.orderId(), Map.of(
-                "payment_id", event.paymentId(),
-                "occurred_at", Instant.now().toString())));
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("payment_id", event.paymentId());
+        data.put("occurred_at", Instant.now().toString());
+        enqueueIfUcpOrder(event.orderId(), "order.confirmed", buildPayload(event.orderId(), data));
     }
 
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onOrderShipped(OrderShippedIntegrationEvent event) {
-        enqueueIfUcpOrder(event.orderId(), "order.shipped", buildPayload(event.orderId(), Map.of(
-                "shipment_id", event.shipmentId(),
-                "occurred_at", Instant.now().toString())));
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("shipment_id", event.shipmentId());
+        data.put("occurred_at", Instant.now().toString());
+        enqueueIfUcpOrder(event.orderId(), "order.shipped", buildPayload(event.orderId(), data));
     }
 
     @EventListener

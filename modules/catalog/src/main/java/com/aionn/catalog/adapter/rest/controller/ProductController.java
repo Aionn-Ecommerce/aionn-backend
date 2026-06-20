@@ -13,6 +13,8 @@ import com.aionn.catalog.adapter.rest.dto.product.EmergencyTakedownRequest;
 import com.aionn.catalog.adapter.rest.dto.product.RejectProductRequest;
 import com.aionn.catalog.adapter.rest.dto.product.UpdateAiMetadataRequest;
 import com.aionn.catalog.adapter.rest.dto.product.UpdateMediaRequest;
+import com.aionn.catalog.adapter.rest.support.session.CurrentAdminId;
+import com.aionn.catalog.adapter.rest.support.session.CurrentOwnerId;
 import com.aionn.catalog.application.dto.product.command.AssignBrandCommand;
 import com.aionn.catalog.application.dto.product.command.AssignCategoriesCommand;
 import com.aionn.catalog.application.dto.product.command.AssignCollectionsCommand;
@@ -73,10 +75,10 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Create product", description = "Merchant creates a product in DRAFT")
         public ResponseEntity<ApiResponse<ProductResult>> create(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @Valid @RequestBody CreateProductRequest request) {
                 ProductResult result = productService.create(
-                                new CreateProductCommand(authentication.getName(), request.name()));
+                                new CreateProductCommand(ownerId, request.name()));
                 return ApiResponse.createdResponse("Product created", result);
         }
 
@@ -84,10 +86,10 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Clone product", description = "Copy product without SKUs / media")
         public ResponseEntity<ApiResponse<ProductResult>> clone(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId) {
                 ProductResult result = productService.clone(
-                                new CloneCommand(productId, authentication.getName()));
+                                new CloneCommand(productId, ownerId));
                 return ApiResponse.createdResponse("Product cloned", result);
         }
 
@@ -95,11 +97,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Define variant", description = "Add a SKU with attribute combo and price")
         public ResponseEntity<ApiResponse<ProductResult>> defineVariant(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody DefineVariantRequest request) {
                 ProductResult result = productService.defineVariant(new DefineVariantCommand(
-                                productId, authentication.getName(), request.attributeValues(),
+                                productId, ownerId, request.attributeValues(),
                                 request.price(), request.currency()));
                 return ApiResponse.createdResponse("Variant defined", result);
         }
@@ -108,11 +110,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Remove variant", description = "Delete a SKU; emits an integration event for inventory")
         public ResponseEntity<ApiResponse<ProductResult>> removeVariant(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @PathVariable String skuId) {
                 ProductResult result = productService.removeVariant(new RemoveVariantCommand(
-                                productId, authentication.getName(), skuId));
+                                productId, ownerId, skuId));
                 return ResponseEntity.ok(ApiResponse.success(result, "Variant removed"));
         }
 
@@ -120,11 +122,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Update media", description = "Replace product image list")
         public ResponseEntity<ApiResponse<ProductResult>> updateMedia(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody UpdateMediaRequest request) {
                 ProductResult result = productService.updateMedia(new UpdateMediaCommand(
-                                productId, authentication.getName(), request.imageList()));
+                                productId, ownerId, request.imageList()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Media updated"));
         }
 
@@ -132,11 +134,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Assign brand", description = "Bind to an approved brand")
         public ResponseEntity<ApiResponse<ProductResult>> assignBrand(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody AssignBrandRequest request) {
                 ProductResult result = productService.assignBrand(new AssignBrandCommand(
-                                productId, authentication.getName(), request.brandId()));
+                                productId, ownerId, request.brandId()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Brand assigned"));
         }
 
@@ -144,11 +146,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Assign categories", description = "Assign one or more categories")
         public ResponseEntity<ApiResponse<ProductResult>> categorize(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody AssignCategoriesRequest request) {
                 ProductResult result = productService.categorize(new AssignCategoriesCommand(
-                                productId, authentication.getName(), request.categoryIds()));
+                                productId, ownerId, request.categoryIds()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Categories assigned"));
         }
 
@@ -156,10 +158,10 @@ public class ProductController {
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Publish product", description = "Admin approves a product for sale")
         public ResponseEntity<ApiResponse<ProductResult>> publish(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @PathVariable String productId) {
                 ProductResult result = productService.publish(
-                                new PublishCommand(productId, authentication.getName()));
+                                new PublishCommand(productId, adminId));
                 return ResponseEntity.ok(ApiResponse.success(result, "Product published"));
         }
 
@@ -167,11 +169,11 @@ public class ProductController {
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Reject product", description = "Admin rejects with a reason code")
         public ResponseEntity<ApiResponse<ProductResult>> reject(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @PathVariable String productId,
                         @Valid @RequestBody RejectProductRequest request) {
                 ProductResult result = productService.reject(new RejectCommand(
-                                productId, authentication.getName(), request.reasonCode(), request.feedback()));
+                                productId, adminId, request.reasonCode(), request.feedback()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Product rejected"));
         }
 
@@ -179,11 +181,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Deactivate (hide)", description = "Merchant hides a product from sale")
         public ResponseEntity<ApiResponse<ProductResult>> deactivate(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody DeactivateProductRequest request) {
                 ProductResult result = productService.deactivate(new DeactivateCommand(
-                                productId, authentication.getName(), request.reason()));
+                                productId, ownerId, request.reason()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Product deactivated"));
         }
 
@@ -191,10 +193,10 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Restore product", description = "Merchant restores a hidden product")
         public ResponseEntity<ApiResponse<ProductResult>> restore(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId) {
                 ProductResult result = productService.restore(
-                                new RestoreCommand(productId, authentication.getName()));
+                                new RestoreCommand(productId, ownerId));
                 return ResponseEntity.ok(ApiResponse.success(result, "Product restored"));
         }
 
@@ -202,12 +204,12 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Change variant price", description = "Update price for a single SKU")
         public ResponseEntity<ApiResponse<ProductResult>> changeVariantPrice(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @PathVariable String skuId,
                         @Valid @RequestBody ChangeVariantPriceRequest request) {
                 ProductResult result = productService.changeVariantPrice(new ChangeVariantPriceCommand(
-                                productId, authentication.getName(), skuId, request.newPrice(), request.currency()));
+                                productId, ownerId, skuId, request.newPrice(), request.currency()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Price updated"));
         }
 
@@ -215,11 +217,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Update AI metadata", description = "Tags + hidden description for the AI agent")
         public ResponseEntity<ApiResponse<ProductResult>> updateAiMetadata(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody UpdateAiMetadataRequest request) {
                 ProductResult result = productService.updateAiMetadata(new UpdateAiMetadataCommand(
-                                productId, authentication.getName(), request.tags(), request.aiDescription()));
+                                productId, ownerId, request.tags(), request.aiDescription()));
                 return ResponseEntity.ok(ApiResponse.success(result, "AI metadata updated"));
         }
 
@@ -227,11 +229,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Assign collections", description = "Bind product to merchandising collections")
         public ResponseEntity<ApiResponse<ProductResult>> assignCollections(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody AssignCollectionsRequest request) {
                 ProductResult result = productService.assignCollections(new AssignCollectionsCommand(
-                                productId, authentication.getName(), request.collectionIds()));
+                                productId, ownerId, request.collectionIds()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Collections assigned"));
         }
 
@@ -239,10 +241,10 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Bulk price update", description = "Apply a price change across many SKUs")
         public ResponseEntity<ApiResponse<Void>> bulkPriceUpdate(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @Valid @RequestBody BulkPriceUpdateRequest request) {
                 productService.bulkPriceUpdate(new BulkPriceUpdateCommand(
-                                authentication.getName(), request.skuIds(), request.changeType(),
+                                ownerId, request.skuIds(), request.changeType(),
                                 request.value(), request.currency()));
                 return ResponseEntity.accepted().body(ApiResponse.success("Bulk price update accepted"));
         }
@@ -251,11 +253,11 @@ public class ProductController {
         @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
         @Operation(summary = "Emergency takedown", description = "Admin removes product immediately")
         public ResponseEntity<ApiResponse<ProductResult>> emergencyTakedown(
-                        Authentication authentication,
+                        @CurrentAdminId String adminId,
                         @PathVariable String productId,
                         @Valid @RequestBody EmergencyTakedownRequest request) {
                 ProductResult result = productService.emergencyTakedown(new EmergencyTakedownCommand(
-                                productId, authentication.getName(), request.reason()));
+                                productId, adminId, request.reason()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Product taken down"));
         }
 
@@ -263,11 +265,11 @@ public class ProductController {
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Define attributes", description = "Apply category-template attributes to product")
         public ResponseEntity<ApiResponse<ProductResult>> defineAttributes(
-                        Authentication authentication,
+                        @CurrentOwnerId String ownerId,
                         @PathVariable String productId,
                         @Valid @RequestBody DefineAttributesRequest request) {
                 ProductResult result = productService.defineAttributes(new DefineAttributesCommand(
-                                productId, authentication.getName(), request.attributes()));
+                                productId, ownerId, request.attributes()));
                 return ResponseEntity.ok(ApiResponse.success(result, "Attributes applied"));
         }
 
@@ -275,6 +277,14 @@ public class ProductController {
         @Operation(summary = "Get product", description = "Public read of a product")
         public ResponseEntity<ApiResponse<ProductResult>> get(@PathVariable String productId) {
                 return ResponseEntity.ok(ApiResponse.success(productService.get(productId), "Product fetched"));
+        }
+
+        @GetMapping("/resolve-by-skus")
+        @Operation(summary = "Resolve products by SKU ids", description = "Public read used to hydrate cart lines")
+        public ResponseEntity<ApiResponse<List<ProductResult>>> resolveBySkuIds(
+                        @RequestParam List<String> skuIds) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                productService.getBySkuIds(skuIds), "Products resolved"));
         }
 
         @GetMapping
@@ -303,7 +313,7 @@ public class ProductController {
                         @RequestParam(required = false) Double ratingMin,
                         @RequestParam(required = false) Boolean onSale,
                         @RequestParam(required = false) List<String> shipping,
-                        @RequestParam(required = false) List<String> locations,
+                        @RequestParam(required = false) List<String> provinceCodes,
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam Map<String, String> allParams) {
@@ -331,7 +341,7 @@ public class ProductController {
                                 brandIds == null ? List.of() : brandIds,
                                 priceMin, priceMax,
                                 attributes, sortEnum, page, size,
-                                ratingMin, onSale, shipping, locations);
+                                ratingMin, onSale, shipping, provinceCodes);
                 return ResponseEntity.ok(ApiResponse.success(
                                 productService.search(criteria), "Search results"));
         }
@@ -366,13 +376,12 @@ public class ProductController {
         }
 
         @PostMapping("/{productId}/view")
+        @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Track product view", description = "Track product view in the database for personalized recommendations")
         public ResponseEntity<ApiResponse<Void>> trackView(
-                Authentication authentication,
+                @CurrentOwnerId String ownerId,
                 @PathVariable String productId) {
-            if (authentication != null) {
-                productService.trackProductView(productId, authentication.getName());
-            }
+            productService.trackProductView(productId, ownerId);
             return ResponseEntity.ok(ApiResponse.success(null, "Product view tracked"));
         }
 }

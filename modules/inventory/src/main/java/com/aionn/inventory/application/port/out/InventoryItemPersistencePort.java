@@ -15,4 +15,6 @@ public interface InventoryItemPersistencePort {
     Optional<InventoryItem> lockByKey(InventoryItemKey key);
 
     List<InventoryItem> findBySkuAcrossWarehouses(String skuId, List<String> warehouseIds);
+
+    List<InventoryItem> findBySku(String skuId);
 }

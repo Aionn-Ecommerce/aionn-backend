@@ -26,6 +26,7 @@ public class CheckoutSessionPersistenceAdapter implements CheckoutSessionPersist
         entity.setCurrency(session.currency());
         entity.setLineItemsJson(session.lineItemsJson());
         entity.setTotalsJson(session.totalsJson());
+        entity.setDiscountsJson(session.discountsJson());
         entity.setOrderId(session.orderId());
         entity.setCartId(session.cartId());
         entity.setContinueUrl(session.continueUrl());
@@ -60,6 +61,7 @@ public class CheckoutSessionPersistenceAdapter implements CheckoutSessionPersist
                 entity.getCurrency(),
                 entity.getLineItemsJson(),
                 entity.getTotalsJson(),
+                entity.getDiscountsJson(),
                 entity.getOrderId(),
                 entity.getCartId(),
                 entity.getContinueUrl(),

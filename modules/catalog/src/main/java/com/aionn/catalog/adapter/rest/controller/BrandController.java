@@ -35,8 +35,8 @@ public class BrandController {
     }
 
     @PutMapping("/{brandId}")
-    @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
-    @Operation(summary = "Update brand")
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN','ROLE_CS_ADMIN')")
+    @Operation(summary = "Update brand", description = "Edit brand content (name, logo, description). CS agents may correct content; structural changes (create/delete) remain SYSTEM_ADMIN only.")
     public ResponseEntity<ApiResponse<BrandResult>> update(
             @PathVariable String brandId,
             @Valid @RequestBody UpdateBrandRequest request) {
@@ -53,6 +53,15 @@ public class BrandController {
             @Valid @RequestBody DeleteBrandRequest request) {
         brandService.delete(new DeleteBrandCommand(brandId, request.reason()));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    @Operation(summary = "List brands", description = "Public paginated list of brands")
+    public ResponseEntity<ApiResponse<com.aionn.catalog.application.dto.common.PageResult<BrandResult>>> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.success(
+                brandService.list(page, size), "Brands fetched"));
     }
 
     @GetMapping("/{brandId}")

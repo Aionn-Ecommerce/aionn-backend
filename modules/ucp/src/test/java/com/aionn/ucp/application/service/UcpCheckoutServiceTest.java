@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,6 +82,7 @@ class UcpCheckoutServiceTest {
                 "chk_1", "user-1", "http://platform/profile", "http://webhook",
                 CheckoutSessionStatus.INCOMPLETE, "VND",
                 "[{\"skuId\":\"sku_1\"}]", "{\"subtotal\":20000}",
+                null,
                 null, "cart_1", "http://localhost:8080/checkout?session=chk_1",
                 Instant.now(), Instant.now());
 
@@ -128,5 +131,35 @@ class UcpCheckoutServiceTest {
         assertEquals(1, response.line_items().size());
 
         verify(sessionRepository).save(any(Session.class));
+    }
+
+    @Test
+    @DisplayName("complete() should pass stored voucher code to order placement")
+    void complete_passesStoredVoucherCodeToOrderPlacement() {
+        Session session = new Session(
+                "chk_1", "user-1", null, "http://webhook",
+                CheckoutSessionStatus.READY_FOR_COMPLETE, "VND",
+                "[{\"skuId\":\"sku_1\",\"quantity\":2,\"unitPriceMinor\":10000,\"title\":\"Variant Title\"}]",
+                "{\"subtotal\":20000,\"total\":15000}",
+                "{\"voucherCode\":\"SAVE5\"}",
+                null, null, "http://localhost:8080/checkout?session=chk_1",
+                Instant.now(), Instant.now());
+
+        when(sessionRepository.findById("chk_1")).thenReturn(Optional.of(session));
+        when(lineCodec.decode(session.lineItemsJson())).thenReturn(List.of(
+                new LineItemSnapshot("sku_1", 2, 10000, "Variant Title")));
+        when(orderPlacementPort.place(any(OrderPlacementPort.PlaceCommand.class)))
+                .thenReturn(new OrderPlacementPort.PlacedOrder("ord_1", 15000, "VND"));
+        when(shippingQueryPort.getShippingOptions(any(), any(), anyLong(), any()))
+                .thenReturn(List.of(new ShippingQueryPort.ShippingOption(
+                        "standard", "Standard Shipping", "Arrives later", 0, "VND")));
+
+        CheckoutDtos.CompleteRequest request = new CheckoutDtos.CompleteRequest("COD", "addr_1");
+
+        checkoutService.complete("chk_1", "user-1", request);
+
+        var captor = forClass(OrderPlacementPort.PlaceCommand.class);
+        verify(orderPlacementPort).place(captor.capture());
+        assertEquals("SAVE5", captor.getValue().voucherCode());
     }
 }

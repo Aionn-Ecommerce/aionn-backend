@@ -7,8 +7,11 @@ import com.aionn.notification.infrastructure.persistence.entity.NotificationTemp
 import com.aionn.notification.infrastructure.persistence.mapper.NotificationTemplateDomainMapper;
 import com.aionn.notification.infrastructure.persistence.repository.NotificationTemplateRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -34,6 +37,14 @@ public class NotificationTemplatePersistenceAdapter implements NotificationTempl
             String eventType, NotificationChannel channel, String locale) {
         return jpa.findByEventTypeAndChannelAndLocale(eventType, channel.name(), locale)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public List<NotificationTemplate> findAll(int limit) {
+        return jpa.findAll(PageRequest.of(0, Math.max(1, limit),
+                Sort.by(Sort.Direction.DESC, "updatedAt"))).stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }
 

@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface UserPreferenceDomainMapper {
 
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "isNew", ignore = true)
     UserPreferenceEntity toEntity(UserPreferenceResult result);
 
     UserPreferenceResult toResult(UserPreferenceEntity entity);

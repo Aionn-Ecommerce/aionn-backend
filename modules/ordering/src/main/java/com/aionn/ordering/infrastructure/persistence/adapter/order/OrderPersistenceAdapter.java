@@ -40,6 +40,46 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
     }
 
     @Override
+    public List<Order> findByUserAndStatuses(String userId, List<String> statuses, int limit) {
+        return jpa.findByUserIdAndStatusInOrderByCreatedAtDesc(
+                        userId,
+                        statuses,
+                        PageRequest.of(0, Math.max(1, limit)))
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Order> findByMerchant(String merchantId, int limit) {
+        return jpa.findByMerchantIdOrderByCreatedAtDesc(merchantId, PageRequest.of(0, Math.max(1, limit))).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Order> findByMerchantAndStatuses(String merchantId, List<String> statuses, int limit) {
+        return jpa.findByMerchantIdAndStatusInOrderByCreatedAtDesc(
+                        merchantId,
+                        statuses,
+                        PageRequest.of(0, Math.max(1, limit)))
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<OrderAnalyticsRow> findMerchantAnalyticsRows(String merchantId, Instant from, Instant to) {
+        return jpa.findMerchantAnalyticsRows(merchantId, from, to).stream()
+                .map(row -> new OrderAnalyticsRow(
+                        row.getStatus(),
+                        row.getTotalAmount(),
+                        row.getCurrency(),
+                        row.getCreatedAt()))
+                .toList();
+    }
+
+    @Override
     public List<String> findPendingOrderIdsOlderThan(Instant cutoff, int limit) {
         return jpa.findPendingOrderIdsOlderThan(cutoff, PageRequest.of(0, Math.max(1, limit)));
     }

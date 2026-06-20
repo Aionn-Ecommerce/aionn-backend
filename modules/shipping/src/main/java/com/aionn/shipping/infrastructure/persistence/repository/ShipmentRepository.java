@@ -14,6 +14,8 @@ public interface ShipmentRepository extends JpaRepository<ShipmentEntity, String
 
     List<ShipmentEntity> findByOrderId(String orderId);
 
+    List<ShipmentEntity> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
+
     List<ShipmentEntity> findByTrackingCodeIsNotNullAndStatusNotIn(
             Collection<String> terminalStatuses, Pageable pageable);
 }

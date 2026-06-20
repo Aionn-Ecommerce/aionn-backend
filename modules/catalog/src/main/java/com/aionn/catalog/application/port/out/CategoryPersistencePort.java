@@ -11,6 +11,8 @@ public interface CategoryPersistencePort {
 
     Optional<Category> findById(String categoryId);
 
+    List<Category> findAllByIds(java.util.Collection<String> categoryIds);
+
     boolean existsByParentAndName(String parentId, String name);
 
     boolean existsBySlug(String slug);

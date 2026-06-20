@@ -67,6 +67,8 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/registrations/**",
                                                                 "/api/v1/geography/**",
                                                                 "/api/v1/payments/webhooks/**",
+                                                                "/api/v1/payments/vnpay/return",
+                                                                "/api/v1/payments/vnpay/ipn",
                                                                 "/api/v1/shipping/webhooks/**",
                                                                 "/ws/chat/**",
                                                                 "/.well-known/ucp",
@@ -74,7 +76,11 @@ public class ApiSecurityConfig {
                                                                 "/ucp/v1/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/inventory/items").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/promotions/banners").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/flash-sales/active").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/campaigns/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/shop-vouchers/merchant/**").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/feedbacks").permitAll()
                                                 .requestMatchers(
                                                                 "/actuator/health",
@@ -115,6 +121,7 @@ public class ApiSecurityConfig {
                                 "Accept",
                                 "X-Client-Type",
                                 "X-Request-Id",
+                                "Idempotency-Key",
                                 "X-Idempotency-Key",
                                 "X-Forwarded-For",
                                 "Origin"));

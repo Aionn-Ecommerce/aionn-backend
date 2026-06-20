@@ -48,6 +48,13 @@ public class InventoryItemPersistenceAdapter implements InventoryItemPersistence
                 .toList();
     }
 
+    @Override
+    public List<InventoryItem> findBySku(String skuId) {
+        return jpa.findByIdSkuId(skuId).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
     private static InventoryItemEntity.InventoryItemId toId(InventoryItemKey key) {
         return new InventoryItemEntity.InventoryItemId(key.skuId(), key.warehouseId());
     }

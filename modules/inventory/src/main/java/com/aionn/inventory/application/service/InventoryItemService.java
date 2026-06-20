@@ -56,7 +56,12 @@ public class InventoryItemService {
             throw new InventoryException(InventoryErrorCode.INVENTORY_ALREADY_INITIALIZED);
         }
         InventoryItem item = InventoryItem.initialize(key, command.initialQty());
-        InventoryItem saved = itemRepository.save(item);
+        InventoryItem saved;
+        try {
+            saved = itemRepository.save(item);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw new InventoryException(InventoryErrorCode.INVENTORY_ALREADY_INITIALIZED);
+        }
         eventPublisher.publish(item.pullEvents());
         return mapper.toResult(saved);
     }
@@ -133,6 +138,13 @@ public class InventoryItemService {
         return itemRepository.findByKey(new InventoryItemKey(skuId, warehouseId))
                 .map(mapper::toResult)
                 .orElseThrow(() -> new InventoryException(InventoryErrorCode.INVENTORY_ITEM_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<InventoryItemResult> listBySku(String skuId) {
+        return itemRepository.findBySku(skuId).stream()
+                .map(mapper::toResult)
+                .toList();
     }
 
     private OwnerContext ownerContext(String ownerId, String warehouseId) {

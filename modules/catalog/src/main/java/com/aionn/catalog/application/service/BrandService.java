@@ -60,6 +60,21 @@ public class BrandService {
     }
 
     @Transactional(readOnly = true)
+    public com.aionn.catalog.application.dto.common.PageResult<BrandResult> list(int page, int size) {
+        java.util.List<Brand> brands = brandRepository.findAll(page, size);
+        java.util.List<BrandResult> results = brands.stream()
+                .map(brandResultMapper::toResult)
+                .toList();
+        return new com.aionn.catalog.application.dto.common.PageResult<>(results, page, size, brandRepository.count());
+    }
+
+    @Transactional(readOnly = true)
+    public com.aionn.catalog.application.dto.common.PageResult<BrandResult> list(
+            com.aionn.sharedkernel.domain.vo.OffsetPagination pagination) {
+        return list(pagination.page(), pagination.size());
+    }
+
+    @Transactional(readOnly = true)
     public BrandResult get(String brandId) {
         return brandResultMapper.toResult(required(brandId));
     }

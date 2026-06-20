@@ -2,12 +2,14 @@ package com.aionn.identity.infrastructure.persistence.adapter.kyc;
 
 import com.aionn.identity.application.port.out.kyc.KycPersistencePort;
 import com.aionn.identity.domain.model.KycProfile;
+import com.aionn.identity.domain.valueobject.KycStatus;
 import com.aionn.identity.infrastructure.persistence.entity.KycProfileEntity;
 import com.aionn.identity.infrastructure.persistence.entity.UserEntity;
 import com.aionn.identity.infrastructure.persistence.mapper.KycDomainMapper;
 import com.aionn.identity.infrastructure.persistence.repository.kyc.KycProfileRepository;
 import com.aionn.identity.infrastructure.persistence.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -56,7 +58,18 @@ public class KycPersistenceAdapter implements KycPersistencePort {
     }
 
     @Override
+    public List<KycProfile> findByStatus(KycStatus status, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 200));
+        return kycRepository
+                .findByStatusOrderBySubmittedAtDesc(status.name(), PageRequest.of(0, safeLimit))
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public void delete(KycProfile kycProfile) {
         kycRepository.deleteById(kycProfile.getKycId());
     }
 }
+

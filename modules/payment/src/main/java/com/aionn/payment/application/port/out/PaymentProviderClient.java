@@ -26,6 +26,7 @@ public interface PaymentProviderClient {
                         String paymentId,
                         String orderId,
                         String userId,
+                        String merchantId,
                         String paymentMethodToken,
                         BigDecimal amount,
                         String currency,

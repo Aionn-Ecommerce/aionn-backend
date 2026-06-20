@@ -23,7 +23,8 @@ public interface CarrierClient {
      */
     OrderDetail fetchOrderDetail(String trackingCode);
 
-    record Quote(BigDecimal fee, String currency, String zoneCode, String detail) {
+    record Quote(BigDecimal fee, String currency, String zoneCode, String detail,
+            Instant expectedDeliveryDate, Instant orderDate) {
     }
 
     record Registration(String trackingCode, String carrierOrderId, Instant expectedDate) {

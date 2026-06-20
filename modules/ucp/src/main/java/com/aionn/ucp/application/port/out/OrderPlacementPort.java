@@ -10,6 +10,7 @@ public interface OrderPlacementPort {
     record PlaceCommand(
             String userId,
             List<Line> lines,
+            String voucherCode,
             String paymentMethodId,
             String addressId,
             String currency,

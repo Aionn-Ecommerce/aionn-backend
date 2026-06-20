@@ -8,8 +8,9 @@ public record MerchantResult(
         String name,
         String logoUrl,
         String description,
+        String provinceCode,
+        String provinceName,
         String status,
         Instant createdAt,
         Instant updatedAt) {
 }
-

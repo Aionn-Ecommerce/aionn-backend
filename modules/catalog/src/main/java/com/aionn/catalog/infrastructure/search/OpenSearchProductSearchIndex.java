@@ -135,6 +135,9 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
             }
 
             if (criteria.priceMin() != null || criteria.priceMax() != null) {
+                // Filter on priceFrom (cheapest variant price).
+                // priceMin → cheapest variant must be ≥ priceMin (nothing cheaper than budget floor).
+                // priceMax → cheapest variant must be ≤ priceMax (product is reachable within budget).
                 filters.add(Query.of(q -> q.range(r -> {
                     r.field("priceFrom");
                     if (criteria.priceMin() != null) {
@@ -161,16 +164,16 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
 
             if (criteria.shipping() != null && !criteria.shipping().isEmpty()) {
                 filters.add(Query.of(q -> q.terms(t -> t
-                        .field("shipping.keyword")
+                        .field("shipping")
                         .terms(v -> v.value(criteria.shipping().stream()
                                 .map(FieldValue::of)
                                 .toList())))));
             }
 
-            if (criteria.locations() != null && !criteria.locations().isEmpty()) {
+            if (criteria.provinceCodes() != null && !criteria.provinceCodes().isEmpty()) {
                 filters.add(Query.of(q -> q.terms(t -> t
-                        .field("location.keyword")
-                        .terms(v -> v.value(criteria.locations().stream()
+                        .field("merchantProvinceCode")
+                        .terms(v -> v.value(criteria.provinceCodes().stream()
                                 .map(FieldValue::of)
                                 .toList())))));
             }
@@ -224,6 +227,7 @@ public class OpenSearchProductSearchIndex implements ProductSearchIndex {
                 case PRICE_ASC -> reqBuilder.sort(s -> s.field(f -> f.field("priceFrom").order(SortOrder.Asc)));
                 case PRICE_DESC -> reqBuilder.sort(s -> s.field(f -> f.field("priceFrom").order(SortOrder.Desc)));
                 case NEWEST -> reqBuilder.sort(s -> s.field(f -> f.field("updatedAt").order(SortOrder.Desc)));
+                case BEST_SELLER -> reqBuilder.sort(s -> s.field(f -> f.field("soldCount").order(SortOrder.Desc)));
                 case RELEVANCE -> {
                     if (!criteria.hasText()) {
                         reqBuilder.sort(s -> s.field(f -> f.field("updatedAt").order(SortOrder.Desc)));

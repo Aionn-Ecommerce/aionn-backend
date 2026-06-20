@@ -44,5 +44,12 @@ public class PromotionCampaignPersistenceAdapter implements PromotionCampaignPer
                 .map(mapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<PromotionCampaign> listByStatus(String status, int limit) {
+        return jpa.findByStatus(status, PageRequest.of(0, Math.max(1, limit))).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }
 

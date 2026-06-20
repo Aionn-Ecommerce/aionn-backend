@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LocalInvoiceStorage implements InvoiceStorage {
 
-    @Value("${payment.invoice.base-url:https://invoices.test/}")
+    @Value("${payment.invoice.base-url}")
     private String baseUrl;
 
     @Override

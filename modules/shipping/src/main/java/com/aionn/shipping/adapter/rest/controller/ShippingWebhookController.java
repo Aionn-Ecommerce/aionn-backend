@@ -15,8 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,7 +31,7 @@ public class ShippingWebhookController {
         @PostMapping("/carrier")
         @Operation(summary = "Carrier webhook")
         public ResponseEntity<ApiResponse<ShipmentResult>> carrierWebhook(
-                        @RequestParam(name = "secret", required = false) String secret,
+                        @RequestHeader(name = "X-Webhook-Secret", required = false) String secret,
                         @Valid @RequestBody CarrierWebhookPayload payload) {
                 verifySecret(secret);
                 ShipmentResult result = shipmentService.applyCarrierWebhook(new CarrierWebhookCommand(

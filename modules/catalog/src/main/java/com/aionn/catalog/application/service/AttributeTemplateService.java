@@ -53,6 +53,17 @@ public class AttributeTemplateService {
                 .orElseThrow(() -> new CatalogException(CatalogErrorCode.ATTRIBUTE_TEMPLATE_NOT_FOUND)));
     }
 
+    @Transactional(readOnly = true)
+    public AttributeTemplateResult getByCategory(String categoryId) {
+        return toResult(attributeTemplateRepository.findByCategoryId(categoryId)
+                .orElseThrow(() -> new CatalogException(CatalogErrorCode.ATTRIBUTE_TEMPLATE_NOT_FOUND)));
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<AttributeTemplateResult> findByCategoryId(String categoryId) {
+        return attributeTemplateRepository.findByCategoryId(categoryId).map(this::toResult);
+    }
+
     private AttributeTemplateResult toResult(AttributeTemplate template) {
         Map<String, Boolean> attrs = new LinkedHashMap<>();
         template.snapshot().forEach((k, v) -> attrs.put(k, v.filterable()));
