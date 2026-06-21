@@ -1,3 +1,6 @@
+﻿-- -----------------------------------------------------------------------------
+-- Squashed from V9.0__init_notification_schema.sql
+-- -----------------------------------------------------------------------------
 CREATE TABLE notification_templates (
     template_id  VARCHAR(50) PRIMARY KEY,
     event_type   VARCHAR(100) NOT NULL,
@@ -164,3 +167,125 @@ VALUES
  '{{senderName}}',
  '{{messagePreview}}',
  '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from V9.1__add_english_notification_templates.sql
+-- -----------------------------------------------------------------------------
+-- =====================================================================
+-- Seed translation data for English (en-US) templates
+-- =====================================================================
+
+INSERT INTO notification_templates (template_id, event_type, channel, category, locale, subject, content, placeholders, version, is_active)
+VALUES
+('idn_pwd_reset_em_en',
+ 'identity.password-reset-requested', 'EMAIL', 'SECURITY', 'en-US',
+ 'Password Reset Request',
+ 'You have requested a password reset. Token: {{resetToken}}. If this was not you, please ignore this email.',
+ '["resetToken"]'::jsonb, 1, TRUE),
+
+('idn_pwd_changed_em_en',
+ 'identity.password-changed', 'EMAIL', 'SECURITY', 'en-US',
+ 'Your password has been changed',
+ 'Your Aionn account password has been changed (channel: {{channelHint}}). If this was not you, please contact support immediately.',
+ '["channelHint"]'::jsonb, 1, TRUE),
+
+('idn_pwd_changed_in_en',
+ 'identity.password-changed', 'IN_APP', 'SECURITY', 'en-US',
+ 'Password Changed',
+ 'Your password has been changed via {{channelHint}}.',
+ '["channelHint"]'::jsonb, 1, TRUE),
+
+('idn_email_changed_em_en',
+ 'identity.email-changed', 'EMAIL', 'SECURITY', 'en-US',
+ 'Email Address Updated',
+ 'Your Aionn account email address was changed from {{oldEmail}} to {{newEmail}}. If this was not you, please contact support immediately.',
+ '["oldEmail","newEmail"]'::jsonb, 1, TRUE),
+
+('idn_email_changed_in_en',
+ 'identity.email-changed', 'IN_APP', 'SECURITY', 'en-US',
+ 'Email Address Updated',
+ 'Your account email address has been updated to {{newEmail}}.',
+ '["newEmail"]'::jsonb, 1, TRUE),
+
+('idn_phone_changed_sms_en',
+ 'identity.phone-changed', 'SMS', 'SECURITY', 'en-US',
+ NULL,
+ 'Aionn: your account phone number has been changed from {{oldPhone}} to {{newPhone}}.',
+ '["oldPhone","newPhone"]'::jsonb, 1, TRUE),
+
+('idn_phone_changed_in_en',
+ 'identity.phone-changed', 'IN_APP', 'SECURITY', 'en-US',
+ 'Phone Number Updated',
+ 'Your account phone number has been updated to {{newPhone}}.',
+ '["newPhone"]'::jsonb, 1, TRUE),
+
+('idn_email_otp_em_en',
+ 'identity.email-otp', 'EMAIL', 'SECURITY', 'en-US',
+ 'Aionn Verification Code',
+ 'Your email verification code is {{otpCode}}. Valid for 5 minutes. Please do not share it with others.',
+ '["otpCode"]'::jsonb, 1, TRUE),
+
+('idn_phone_otp_sms_en',
+ 'identity.phone-otp', 'SMS', 'SECURITY', 'en-US',
+ NULL,
+ 'Aionn: your verification code is {{otpCode}}. Valid for 5 minutes. Do not share it.',
+ '["otpCode"]'::jsonb, 1, TRUE),
+
+('idn_reg_otp_sms_en',
+ 'identity.registration-otp', 'SMS', 'SECURITY', 'en-US',
+ NULL,
+ 'Aionn: your registration OTP is {{otpCode}}. Valid for 5 minutes. Do not share it.',
+ '["otpCode"]'::jsonb, 1, TRUE),
+
+('chat_msg_in_app_en',
+ 'chat.message-received', 'IN_APP', 'CHAT', 'en-US',
+ '{{senderName}} sent a message',
+ '{{messagePreview}}',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE),
+
+('chat_msg_email_en',
+ 'chat.message-received', 'EMAIL', 'CHAT', 'en-US',
+ 'New message from {{senderName}}',
+ '{{senderName}} has sent you a message:\n\n{{messagePreview}}\n\nOpen Aionn to reply.',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE),
+
+('chat_msg_push_en',
+ 'chat.message-received', 'PUSH', 'CHAT', 'en-US',
+ '{{senderName}}',
+ '{{messagePreview}}',
+ '["senderName","messagePreview","conversationId"]'::jsonb, 1, TRUE);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from V9.2__seed_user_notifications.sql
+-- -----------------------------------------------------------------------------
+-- Seed some mock notifications for default buyer_001 to show off on the front-end header popover
+INSERT INTO notifications (
+    noti_id, user_id, template_id, channel, category, priority,
+    subject, content, campaign_id, status, retry_count,
+    created_at, updated_at, sent_at, read_at
+) VALUES
+(
+    'not_00000000000000000000000001', '01KV05RTC7NA4KZMMP8KXX7461', NULL, 'IN_APP', 'ORDER', 'HIGH',
+    'Giao kiện hàng thành công', 'Kiện hàng SPXVN065617513426 của đơn hàng 2606130F61PQFS đã giao thành công đến bạn.',
+    NULL, 'SENT', 0, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', NULL
+),
+(
+    'not_00000000000000000000000002', '01KV05RTC7NA4KZMMP8KXX7461', NULL, 'IN_APP', 'PROMOTION', 'HIGH',
+    'SIÊU SALE BÁCH HÓA GIẢM ĐẾN 50%', '❤️ Áp thêm mã giảm 500K sẵn trong ví 💚 Mã giảm ngành hàng đến 300K, 150K 💛 Cùng mã miễn phí vận chuyển tận nơi 💙 Nhiều tầng giảm giá - Chốt đơn ngay nha!',
+    NULL, 'SENT', 0, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours', NULL
+),
+(
+    'not_00000000000000000000000003', '01KV05RTC7NA4KZMMP8KXX7461', NULL, 'IN_APP', 'PROMOTION', 'MEDIUM',
+    'SĂN VOUCHER XTRA ĐẾN 6 TRIỆU NGAY', 'ðŸŒŸ Cùng mã giảm ngành hàng đến 3 Triệu 💟 Thêm mã giảm 666K, 500K tràn ngập ðŸ“º Săn deal giảm 50% tại Shopee Live 💥 0h sale khủng - Mua sạch giỏ hàng!',
+    NULL, 'SENT', 0, NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours'
+),
+(
+    'not_00000000000000000000000004', '01KV05RTC7NA4KZMMP8KXX7461', NULL, 'IN_APP', 'PROMOTION', 'MEDIUM',
+    'Thời gian sắp hết!', 'ðŸ—“️ Voucher của bạn sẽ hết hạn vào ngày mai. Mua ngay để tiết kiệm hơn!',
+    NULL, 'SENT', 0, NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', NULL
+),
+(
+    'not_00000000000000000000000005', '01KV05RTC7NA4KZMMP8KXX7461', NULL, 'IN_APP', 'ORDER', 'HIGH',
+    'Giao kiện hàng thành công', 'Kiện hàng SPXVN064677750536 của đơn hàng 2606130G5T9EBC đã giao thành công đến bạn.',
+    NULL, 'SENT', 0, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'
+);

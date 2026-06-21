@@ -51,4 +51,9 @@ public class NotificationTemplateService {
         return mapper.toResult(repository.findById(templateId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.TEMPLATE_NOT_FOUND)));
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<TemplateResult> list(int limit) {
+        return repository.findAll(limit).stream().map(mapper::toResult).toList();
+    }
 }

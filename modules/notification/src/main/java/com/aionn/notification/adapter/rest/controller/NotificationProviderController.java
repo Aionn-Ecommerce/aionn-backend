@@ -2,6 +2,7 @@ package com.aionn.notification.adapter.rest.controller;
 
 import com.aionn.notification.adapter.rest.dto.provider.ConfigureProviderRequest;
 import com.aionn.notification.adapter.rest.dto.provider.UpdateProviderRequest;
+import com.aionn.notification.adapter.rest.support.session.CurrentAdminId;
 import com.aionn.notification.application.dto.provider.command.ProviderCommands;
 import com.aionn.notification.application.dto.provider.result.ProviderResult;
 import com.aionn.notification.application.service.NotificationAnalyticsService;
@@ -13,7 +14,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,25 +38,25 @@ public class NotificationProviderController {
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
     @Operation(summary = "Configure provider", description = "UC8.11")
     public ResponseEntity<ApiResponse<ProviderResult>> configure(
-            Authentication authentication,
+            @CurrentAdminId String adminId,
             @Valid @RequestBody ConfigureProviderRequest request) {
         return ApiResponse.createdResponse("Provider configured",
                 providerService.configure(new ProviderCommands.ConfigureProvider(
                         request.channel(), request.providerType(), request.config(),
-                        request.rateLimitPerMinute(), authentication.getName())));
+                        request.rateLimitPerMinute(), adminId)));
     }
 
     @PutMapping("/providers/{providerId}")
     @PreAuthorize("hasAuthority('ROLE_SYSTEM_ADMIN')")
     @Operation(summary = "Update provider")
     public ResponseEntity<ApiResponse<ProviderResult>> update(
-            Authentication authentication,
+            @CurrentAdminId String adminId,
             @PathVariable String providerId,
             @Valid @RequestBody UpdateProviderRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 providerService.update(new ProviderCommands.UpdateProvider(
                         providerId, request.config(), request.rateLimitPerMinute(),
-                        request.active(), authentication.getName())),
+                        request.active(), adminId)),
                 "Provider updated"));
     }
 
@@ -75,4 +75,3 @@ public class NotificationProviderController {
                 analyticsService.report(campaignId), "Analytics generated"));
     }
 }
-

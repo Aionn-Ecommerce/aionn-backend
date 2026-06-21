@@ -1,12 +1,11 @@
-package com.aionn.notification.application.port.out;
+package com.aionn.notification.application.port.out.template;
 
 import com.aionn.notification.domain.model.NotificationTemplate;
 import com.aionn.notification.domain.valueobject.NotificationChannel;
 
-import java.util.List;
 import java.util.Optional;
 
-public interface NotificationTemplatePersistencePort {
+public interface NotificationTemplateRepositoryPort {
 
     NotificationTemplate save(NotificationTemplate template);
 
@@ -14,7 +13,4 @@ public interface NotificationTemplatePersistencePort {
 
     Optional<NotificationTemplate> findByEventChannelLocale(String eventType, NotificationChannel channel,
             String locale);
-
-    List<NotificationTemplate> findAll(int limit);
 }
-
