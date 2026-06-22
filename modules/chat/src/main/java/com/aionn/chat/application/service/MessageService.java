@@ -132,6 +132,16 @@ public class MessageService {
     }
 
     @Transactional(readOnly = true)
+    public MessageResult getForUser(String userId, String messageId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ChatException(ChatErrorCode.MESSAGE_NOT_FOUND));
+        Conversation conversation = conversationRepository.findById(message.getConversationId())
+                .orElseThrow(() -> new ChatException(ChatErrorCode.CONVERSATION_NOT_FOUND));
+        conversation.requireParticipant(userId);
+        return mapper.toResult(message);
+    }
+
+    @Transactional(readOnly = true)
     public List<MessageResult> listLatest(String userId, String conversationId, int limit) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new ChatException(ChatErrorCode.CONVERSATION_NOT_FOUND));
