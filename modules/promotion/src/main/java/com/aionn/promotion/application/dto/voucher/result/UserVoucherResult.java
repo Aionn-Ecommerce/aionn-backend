@@ -16,6 +16,12 @@ public record UserVoucherResult(
         Instant reservedExpiresAt,
         Instant appliedAt,
         Instant releasedAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        BigDecimal voucherDiscountAmount,
+        String voucherCurrency,
+        String voucherScope,
+        Instant voucherValidUntil,
+        BigDecimal minOrderValue,
+        int voucherUsageLimit,
+        int voucherUsedCount) {
 }
-

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -121,6 +122,20 @@ public class PromotionCampaignService {
     @Transactional(readOnly = true)
     public CampaignResult get(String campaignId) {
         return mapper.toResult(required(campaignId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<CampaignResult> listByStatus(String status, int limit) {
+        return campaignRepository.listByStatus(status, limit).stream()
+                .map(mapper::toResult)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<VoucherResult> listVouchersByCampaignId(String campaignId, int limit) {
+        return voucherRepository.findByCampaignId(campaignId, limit).stream()
+                .map(mapper::toResult)
+                .toList();
     }
 
     private PromotionCampaign required(String campaignId) {

@@ -13,6 +13,8 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucherEntity, 
 
     Optional<UserVoucherEntity> findByUserIdAndVoucherCode(String userId, String voucherCode);
 
+    Optional<UserVoucherEntity> findByReservedOrderId(String reservedOrderId);
+
     @Query("""
             SELECT COUNT(uv) FROM UserVoucherEntity uv
               JOIN VoucherEntity v ON uv.voucherCode = v.voucherCode

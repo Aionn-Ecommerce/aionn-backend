@@ -2,6 +2,7 @@ package com.aionn.promotion.application.port.out;
 
 import com.aionn.promotion.domain.model.Voucher;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface VoucherPersistencePort {
@@ -11,4 +12,8 @@ public interface VoucherPersistencePort {
     Optional<Voucher> findByCode(String voucherCode);
 
     Optional<Voucher> lockByCode(String voucherCode);
+
+    List<Voucher> findByCampaignId(String campaignId, int limit);
+
+    List<Voucher> findByMerchantId(String merchantId, int limit);
 }

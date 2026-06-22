@@ -56,5 +56,27 @@ public final class PromotionEvents {
             Integer maxClaimsPerUser, Integer maxUsesPerVoucher,
             Instant configuredAt, Instant occurredAt) implements PromotionEvent {
     }
+
+    public record FlashSaleRegistered(
+            String registrationId, String campaignId, String merchantId,
+            String productId, String skuId,
+            BigDecimal salePrice, String currency, int saleStock,
+            Instant occurredAt) implements PromotionEvent {
+    }
+
+    public record FlashSaleApproved(
+            String registrationId, String campaignId, String skuId,
+            String adminId, Instant occurredAt) implements PromotionEvent {
+    }
+
+    public record FlashSaleRejected(
+            String registrationId, String campaignId, String skuId,
+            String adminId, String reason, Instant occurredAt) implements PromotionEvent {
+    }
+
+    public record FlashSaleCancelled(
+            String registrationId, String campaignId, String skuId,
+            Instant occurredAt) implements PromotionEvent {
+    }
 }
 

@@ -6,6 +6,7 @@ import com.aionn.promotion.domain.event.PromotionEvents;
 import com.aionn.promotion.domain.exception.PromotionErrorCode;
 import com.aionn.promotion.domain.exception.PromotionException;
 import com.aionn.sharedkernel.domain.vo.Money;
+import com.aionn.promotion.domain.valueobject.VoucherScope;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -15,6 +16,8 @@ public class Voucher extends AggregateRoot {
 
     private final String voucherCode;
     private final String campaignId;
+    private final VoucherScope scope;
+    private final String merchantId;
     private final Money discountAmount;
     private final int usageLimit;
     private int usedCount;
@@ -24,11 +27,13 @@ public class Voucher extends AggregateRoot {
     private final Instant createdAt;
     private Instant updatedAt;
 
-    public Voucher(String voucherCode, String campaignId, Money discountAmount,
+    public Voucher(String voucherCode, String campaignId, VoucherScope scope, String merchantId, Money discountAmount,
             int usageLimit, int usedCount, int reservedCount,
             Instant validFrom, Instant validUntil, Instant createdAt, Instant updatedAt) {
         this.voucherCode = voucherCode;
         this.campaignId = campaignId;
+        this.scope = scope;
+        this.merchantId = merchantId;
         this.discountAmount = discountAmount;
         this.usageLimit = usageLimit;
         this.usedCount = usedCount;
@@ -47,7 +52,7 @@ public class Voucher extends AggregateRoot {
                 () -> new PromotionException(PromotionErrorCode.INVALID_ARGUMENT,
                         "validFrom must be before validUntil"));
         Instant now = Instant.now();
-        Voucher v = new Voucher(voucherCode, campaignId, discountAmount, usageLimit, 0, 0,
+        Voucher v = new Voucher(voucherCode, campaignId, VoucherScope.PLATFORM, null, discountAmount, usageLimit, 0, 0,
                 validFrom, validUntil, now, now);
         v.record(new PromotionEvents.VoucherIssued(voucherCode, campaignId,
                 discountAmount.amount(), discountAmount.currency(),
@@ -55,41 +60,63 @@ public class Voucher extends AggregateRoot {
         return v;
     }
 
-    public boolean isUsable(Instant now) {
+    public static Voucher issueForShop(String voucherCode, String merchantId, Money discountAmount,
+            int usageLimit, Instant validFrom, Instant validUntil) {
+        Guard.notBlank(merchantId, "merchantId");
+        Guard.require(usageLimit > 0,
+                () -> new PromotionException(PromotionErrorCode.INVALID_ARGUMENT, "usageLimit must be > 0"));
+        Guard.require(validUntil == null || validFrom == null || validFrom.isBefore(validUntil),
+                () -> new PromotionException(PromotionErrorCode.INVALID_ARGUMENT,
+                        "validFrom must be before validUntil"));
+        Instant now = Instant.now();
+        Voucher voucher = new Voucher(voucherCode, null, VoucherScope.SHOP, merchantId, discountAmount,
+                usageLimit, 0, 0, validFrom, validUntil, now, now);
+        voucher.record(new PromotionEvents.VoucherIssued(voucherCode, null,
+                discountAmount.amount(), discountAmount.currency(), usageLimit, validUntil, now));
+        return voucher;
+    }
+
+    public boolean appliesToMerchant(String targetMerchantId) {
+        return scope == VoucherScope.PLATFORM || merchantId.equals(targetMerchantId);
+    }
+
+    public boolean isValidNow(Instant now) {
         if (validUntil != null && now.isAfter(validUntil))
             return false;
         if (validFrom != null && now.isBefore(validFrom))
             return false;
-        return reservedCount + usedCount < usageLimit;
+        return true;
+    }
+
+    public boolean isUsable(Instant now) {
+        return isValidNow(now) && remainingUses() > 0;
     }
 
     public int remainingUses() {
-        return usageLimit - reservedCount - usedCount;
+        return Math.max(usageLimit - usedCount, 0);
     }
 
-    public void reserveSlot() {
+    public void claimSlot() {
         Instant now = Instant.now();
-        Guard.require(validUntil == null || !now.isAfter(validUntil),
+        Guard.require(isValidNow(now),
                 () -> new PromotionException(PromotionErrorCode.VOUCHER_EXPIRED));
         Guard.require(remainingUses() > 0,
                 () -> new PromotionException(PromotionErrorCode.VOUCHER_NO_USAGE_LEFT));
-        this.reservedCount++;
+        this.usedCount++;
         this.updatedAt = now;
     }
 
+    public void reserveSlot() {
+        Guard.require(isValidNow(Instant.now()),
+                () -> new PromotionException(PromotionErrorCode.VOUCHER_EXPIRED));
+        this.updatedAt = Instant.now();
+    }
+
     public void commitSlot() {
-        Guard.require(reservedCount > 0,
-                () -> new PromotionException(PromotionErrorCode.USER_VOUCHER_INVALID_STATE,
-                        "No reserved slot to commit"));
-        this.reservedCount--;
-        this.usedCount++;
         this.updatedAt = Instant.now();
     }
 
     public void releaseSlot() {
-        if (reservedCount <= 0)
-            return;
-        this.reservedCount--;
         this.updatedAt = Instant.now();
     }
 

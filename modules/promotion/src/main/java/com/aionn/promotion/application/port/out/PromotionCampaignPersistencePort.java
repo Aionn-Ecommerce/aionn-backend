@@ -15,4 +15,6 @@ public interface PromotionCampaignPersistencePort {
     List<PromotionCampaign> findToActivate(Instant now, int limit);
 
     List<PromotionCampaign> findToEnd(Instant now, int limit);
+
+    List<PromotionCampaign> listByStatus(String status, int limit);
 }

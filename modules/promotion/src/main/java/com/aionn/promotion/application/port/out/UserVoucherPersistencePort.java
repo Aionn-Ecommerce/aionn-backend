@@ -14,6 +14,8 @@ public interface UserVoucherPersistencePort {
 
     Optional<UserVoucher> findByUserAndCode(String userId, String voucherCode);
 
+    Optional<UserVoucher> findByReservedOrderId(String orderId);
+
     long countByUserAndCampaign(String userId, String campaignId);
 
     List<UserVoucher> findByUser(String userId, int limit);

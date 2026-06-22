@@ -10,4 +10,7 @@ public interface JpaPromotionBannerRepository extends JpaRepository<PromotionBan
 
     @Query("SELECT b FROM PromotionBannerEntity b WHERE b.active = true ORDER BY b.displayOrder ASC")
     List<PromotionBannerEntity> findAllActiveOrderByDisplayOrder();
+
+    @Query("SELECT b FROM PromotionBannerEntity b ORDER BY b.displayOrder ASC, b.createdAt ASC")
+    List<PromotionBannerEntity> findAllOrdered();
 }

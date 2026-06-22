@@ -21,5 +21,7 @@ public interface PromotionCampaignRepository extends JpaRepository<PromotionCamp
               WHERE c.status = 'RUNNING' AND c.endDate <= :now
             """)
     List<PromotionCampaignEntity> findToEnd(Instant now, Pageable pageable);
+
+    List<PromotionCampaignEntity> findByStatus(String status, Pageable pageable);
 }
 

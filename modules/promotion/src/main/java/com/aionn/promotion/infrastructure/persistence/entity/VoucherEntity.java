@@ -16,6 +16,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import com.aionn.promotion.domain.valueobject.VoucherScope;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 @Table(name = "vouchers", indexes = {
@@ -32,8 +35,15 @@ public class VoucherEntity {
     @Column(name = "voucher_code", length = 50)
     private String voucherCode;
 
-    @Column(name = "campaign_id", length = 50, nullable = false)
+    @Column(name = "campaign_id", length = 50)
     private String campaignId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", length = 20, nullable = false)
+    private VoucherScope scope;
+
+    @Column(name = "merchant_id", length = 50)
+    private String merchantId;
 
     @Column(name = "discount_amount", precision = 18, scale = 2, nullable = false)
     private BigDecimal discountAmount;
@@ -68,4 +78,3 @@ public class VoucherEntity {
     @Column(name = "version", nullable = false)
     private long version;
 }
-
