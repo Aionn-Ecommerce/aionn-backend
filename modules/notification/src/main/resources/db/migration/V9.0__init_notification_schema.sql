@@ -76,7 +76,7 @@ CREATE INDEX idx_provider_channel_active ON notification_configurations(channel,
 
 -- ---------------------------------------------------------------------
 -- Default identity-driven templates (vi-VN). Event-type strings match
--- IdentityNotificationDispatcherAdapter and IdentityEventListener.
+-- IdentityNotificationAdapter and IdentityEventListener.
 -- ---------------------------------------------------------------------
 INSERT INTO notification_templates (template_id, event_type, channel, category, locale, subject, content, placeholders, version, is_active)
 VALUES
